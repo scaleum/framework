@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum\Stdlib.
  *
@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 namespace Scaleum\Stdlib\Base;
 
-use Scaleum\Stdlib\Helpers\StringHelper;
+use ReflectionClass;
 use RuntimeException;
+use Scaleum\Stdlib\Exception\ERuntimeError;
+use Scaleum\Stdlib\Helper\StringHelper;
 
 /**
  * AutoInitialized
@@ -21,38 +23,57 @@ use RuntimeException;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  * @datetime 07.05.2024 11:20:55
  */
-class AutoInitialized
-{
+class AutoInitialized {
     use InitTrait;
-    public function __construct(array $config = [])
-    {
+    public function __construct(array $config = []) {
         $this->initialize($config);
     }
 
-    public static function turnInto(mixed $input): mixed
-    {
-        $result = null;
+    public static function turnInto(mixed $input): mixed {
+        $invokable = null;
+        $config    = [];
 
-        $class_name = null;
-        $args = [];
         if (is_string($input)) {
-            $class_name = $input;
+            $invokable = $input;
         } elseif (is_array($input) && count($input) > 0) {
-            $class_name = isset($input['class']) ? $input['class'] : null;
-            $args = isset($input['config']) ? $input['config'] : array_diff_key($input, array_fill_keys(['class', 'config'], 'empty'));
+            $invokable = $input['class'] ?? null;
+            $config    = $input['config'] ?? array_diff_key($input, array_fill_keys(['class', 'config'], 'empty'));
         }
 
-        if (!class_exists((string)$class_name)) {
-            throw new RuntimeException(sprintf('%s: failed retrieving class name "%s" via mixed "%s"; class does not exist', __METHOD__, StringHelper::className($class_name, true), gettype($class_name)));
+        if (! class_exists((string) $invokable)) {
+            throw new RuntimeException(sprintf('%s: failed retrieving class name "%s" via mixed "%s"; class does not exist', __METHOD__, StringHelper::className($invokable, true), gettype($invokable)));
         }
 
-        if (count($args) > 0) {
-            $result = new $class_name($args);
-        } else {
-            $result = new $class_name();
+        $reflection = new ReflectionClass($invokable);
+        if (empty($config)) {
+            return $reflection->newInstance();
         }
 
-        return $result;
+        $constructor = $reflection->getConstructor();
+        if ($constructor === null) {
+            return $reflection->newInstance();
+        }
+
+        $parameters = $constructor->getParameters();
+
+        if (count($parameters) === 1 && $parameters[0]->getType() && $parameters[0]->getType()->getName() === 'array') {
+            // Constructor expects an array
+            return $reflection->newInstance($config);
+        }
+
+        $args = [];
+        foreach ($parameters as $parameter) {
+            $name = $parameter->getName();
+            if (array_key_exists($name, $config)) {
+                $args[] = $config[$name];
+            } elseif ($parameter->isDefaultValueAvailable()) {
+                $args[] = $parameter->getDefaultValue();
+            } else {
+                throw new ERuntimeError(sprintf('Missing required parameter "%s" for "%s"', $name, $invokable));
+            }
+        }
+
+        return $reflection->newInstanceArgs($args);
     }
 }
 /** End of AutoInitialized **/

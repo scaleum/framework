@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -9,14 +9,16 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core;
-use DI\ContainerBuilder;
+namespace Scaleum\Config\Loader;
+
 /**
- * ContainerTunerInterface
+ * LoaderInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface ContainerTunerInterface
-{
-    public function handle(ContainerBuilder $builder): void;
+interface LoaderInterface {
+    public function fromFile(string $filename):array;
+
+    public function fromString(string $str):array;
 }
+/** End of LoaderInterface **/

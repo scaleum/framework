@@ -7,14 +7,12 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace Scaleum\Stdlib\Helpers;
-
+namespace Scaleum\Stdlib\Helper;
 
 /**
  * Class PathHelper
  */
-class PathHelper
-{
+class PathHelper {
     /**
      * Returns the path excluding matching segments($overlap)
      *
@@ -23,16 +21,15 @@ class PathHelper
      *
      * @return array|string
      */
-    public static function overlapPath(string $path, mixed $overlap = null)
-    {
-        if ($overlap == null || (!is_string( $path ) || !is_string( $overlap ))) {
+    public static function overlapPath(string $path, mixed $overlap = null) {
+        if ($overlap == null || (! is_string($path) || ! is_string($overlap))) {
             return $path;
         }
 
-        $path    = explode( '/', str_replace( "\\", "/", $path ) );
-        $overlap = explode( '/', str_replace( "\\", "/", $overlap ) );
+        $path    = explode('/', str_replace("\\", "/", $path));
+        $overlap = explode('/', str_replace("\\", "/", $overlap));
 
-        return '/'.implode( '/', array_diff_assoc( $path, $overlap ) );
+        return '/' . implode('/', array_diff_assoc($path, $overlap));
     }
 
     /**
@@ -51,38 +48,47 @@ class PathHelper
      *
      * @return string
      */
-    public static function relativePath(string $path, string $to)
-    {
+    public static function relativePath(string $path, string $to) {
         // some compatibility fixes for Windows paths
-        $path = is_dir( $path ) ? rtrim( $path, '\/' ).'/' : $path;
-        $to   = is_dir( $to ) ? rtrim( $to, '\/' ).'/' : $to;
-        $path = str_replace( '\\', '/', $path );
-        $to   = str_replace( '\\', '/', $to );
+        $path = is_dir($path) ? rtrim($path, '\/') . '/' : $path;
+        $to   = is_dir($to) ? rtrim($to, '\/') . '/' : $to;
+        $path = str_replace('\\', '/', $path);
+        $to   = str_replace('\\', '/', $to);
 
-        $path    = explode( '/', $path );
-        $to      = explode( '/', $to );
+        $path    = explode('/', $path);
+        $to      = explode('/', $to);
         $relPath = $to;
 
         foreach ($path as $depth => $dir) {
             // find first non-matching dir
             if ($dir === $to[$depth]) {
                 // ignore this directory
-                array_shift( $relPath );
+                array_shift($relPath);
             } else {
                 // get number of remaining dirs to $from
-                $remaining = count( $path ) - $depth;
+                $remaining = count($path) - $depth;
                 if ($remaining > 1) {
                     // add traversals up to first matching dir
-                    $padLength = (count( $relPath ) + $remaining - 1) * -1;
-                    $relPath   = array_pad( $relPath, $padLength, '..' );
+                    $padLength = (count($relPath) + $remaining - 1) * -1;
+                    $relPath   = array_pad($relPath, $padLength, '..');
                     break;
                 } else {
-                    $relPath[0] = './'.$relPath[0];
+                    $relPath[0] = './' . $relPath[0];
                 }
             }
         }
 
-        return implode( '/', $relPath );
+        return implode('/', $relPath);
+    }
+
+    public static function join(...$parts): string {
+        $parts = array_map(fn($part) => trim($part, '/'), $parts);
+        return implode(DIRECTORY_SEPARATOR, $parts);
+    }
+
+    public static function getScriptDir(): string {
+        $file = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[count(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)) - 1]['file'];
+        return dirname($file);
     }
 }
 

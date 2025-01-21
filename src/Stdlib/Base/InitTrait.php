@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Scaleum\Stdlib\Base;
 
-use Scaleum\Stdlib\Helpers\StringHelper;
+use Scaleum\Stdlib\Helper\StringHelper;
 
 trait InitTrait
 {
@@ -38,9 +38,8 @@ trait InitTrait
                 if (method_exists($context, $method = 'set' . StringHelper::normalizeName($key))) {
                     call_user_func([$context, $method], $val);
                 } else {
-
-                    if (strpos(phpversion(), '8.2') === 0 && !property_exists($context, $key)) {
-                        throw new \Exception(sprintf('Class  "%s" does not have the "%s" property, dynamic creation of properties is not supported since version 8.2', StringHelper::className($context, false), $key));
+                    if (!property_exists($context, $key) && (!$context instanceof \stdClass)) {
+                        throw new \Exception(sprintf('Class  "%s" does not have the "%s" property, dynamic creation of properties is not supported', StringHelper::className($context, false), $key));
                     }
 
                     $context->{$key} = $val;

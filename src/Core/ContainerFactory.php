@@ -11,40 +11,73 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core;
 
-use Psr\Container\ContainerInterface;
 use DI\ContainerBuilder;
+use Psr\Container\ContainerInterface;
+use Scaleum\Stdlib\Base\AutoInitialized;
 
 /**
  * ContainerFactory
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ContainerFactory {
-    private array $definitions = [];
-    private array $tuners      = [];
+class ContainerFactory extends AutoInitialized {
+    private ?ContainerBuilder $builder = null;
+    protected array $definitions       = [];
+    protected array $configurators     = [];
 
-    public function addDefinition(string $id, mixed $definition): void {
-        $this->definitions[$id] = $definition;
+    public function __construct(array $config = []) {
+        parent::__construct($config);
+        $this->flush();
     }
 
-    public function addDefinitions(array $definitions): void {
-        $this->definitions = array_merge($this->definitions, $definitions);
+    public function addDefinition(string $key, mixed $definition): self {
+        $this->definitions[$key] = $definition;
+        return $this;
     }
 
-    public function addTuner(ContainerTunerInterface $tuner): void {
-        $this->tuners[] = $tuner;
+    public function addDefinitions(array $definitions): self {
+        $this->definitions = array_merge_recursive($this->definitions, $definitions);
+        return $this;
+    }
+
+    public function addConfigurator(ContainerConfiguratorInterface $configurator): self {
+        $this->configurators[] = $configurator;
+        return $this;
+    }
+
+    public function addConfigurators(array $configurators): self {
+        foreach ($configurators as $configurator) {
+            $this->addConfigurator($configurator);
+        }
+        return $this;
     }
 
     public function build(): ContainerInterface {
-        $builder = new ContainerBuilder();
-
-        foreach ($this->tuners as $tuner) {
-            $tuner->handle($builder);
+        $builder = $this->getBuilder();
+        foreach ($this->configurators as $configurator) {
+            $configurator->configure($builder);
         }
-
         $builder->addDefinitions($this->definitions);
+        $container = $builder->build();
+        $this->flush();
 
-        return $builder->build();
+        return $container;
+    }
+
+    public function flush(): void {
+        $this->definitions   = [];
+        $this->configurators = [];
+        $this->builder       = new ContainerBuilder();
+    }
+
+    /**
+     * Get the value of builder
+     */
+    public function getBuilder() {
+        if ($this->builder === null) {
+            $this->builder = new ContainerBuilder();
+        }
+        return $this->builder;
     }
 }
 /** End of ContainerFactory **/

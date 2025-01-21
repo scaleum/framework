@@ -16,7 +16,7 @@ namespace Scaleum\Stdlib\Base;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  * @datetime 09.01.2025 17:12:00
  */
-class Collection implements \Iterator, \ArrayAccess, \Countable {
+class Collection extends \stdClass implements \Iterator, \ArrayAccess, \Countable {
     /**
      * The inner array
      * @var array
@@ -55,12 +55,12 @@ class Collection implements \Iterator, \ArrayAccess, \Countable {
     }
 
     /**
-     * Append an item to the collection
+     * Set an item to the collection
      *
      * @param string|int $key Key to associate with the item
      * @param mixed $item The item to append
      */
-    public function append($key, $item): void {
+    public function set($key, $item): void {
         if (!array_key_exists($key, $this->elements)) {
             $this->elements[$key] = $item;
         } else {
@@ -70,6 +70,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable {
             $this->elements[$key][] = $item;
         }
     }
+
 
     public function asort(?int $flags = SORT_REGULAR) {
         asort($this->elements, $flags);
@@ -243,26 +244,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable {
         return false;
     }
 
-    /**
-     * Set an item in the collection
-     *
-     * @param string|int $key The key to set
-     * @param mixed|null $item The item to set
-     * @param bool $atFirst Whether to insert the key at the beginning
-     * @return $this
-     */
-    public function set($key, $item = null, $atFirst = false): self {
-        if ($item !== null) {
-            if ($this->exists($key) && is_array($item_current = $this->get($key))) {
-                $item = is_array($item) ? array_replace_recursive($item_current, $item) : array_merge_recursive($item_current, [$item]);
-            }
-            $this->elements[$key] = $item;
-        } else {
-            $atFirst ? array_unshift($this->elements, $key) : array_push($this->elements, $key);
-        }
 
-        return $this;
-    }
 
     public function sort(?int $flags = null): self {
         sort($this->elements, $flags);

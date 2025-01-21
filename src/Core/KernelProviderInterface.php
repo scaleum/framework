@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -11,18 +11,13 @@ declare(strict_types=1);
 
 namespace Scaleum\Core;
 
-use DI\ContainerBuilder;
 /**
- * KernelTuner
+ * KernelProviderInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class KernelTuner implements ContainerTunerInterface
-{
-    public function handle(ContainerBuilder $builder): void{
-        $builder->addDefinitions([
-            "version"=> "1.0",
-        ]);
-    }
+interface KernelProviderInterface {
+    public function getKernel(): KernelInterface;
+    public function setKernel(KernelInterface $kernel): void;
 }
-/** End of KernelTuner **/
+/** End of KernelProviderInterface **/
