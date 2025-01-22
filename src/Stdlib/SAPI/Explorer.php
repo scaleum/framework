@@ -9,7 +9,7 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core\SAPI;
+namespace Scaleum\Stdlib\SAPI;
 
 /**
  * Explorer
@@ -40,7 +40,7 @@ class Explorer {
      */
     public static function getType() {
         if (static::$type === null) {
-            static::$type = SapiIdentifier::fromString(php_sapi_name());
+            static::$type = SapiIdentifier::fromString(php_sapi_name() ?? '');
         }
         return static::$type;
     }

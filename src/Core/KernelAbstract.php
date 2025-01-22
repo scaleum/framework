@@ -63,6 +63,7 @@ abstract class KernelAbstract implements KernelInterface {
         # self container`s configurators
         $this->getRegistry()->set('kernel.configurators', [
             new DependencyInjection\Basic(),
+            new DependencyInjection\Exceptions(),
             new DependencyInjection\Behaviors(),
         ]);
 

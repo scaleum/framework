@@ -19,12 +19,6 @@ namespace Scaleum\Stdlib\Exception;
  */
 interface ExceptionRendererInterface
 {
-    /**
-     * Renders an exception.
-     *
-     * @param \Throwable $exception The exception to render.
-     * @return string The rendered exception as a string.
-     */
     public function render(\Throwable $exception): void;
 }
 /** End of ExceptionRendererInterface **/

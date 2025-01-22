@@ -17,6 +17,7 @@ use Scaleum\Events\Event;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Stdlib\Exception\ExceptionHandlerInterface;
+use Scaleum\Stdlib\Exception\ExceptionRendererInterface;
 
 /**
  * Exceptions
@@ -31,10 +32,8 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
 
     public function onBootstrap(Event $event): void {
         if ($handler = $this->getKernel()->get(ExceptionHandlerInterface::class)) {
-            // set_exception_handler([$handler, 'handle']);
             if ($handler instanceof ExceptionHandlerInterface) {
                 $this->handler = $handler;
-                // TODO: set renderer!!!
                 set_error_handler([$this, 'handlerError']);
                 set_exception_handler([$this, 'handlerException']);
                 register_shutdown_function([$this, 'handlerShutdown']);
@@ -72,7 +71,6 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
             $err = func_get_args();
         }
 
-        // Return if no error
         if (empty($err)) {
             return;
         }

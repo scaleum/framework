@@ -82,7 +82,7 @@ class PathHelper {
     }
 
     public static function join(...$parts): string {
-        $parts = array_map(fn($part) => trim($part, '/'), $parts);
+        $parts = array_map(fn($part) => trim($part, DIRECTORY_SEPARATOR), $parts);
         return implode(DIRECTORY_SEPARATOR, $parts);
     }
 

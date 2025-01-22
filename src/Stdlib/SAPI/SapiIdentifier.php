@@ -9,7 +9,7 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core\SAPI;
+namespace Scaleum\Stdlib\SAPI;
 
 use Scaleum\Stdlib\Exception\ERuntimeError;
 
@@ -19,17 +19,17 @@ use Scaleum\Stdlib\Exception\ERuntimeError;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 enum SapiIdentifier: int {
-    case CLI       = 1;
-    case PHPDBG    = 2;
-    case APACHE    = 3;
-    case CGI       = 4;
-    case FASTCGI   = 5;
-    case FPM       = 6;
-    case LITESPEED = 7;
-    case ISAPI     = 8;
-    case EMBED     = 9;
-    case UWSGI     = 10;
-    case UNKNOWN   = 100;
+case CLI       = 1;
+case PHPDBG    = 2;
+case APACHE    = 3;
+case CGI       = 4;
+case FASTCGI   = 5;
+case FPM       = 6;
+case LITESPEED = 7;
+case ISAPI     = 8;
+case EMBED     = 9;
+case UWSGI     = 10;
+case UNKNOWN   = 100;
 
     public const NAMES = [
         self::CLI       => 'Command Line Interface',
@@ -52,6 +52,7 @@ enum SapiIdentifier: int {
     public static function fromString(string $str): self {
         return match (strtolower($str)) {
             'cli' => self::CLI,
+            'cli-server' => self::CLI,
             'phpdbg' => self::PHPDBG,
             'apache2handler' => self::APACHE,
             'cgi' => self::CGI,

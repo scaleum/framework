@@ -23,10 +23,10 @@ class ExceptionHandler implements ExceptionHandlerInterface {
     protected mixed $renderer = null;
 
     public function handle(\Throwable $exception): void {        
-        if ($this->renderer instanceof ExceptionRendererInterface) {
-            $this->renderer->render($exception);
-        } elseif (is_callable($this->renderer)) {
-            ($this->renderer)($exception);
+        if ($this->getRenderer() instanceof ExceptionRendererInterface) {
+            $this->getRenderer()->render($exception);
+        } elseif (is_callable($func = $this->getRenderer())) {
+            $func($exception);
         } else {
             echo 'An error occurred: ' . $exception->getMessage();
         }
