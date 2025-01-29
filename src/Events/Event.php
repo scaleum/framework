@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Events;
 
-use Scaleum\Stdlib\Base\AutoInitialized;
+use Scaleum\Stdlib\Base\Hydrator;
 
 /**
  * Event
@@ -19,7 +19,7 @@ use Scaleum\Stdlib\Base\AutoInitialized;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  * @datetime 09.01.2025 18:52:00
  */
-class Event extends AutoInitialized implements EventInterface {
+class Event extends Hydrator implements EventInterface {
     protected mixed $context    = null;
     protected bool $fireStopped = false;
     protected string $name;

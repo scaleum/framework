@@ -25,6 +25,14 @@ interface KernelInterface {
      * @return string The project directory path.
      */
     public function getProjectDir(): string;
+
+    /**
+     * Get the directory path of the configuration files.
+     *
+     * @return string The path to the configuration directory.
+     */
+    public function getConfigDir(): string;
+
     /**
      * Retrieves the current environment of the application.
      *

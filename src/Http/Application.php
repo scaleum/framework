@@ -9,9 +9,10 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core;
+namespace Scaleum\Http;
 
 use Scaleum\Config\LoaderResolver;
+use Scaleum\Core\HandlerInterface;
 use Scaleum\Core\KernelAbstract;
 use Scaleum\Core\KernelEvents;
 use Scaleum\Events\EventHandlerInterface;
@@ -27,9 +28,17 @@ use Scaleum\Stdlib\Helper\PathHelper;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Application extends KernelAbstract {
-    
+    protected ?HandlerInterface $handler = null;
+
     public function __construct(array $array = []) {
         parent::__construct($array);
+    }
+
+    public function getHandler():HandlerInterface{
+        if($this->handler === null){
+            $this->handler = new RequestHandler(new Request());
+        }
+        return $this->handler;
     }
 }
 /** End of Application **/

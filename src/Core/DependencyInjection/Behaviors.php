@@ -14,7 +14,7 @@ namespace Scaleum\Core\DependencyInjection;
 use DI\ContainerBuilder;
 use Scaleum\Core\Behaviors\Exceptions;
 use Scaleum\Core\ContainerConfiguratorInterface;
-use Scaleum\Core\Behaviors\KernelBehaviors;
+use Scaleum\Core\Behaviors\Kernel;
 
 /**
  * Behaviors
@@ -24,21 +24,12 @@ use Scaleum\Core\Behaviors\KernelBehaviors;
 class Behaviors implements ContainerConfiguratorInterface {
     public function configure(ContainerBuilder $builder): void {
         $builder->addDefinitions([
-            KernelBehaviors::class => \DI\autowire()
+            Kernel::class => \DI\autowire()
                 ->constructor(\DI\get('kernel'))
-                ->method('register', \DI\get('event-manager')),
+                ->method('register', \DI\get('event.manager')),
             Exceptions::class => \DI\autowire()
                 ->constructor(\DI\get('kernel'))
-                ->method('register', \DI\get('event-manager')),
-
-            # aliases behaviors
-            'behavior::kernel'         => \DI\get(KernelBehaviors::class),
-            'behavior::exceptions'     => \DI\get(Exceptions::class),
-            # behaviors
-            'behaviors'                => \DI\add([
-                'behavior::kernel',
-                'behavior::exceptions',
-            ]),
+                ->method('register', \DI\get('event.manager')),
         ]);
     }
 }

@@ -23,7 +23,7 @@ trait InitTrait
      * @param mixed $context The context for initialization.
      * @return void
      */
-    public function initialize(array $config = [], $context = null)
+    public function init(array $config = [], mixed $context = null)
     {
         if ($context == null || !is_object($context)) {
             $context = &$this;

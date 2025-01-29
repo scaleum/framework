@@ -11,8 +11,11 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core;
 
+use DI\Container;
 use Psr\Container\ContainerInterface;
 use Scaleum\Config\LoaderResolver;
+use Scaleum\Core\Behaviors\Exceptions;
+use Scaleum\Core\Behaviors\Kernel;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Services\ServiceProviderInterface;
@@ -21,6 +24,7 @@ use Scaleum\Stdlib\Exception\ERuntimeError;
 use Scaleum\Stdlib\Helper\EnvHelper;
 use Scaleum\Stdlib\Helper\FileHelper;
 use Scaleum\Stdlib\Helper\PathHelper;
+use Scaleum\Stdlib\Helper\StringHelper;
 
 /**
  * KernelAbstract
@@ -44,45 +48,49 @@ abstract class KernelAbstract implements KernelInterface {
         $this->getRegistry()->merge($config);
 
         # configs
-        $configs = $this->getRegistry()->get('kernel.configs', []);
-        if (is_array($configs)) {
-            foreach ($configs as $config) {
-                // full path to config file?
-                if (! file_exists($filename = $config)) {
-                    $filename = FileHelper::prepFilename(PathHelper::join($this->getProjectDir(), "config", $config));
-                }
-                // load config file
-                if (file_exists($filename) && is_readable($filename)) {
-                    if ($array = (new LoaderResolver($this->getEnvironment()))->fromFile($filename)) {
-                        $this->getRegistry()->set('kernel.definitions', $array);
-                    }
+        if (is_array($items = $this->getRegistry()->get('kernel.configs', []))) {
+            foreach ($items as $filename) {
+                if ($array = $this->getConfig($filename)) {
+                    $this->getRegistry()->set('kernel.definitions', $array);
                 }
             }
         }
 
-        # self container`s configurators
+        # add main container configurators
         $this->getRegistry()->set('kernel.configurators', [
             new DependencyInjection\Basic(),
             new DependencyInjection\Exceptions(),
             new DependencyInjection\Behaviors(),
         ]);
 
-        # init behaviors
-        if (is_array($array = $this->get('behaviors'))) {
-            foreach ($array as $definition) {
-                if ($subscriber = $this->get($definition)) {
-                    if (! $subscriber instanceof EventHandlerInterface) {
-                        throw new ERuntimeError("Subscriber `{$definition}` is not an instance of EventHandlerInterface");
-                    }
+        # add main behaviors
+        $this->getRegistry()->set('behaviors', [
+            Kernel::class,
+            Exceptions::class,
+        ]);
+
+        # init everything behaviors
+        $array = $this->getRegistry()->get('behaviors');
+        foreach ($array as $definition) {
+            if ($handler = $this->get($definition)) {
+                if (! $handler instanceof EventHandlerInterface) {
+                    throw new ERuntimeError(
+                        sprintf(
+                            'Behavior must be an instance of `EventHandlerInterface` given `%s`',
+                            is_object($handler) ? StringHelper::className($handler, true) : gettype($handler)
+                        )
+                    );
                 }
+                # TODO need to insert to wherever?
             }
         }
 
-        # init services
-        if (is_array($array = $this->get('services'))) {
-            foreach ($array as $definition) {
+        # has predefined services?
+        if (is_array($array = $this->getRegistry()->get('services'))) {
+            foreach ($array as $key => $definition) {
                 if ($service = $this->get($definition)) {
-                    $this->getServiceManager()->set($definition, $service);
+                    // TODO add check for ServiceInterface?
+                    $this->getServiceManager()->setService($key, $service);
                 }
             }
         }
@@ -100,12 +108,12 @@ abstract class KernelAbstract implements KernelInterface {
         }
 
         $this->getEventManager()->dispatch(KernelEvents::START);
-        // if($response = $this->getHandler()->handle()) {
-        //     if(! $response instanceof ResponseInterface) {
-        //         throw new ERuntimeError("Handler must return an instance of ResponseInterface");
-        //     }
-        //     $response->send();
-        // }
+        if($response = $this->getHandler()->handle()) {
+            if(! $response instanceof ResponseInterface) {
+                throw new ERuntimeError("Handler must return an instance of ResponseInterface");
+            }
+            $response->send();
+        }
         $this->getEventManager()->dispatch(KernelEvents::FINISH);
     }
 
@@ -113,7 +121,7 @@ abstract class KernelAbstract implements KernelInterface {
 
     }
 
-    // abstract public function getHandler():HandlerInterface;
+    abstract public function getHandler():HandlerInterface;
 
     /**
      * Retrieves the event manager instance.
@@ -121,14 +129,14 @@ abstract class KernelAbstract implements KernelInterface {
      * @return EventManagerInterface The event manager instance.
      */
     public function getEventManager(): EventManagerInterface {
-        if (! ($result = $this->get('event-manager')) instanceof EventManagerInterface) {
+        if (! ($result = $this->get('event.manager')) instanceof EventManagerInterface) {
             throw new \RuntimeException("Event manager is not an instance of EventManagerInterface");
         }
         return $result;
     }
 
     public function getServiceManager(): ServiceProviderInterface {
-        if (! ($result = $this->get('service-manager')) instanceof ServiceProviderInterface) {
+        if (! ($result = $this->get('service.manager')) instanceof ServiceProviderInterface) {
             throw new ERuntimeError("Service manager is not an instance of ServiceProviderInterface");
         }
         return $result;
@@ -139,6 +147,19 @@ abstract class KernelAbstract implements KernelInterface {
      */
     public function getProjectDir(): string {
         return $this->getRegistry()->get('project_dir', realpath(PathHelper::getScriptDir()));
+    }
+
+    public function getConfigDir(): string {
+        return $this->getRegistry()->get('config_dir', realpath(PathHelper::join($this->getProjectDir(), 'config')));
+    }
+
+    public function getConfig(string $filename): array {
+        # May be $filename is basename & need to be prepended with config_dir ?
+        if (! file_exists($filename)) {
+            $filename = FileHelper::prepFilename(PathHelper::join($this->getConfigDir(), $filename));
+        }
+
+        return (new LoaderResolver($this->getEnvironment()))->fromFile($filename);
     }
 
     /**
@@ -185,7 +206,7 @@ abstract class KernelAbstract implements KernelInterface {
     /**
      * Retrieves the dependency injection container.
      *
-     * @return ContainerInterface The dependency injection container.
+     * @return Container The dependency injection container.
      */
     public function getContainer(): ContainerInterface {
         if (! $this->container instanceof ContainerInterface) {

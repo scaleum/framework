@@ -18,8 +18,8 @@ namespace Scaleum\Services;
  */
 interface ServiceProviderInterface {
     public function getAll(): array;
-    public function get(string $str, mixed $default = null): mixed;
-    public function has(string $str): bool;
-    public function set(string $str, mixed $definition, bool $override = false): mixed;
+    public function getService(string $str, mixed $default = null): mixed;
+    public function hasService(string $str): bool;
+    public function setService(string $str, mixed $definition, bool $override = false): mixed;
 }
 /** End of ServiceProviderInterface **/

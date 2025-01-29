@@ -9,7 +9,7 @@
          executionOrder="depends,defects"
          testdox="true"
          beStrictAboutTestsThatDoNotTestAnything="false">
-    <testsuites>
+    <testsuites> 
         <testsuite name="Unit Tests">
             <directory>tests/unit</directory>
         </testsuite>

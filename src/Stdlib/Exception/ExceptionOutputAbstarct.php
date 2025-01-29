@@ -11,14 +11,14 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Exception;
 
-use Scaleum\Stdlib\Base\AutoInitialized;
+use Scaleum\Stdlib\Base\Hydrator;
 
 /**
  * ExceptionOutputAbstarct
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-abstract class ExceptionOutputAbstarct extends AutoInitialized implements ExceptionRendererInterface {
+abstract class ExceptionOutputAbstarct extends Hydrator implements ExceptionRendererInterface {
     /**
      * Base path (for overlap).
      * $base_path property, which can be represents the base path of the project's files.

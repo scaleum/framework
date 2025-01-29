@@ -18,18 +18,18 @@ use Scaleum\Stdlib\Exception\ERuntimeError;
 use Scaleum\Stdlib\Helper\StringHelper;
 
 /**
- * AutoInitialized
+ * Hydrator
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  * @datetime 07.05.2024 11:20:55
  */
-class AutoInitialized {
+class Hydrator implements HydratorInterface {
     use InitTrait;
     public function __construct(array $config = []) {
-        $this->initialize($config);
+        $this->init($config, $this);
     }
 
-    public static function turnInto(mixed $input): mixed {
+    public static function createInstance(mixed $input): mixed {
         $invokable = null;
         $config    = [];
 
@@ -47,20 +47,18 @@ class AutoInitialized {
         $reflection = new ReflectionClass($invokable);
         if (empty($config)) {
             return $reflection->newInstance();
-        }
+        }        
 
         $constructor = $reflection->getConstructor();
         if ($constructor === null) {
             return $reflection->newInstance();
         }
 
-        $parameters = $constructor->getParameters();
-
-        if (count($parameters) === 1 && $parameters[0]->getType() && $parameters[0]->getType()->getName() === 'array') {
-            // Constructor expects an array
+        if($reflection->implementsInterface(HydratorInterface::class)) {
             return $reflection->newInstance($config);
         }
 
+        $parameters = $constructor->getParameters();
         $args = [];
         foreach ($parameters as $parameter) {
             $name = $parameter->getName();
@@ -76,4 +74,4 @@ class AutoInitialized {
         return $reflection->newInstanceArgs($args);
     }
 }
-/** End of AutoInitialized **/
+/** End of Hydrator **/

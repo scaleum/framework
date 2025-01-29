@@ -11,6 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Base;
 
+use Scaleum\Stdlib\Helper\ArrayHelper;
+
 /**
  * Class for working with nested arrays using a path
  *
@@ -50,8 +52,7 @@ class Registry {
             $items = &$items[$key];
         }
 
-        $items = (is_array($value)) ? array_replace_recursive($items, $value) : $value;
-
+        $items = (is_array($value)) ? (ArrayHelper::isAssociative($items) ? array_replace_recursive($items, $value) : array_merge($items, $value)) : $value;
         return $this;
     }
 
@@ -79,11 +80,28 @@ class Registry {
         return $this;
     }
 
+    public function unset(string $str): void {
+        $keys  = explode($this->separator, $str);
+        $items = &$this->items;
+
+        foreach ($keys as $key) {
+            if (isset($items[$key])) {
+                if (end($keys) === $key) {
+                    unset($items[$key]);
+                } else {
+                    $items = &$items[$key];
+                }
+            } else {
+                break;
+            }
+        }
+        unset($items);
+    }
+
     /**
      * Get the value of separator
-     */ 
-    public function getSeparator()
-    {
+     */
+    public function getSeparator() {
         return $this->separator;
     }
 
@@ -91,9 +109,8 @@ class Registry {
      * Set the value of separator
      *
      * @return  self
-     */ 
-    public function setSeparator($separator)
-    {
+     */
+    public function setSeparator($separator) {
         $this->separator = $separator;
 
         return $this;

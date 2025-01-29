@@ -13,14 +13,15 @@ namespace Scaleum\Core;
 
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
-use Scaleum\Stdlib\Base\AutoInitialized;
+use Scaleum\Stdlib\Base\Hydrator;
+use Scaleum\Stdlib\Helper\StringHelper;
 
 /**
  * ContainerFactory
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ContainerFactory extends AutoInitialized {
+class ContainerFactory extends Hydrator {
     private ?ContainerBuilder $builder = null;
     protected array $definitions       = [];
     protected array $configurators     = [];
@@ -47,6 +48,15 @@ class ContainerFactory extends AutoInitialized {
 
     public function addConfigurators(array $configurators): self {
         foreach ($configurators as $configurator) {
+            if (! $configurator instanceof ContainerConfiguratorInterface) {
+                throw new \InvalidArgumentException(
+                    sprintf(
+                        'Configurator must be an instance of `ContainerConfiguratorInterface` given `%s`',
+                        is_object($configurator) ? StringHelper::className($configurator,true) : gettype($configurator)
+                    )
+                );
+            }
+
             $this->addConfigurator($configurator);
         }
         return $this;

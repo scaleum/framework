@@ -51,7 +51,7 @@ class LoaderResolver {
         if (isset(static::$extensions[$ext])) {
             $loader = static::$extensions[$ext];
             if (! $loader instanceof LoaderInterface) {
-                $loader                   = static::getDispatcher()->get($loader);
+                $loader                   = static::getDispatcher()->getService($loader);
                 static::$extensions[$ext] = $loader;
             }
             

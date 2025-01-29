@@ -13,13 +13,13 @@ namespace Scaleum\Core\DependencyInjection;
 
 use DI\ContainerBuilder;
 use Scaleum\Config\Config;
-use Scaleum\Config\LoaderResolver as ConfigLoader;
+use Scaleum\Config\LoaderResolver;
 use Scaleum\Core\ContainerConfiguratorInterface;
 use Scaleum\Core\KernelInterface;
-use Scaleum\Stdlib\SAPI\Explorer;
 use Scaleum\Events\EventManager;
+use Scaleum\Logger\LoggerManager;
 use Scaleum\Services\ServiceManager;
-use Scaleum\Stdlib\Base\FileResolver;
+use Scaleum\Stdlib\SAPI\Explorer;
 
 /**
  * Framework
@@ -42,29 +42,25 @@ class Basic implements ContainerConfiguratorInterface {
             KernelInterface::class => \DI\get('kernel'),
             EventManager::class    => \DI\autowire(),
             ServiceManager::class  => \DI\autowire(),
-
-            ConfigLoader::class    => \DI\autowire()
-                ->constructorParameter('env', \DI\get('environment')),
+            LoggerManager::class   => \DI\autowire(),
+            
+            LoaderResolver::class  => \DI\autowire()
+                ->constructor(\DI\get('environment')),
             Config::class          => \DI\autowire()
-                ->constructorParameter('separator', \DI\get('config.separator'))
-                ->constructorParameter('resolver', \DI\get(ConfigLoader::class)),
+                ->constructorParameter('resolver', \DI\get(LoaderResolver::class)),
 
-            FileResolver::class    => \DI\autowire()
-                ->method('addPath', \DI\get('kernel.project_dir')),
+            // FileResolver::class    => \DI\autowire()
+            //     ->method('addPath', \DI\get('kernel.project_dir')),
 
             # aliases definitions
-            'event-manager'        => \DI\get(EventManager::class),
-            'service-manager'      => \DI\get(ServiceManager::class),
-
-            'file-resolver'        => \DI\get(FileResolver::class),
-            'config'               => \DI\get(Config::class),
-            'config.separator'     => '.',
+            'event.manager'        => \DI\get(EventManager::class),
+            'log.manager'          => \DI\get(LoggerManager::class),
+            // 'file.resolver'        => \DI\get(FileResolver::class),
+            // 'config'               => \DI\get(Config::class),
+            // 'config.separator'     => '.',
 
             # services
-            'services'             => \DI\add([
-                'config',
-                'file-resolver',
-            ]),
+            'service.manager'      => \DI\get(ServiceManager::class),
 
         ]);
     }

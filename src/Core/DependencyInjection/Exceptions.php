@@ -14,12 +14,12 @@ namespace Scaleum\Core\DependencyInjection;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 use Scaleum\Core\ContainerConfiguratorInterface;
-use Scaleum\Stdlib\SAPI\SapiMode;
 use Scaleum\Stdlib\Exception\ExceptionHandler;
 use Scaleum\Stdlib\Exception\ExceptionHandlerInterface;
 use Scaleum\Stdlib\Exception\ExceptionOutputConsole;
 use Scaleum\Stdlib\Exception\ExceptionOutputHttp;
 use Scaleum\Stdlib\Exception\ExceptionRendererInterface;
+use Scaleum\Stdlib\SAPI\SapiMode;
 
 /**
  * Framework
@@ -28,10 +28,6 @@ use Scaleum\Stdlib\Exception\ExceptionRendererInterface;
  */
 class Exceptions implements ContainerConfiguratorInterface {
     public function configure(ContainerBuilder $builder): void {
-        $builder
-            ->useAttributes(false)
-            ->useAutowiring(true);
-
         $builder->addDefinitions([
             ExceptionOutputConsole::class     => \DI\autowire()
                 ->constructor(\DI\get('error_renderer.config')),
@@ -39,7 +35,6 @@ class Exceptions implements ContainerConfiguratorInterface {
                 ->constructor(\DI\get('error_renderer.config')),
             'error_renderer.console'          => \DI\get(ExceptionOutputConsole::class),
             'error_renderer.http'             => \DI\get(ExceptionOutputHttp::class),
-
             'error_renderer.config'           => \DI\add([
                 'base_path'           => \DI\get('kernel.project_dir'),
                 'include_traces'      => false,

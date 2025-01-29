@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Exception;
 
-use Scaleum\Stdlib\Base\AutoInitialized;
+use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Stdlib\Helper\ArrayHelper;
 use Scaleum\Stdlib\Helper\PathHelper;
 use Scaleum\Stdlib\Helper\StringHelper;

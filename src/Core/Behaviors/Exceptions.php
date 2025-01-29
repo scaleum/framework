@@ -57,8 +57,9 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
     public function handlerException(
         \Throwable $exception
     ): void {
-        # TODO: add logging
+        # TODO add logging
         $this->getHandler()->handle($exception);
+        # TODO call Kernel::halt()
     }
 
     public function handlerShutdown(): void {
@@ -79,8 +80,9 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
         $exception = new \ErrorException($err['errstr'], 0, $err['errno'], $err['errfile'], $err['errline']);
 
         if (error_reporting() & $err['type']) {
-            # TODO: add logging
+            # TODO add logging
             $this->getHandler()->handle($exception);
+            # TODO call Kernel::halt()
             exit(1);
         }
     }

@@ -197,6 +197,25 @@ class ArrayHelper
         return array_search( $needle, $column !== null ? array_column( $haystack, $column ) : $haystack, $strict );
     }
 
+    /**
+     * Checks if the given array is associative.
+     *
+     * An array is considered associative if it has at least one string key.
+     *
+     * @param array $array The array to check.
+     * @return bool True if the array is associative, false otherwise.
+     */
+    public static function isAssociative(array $array): bool
+    {
+        // foreach (array_keys($array) as $key) {
+        //     if (is_string($key)) {
+        //         return true;
+        //     }
+        // }
+        // return false;
+        
+        return (bool)array_filter(array_keys($array), 'is_string');        
+    }
 }
 
 /* End of file ArrayHelper.php */

@@ -21,7 +21,7 @@ use Scaleum\Stdlib\Base\Registry;
 class Config extends Registry {
     protected ?LoaderResolver $resolver = null;
 
-    public function __construct(array $items = [], string $separator = '/', ?LoaderResolver $resolver = null) {
+    public function __construct(array $items = [], string $separator = '.', ?LoaderResolver $resolver = null) {
         parent::__construct($items, $separator);
         if ($resolver !== null) {
             $this->setResolver($resolver);

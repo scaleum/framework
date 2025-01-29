@@ -12,6 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Services;
 
 use ReflectionClass;
+use Scaleum\Stdlib\Base\HydratorInterface;
 use Scaleum\Stdlib\Exception\EComponentError;
 use Scaleum\Stdlib\Exception\EMatchError;
 use Scaleum\Stdlib\Exception\ERuntimeError;
@@ -26,7 +27,7 @@ class ServiceManager implements ServiceProviderInterface {
     protected array $invokableClasses = [];
     protected array $normalized       = [];
 
-    public function get(string $name, mixed $default = null): mixed {
+    public function getService(string $name, mixed $default = null): mixed {
         $_name = $this->normalized[$name] ?? $this->normalize($name, false);
 
         if (isset($this->instances[$_name])) {
@@ -51,7 +52,7 @@ class ServiceManager implements ServiceProviderInterface {
         return $this->instances;
     }
 
-    public function has(string $name): bool {
+    public function hasService(string $name): bool {
         $_name = $this->normalized[$name] ?? $this->normalize($name, false);
         if (isset($this->invokableClasses[$_name]) || isset($this->instances[$_name])) {
             return true;
@@ -60,10 +61,10 @@ class ServiceManager implements ServiceProviderInterface {
         return false;
     }
 
-    public function set(string $name, mixed $definition, bool $override = false): mixed {
+    public function setService(string $name, mixed $definition, bool $override = false): mixed {
         if (! empty($name)) {
 
-            if ($override == false && $this->has($name)) {
+            if ($override == false && $this->hasService($name)) {
                 return false;
             }
 
@@ -95,7 +96,7 @@ class ServiceManager implements ServiceProviderInterface {
     }
 
     public function unlink(string $name): self {
-        if ($this->has($name)) {
+        if ($this->hasService($name)) {
             $invoked = $this->normalize($name, false);
             unset($this->invokableClasses[$invoked], $this->instances[$invoked]);
         }
@@ -123,13 +124,11 @@ class ServiceManager implements ServiceProviderInterface {
             return $reflection->newInstance();
         }
 
-        $parameters = $constructor->getParameters();
-
-        if (count($parameters) === 1 && $parameters[0]->getType() && $parameters[0]->getType()->getName() === 'array') {
-            // Constructor expects an array
+        if($reflection->implementsInterface(HydratorInterface::class)) {
             return $reflection->newInstance($config);
         }
-
+        
+        $parameters = $constructor->getParameters();
         $args = [];
         foreach ($parameters as $parameter) {
             $name = $parameter->getName();
@@ -151,7 +150,7 @@ class ServiceManager implements ServiceProviderInterface {
         }
 
         $_name = preg_replace('/[^\p{L}\p{N}_-]/u', '_', mb_strtolower($name));
-        
+
         if ($remember == true) {
             $this->normalized[$name] = $_name;
         }

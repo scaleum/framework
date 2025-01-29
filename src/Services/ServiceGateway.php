@@ -14,11 +14,11 @@ namespace Scaleum\Services;
 use Scaleum\Stdlib\Exception\ERuntimeError;
 
 /**
- * ServiceRegistry
- *
+ * ServiceGateway - facade for service provider
+ * 
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ServiceRegistry {
+class ServiceGateway {
     protected static ?ServiceProviderInterface $provider = null;
 
     public static function setProvider(ServiceProviderInterface $provider): void {
@@ -32,7 +32,7 @@ class ServiceRegistry {
     }
 
     public static function get(string $str, mixed $default = null): mixed {
-        return self::getProvider()->get($str, $default);
+        return self::getProvider()->getService($str, $default);
     }
 
     public static function getAll(): array {
@@ -40,11 +40,11 @@ class ServiceRegistry {
     }
 
     public static function has(string $str): bool {
-        return self::getProvider()->has($str);
+        return self::getProvider()->hasService($str);
     }
 
     public static function set(string $str, mixed $definition, bool $override = false): mixed {
-        return self::getProvider()->set($str, $definition, $override);
+        return self::getProvider()->setService($str, $definition, $override);
     }
 }
-/** End of ServiceRegistry **/
+/** End of ServiceGateway **/

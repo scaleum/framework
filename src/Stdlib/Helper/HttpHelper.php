@@ -20,10 +20,11 @@ use Scaleum\Stdlib\SAPI\SapiIdentifier;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class HttpHelper {
-    public static $httpStatuses = [
+    public static $statuses = [
         100 => 'Continue',
         101 => 'Switching Protocols',
         102 => 'Processing',
+        103 => 'Early Hints',
         118 => 'Connection timed out',
         200 => 'OK',
         201 => 'Created',
@@ -64,7 +65,7 @@ class HttpHelper {
         415 => 'Unsupported Media Type',
         416 => 'Requested range unsatisfiable',
         417 => 'Expectation failed',
-        418 => 'I\'m a teapot',
+        418 => "I'm a teapot",
         422 => 'Unprocessable entity',
         423 => 'Locked',
         424 => 'Method failure',
@@ -75,6 +76,7 @@ class HttpHelper {
         431 => 'Request Header Fields Too Large',
         449 => 'Retry With',
         450 => 'Blocked by Windows Parental Controls',
+        451 => 'Unavailable For Legal Reasons',
         500 => 'Internal Server Error',
         501 => 'Not Implemented',
         502 => 'Bad Gateway or Proxy Error',
@@ -88,6 +90,16 @@ class HttpHelper {
         511 => 'Network Authentication Required',
     ];
 
+    /**
+     * Sets an HTTP header.
+     *
+     * @param string $header The header string.
+     * @param string|null $text The optional text to include with the header.
+     * @param bool $replace Whether to replace a previous similar header, or add a second header of the same type.
+     * @param int $response_code The optional response code to send with the header.
+     *
+     * @return void
+     */
     public static function setHeader(string $header, ?string $text = null, bool $replace = true, int $response_code = 0): void {
         if (! headers_sent()) {
             switch ($text) {
@@ -101,11 +113,18 @@ class HttpHelper {
         }
     }
 
-    public static function setStatusHeader(int $code, ?string $text = null):void {
+    /**
+     * Sets the HTTP status header.
+     *
+     * @param int $code The HTTP status code.
+     * @param string|null $text Optional. The HTTP status text. If not provided, the default status text for the given code will be used.
+     * @return void
+     */
+    public static function setStatusHeader(int $code, ?string $text = null): void {
         if (! headers_sent()) {
-            $code = self::isHttpStatus($code) ? $code : 200;
+            $code = self::isStatusCode($code) ? $code : 200;
             if ($text == null) {
-                $text = self::getStatusName($code);
+                $text = self::getStatusMessage($code);
             }
             $server_protocol = $_SERVER['SERVER_PROTOCOL'] ?? false;
 
@@ -119,12 +138,24 @@ class HttpHelper {
         }
     }
 
-    public static function getStatusName(int $code): string {
-        return self::$httpStatuses[$code] ?? 'Unknown';
+    /**
+     * Get the HTTP status message corresponding to a given status code.
+     *
+     * @param int $code The HTTP status code.
+     * @return string The corresponding status message.
+     */
+    public static function getStatusMessage(int $code): string {
+        return self::$statuses[$code] ?? 'Unknown';
     }
 
-    public static function isHttpStatus(int $code): bool {
-        return isset(self::$httpStatuses[$code]);
+    /**
+     * Checks if the given status code is a valid HTTP status code.
+     *
+     * @param int $code The HTTP status code to check.
+     * @return bool True if the status code is valid, false otherwise.
+     */
+    public static function isStatusCode(int $code): bool {
+        return isset(self::$statuses[$code]);
     }
 
 }

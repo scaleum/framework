@@ -43,7 +43,7 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
     public function render(\Throwable $exception): void {
         HttpHelper::setHeader('Content-Type', sprintf('%s; charset=utf-8', $this->formats[$format = $this->getResponseFormat()]));
         HttpHelper::setStatusHeader(
-            HttpHelper::isHttpStatus(
+            HttpHelper::isStatusCode(
                 $code = $exception instanceof ErrorException ? $exception->getSeverity() : $exception->getCode()
             ) ? $code : 500
         );
@@ -118,11 +118,11 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
     }
 
     protected function formatAsHtml(\Throwable $exception): string {
-        $code = HttpHelper::isHttpStatus(
+        $code = HttpHelper::isStatusCode(
             $code = $exception instanceof ErrorException ? $exception->getSeverity() : $exception->getCode()
         ) ? $code : 500;
 
-        $code_str = HttpHelper::getStatusName($code);
+        $code_str = HttpHelper::getStatusMessage($code);
 
         $result = "<!DOCTYPE html><html><head><title>HTTP Error {$code} - {$code_str}</title></head><body>";
         $result .= "<h1>HTTP Error {$code} - {$code_str}</h1>";
