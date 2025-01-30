@@ -11,11 +11,10 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core;
 
-use DI\Container;
 use Psr\Container\ContainerInterface;
 use Scaleum\Config\LoaderResolver;
-use Scaleum\Core\Behaviors\Exceptions;
-use Scaleum\Core\Behaviors\Kernel;
+use Scaleum\DependencyInjection\Container;
+use Scaleum\DependencyInjection\Contract\ConfiguratorInterface;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Services\ServiceProviderInterface;
@@ -65,14 +64,14 @@ abstract class KernelAbstract implements KernelInterface {
 
         # add main behaviors
         $this->getRegistry()->set('behaviors', [
-            Kernel::class,
-            Exceptions::class,
+            Behaviors\Kernel::class,
+            Behaviors\Exceptions::class,
         ]);
 
         # init everything behaviors
         $array = $this->getRegistry()->get('behaviors');
         foreach ($array as $definition) {
-            if ($handler = $this->get($definition)) {
+            if ($handler = $this->getContainer()->get($definition)) {
                 if (! $handler instanceof EventHandlerInterface) {
                     throw new ERuntimeError(
                         sprintf(
@@ -88,7 +87,7 @@ abstract class KernelAbstract implements KernelInterface {
         # has predefined services?
         if (is_array($array = $this->getRegistry()->get('services'))) {
             foreach ($array as $key => $definition) {
-                if ($service = $this->get($definition)) {
+                if ($service = $this->getContainer()->get($definition)) {
                     // TODO add check for ServiceInterface?
                     $this->getServiceManager()->setService($key, $service);
                 }
@@ -108,8 +107,8 @@ abstract class KernelAbstract implements KernelInterface {
         }
 
         $this->getEventManager()->dispatch(KernelEvents::START);
-        if($response = $this->getHandler()->handle()) {
-            if(! $response instanceof ResponseInterface) {
+        if ($response = $this->getHandler()->handle()) {
+            if (! $response instanceof ResponseInterface) {
                 throw new ERuntimeError("Handler must return an instance of ResponseInterface");
             }
             $response->send();
@@ -121,7 +120,7 @@ abstract class KernelAbstract implements KernelInterface {
 
     }
 
-    abstract public function getHandler():HandlerInterface;
+    abstract public function getHandler(): HandlerInterface;
 
     /**
      * Retrieves the event manager instance.
@@ -129,14 +128,14 @@ abstract class KernelAbstract implements KernelInterface {
      * @return EventManagerInterface The event manager instance.
      */
     public function getEventManager(): EventManagerInterface {
-        if (! ($result = $this->get('event.manager')) instanceof EventManagerInterface) {
+        if (! ($result = $this->getContainer()->get('event.manager')) instanceof EventManagerInterface) {
             throw new \RuntimeException("Event manager is not an instance of EventManagerInterface");
         }
         return $result;
     }
 
     public function getServiceManager(): ServiceProviderInterface {
-        if (! ($result = $this->get('service.manager')) instanceof ServiceProviderInterface) {
+        if (! ($result = $this->getContainer()->get('service.manager')) instanceof ServiceProviderInterface) {
             throw new ERuntimeError("Service manager is not an instance of ServiceProviderInterface");
         }
         return $result;
@@ -190,23 +189,8 @@ abstract class KernelAbstract implements KernelInterface {
     }
 
     /**
-     * Retrieves an entry from the kernel container.
-     *
-     * @param string $string The key of the entry to retrieve.
-     * @param mixed $default The default value to return if the entry does not exist. Default is null.
-     * @return mixed The value of the entry, or the default value if the entry does not exist.
-     */
-    public function get(string $string, mixed $default = null): mixed {
-        if ($this->getContainer()->has($string)) {
-            return $this->getContainer()->get($string);
-        }
-        return $default;
-    }
-
-    /**
      * Retrieves the dependency injection container.
      *
-     * @return Container The dependency injection container.
      */
     public function getContainer(): ContainerInterface {
         if (! $this->container instanceof ContainerInterface) {
@@ -217,16 +201,29 @@ abstract class KernelAbstract implements KernelInterface {
     }
 
     protected function createContainer(): ContainerInterface {
-        return (new ContainerFactory())
-            ->addConfigurators($this->getRegistry()->get('kernel.configurators', []))
-            ->addDefinitions($this->getRegistry()->get('kernel.definitions', []))
-            ->addDefinitions([
-                'environment'        => $this->getEnvironment(),
-                'kernel.project_dir' => $this->getProjectDir(),
-                'kernel.start'       => microtime(true),
-                'kernel'             => $this,
-            ])
-            ->build();
+        $container = new Container();
+        foreach ($this->getRegistry()->get('kernel.configurators', []) as $configurator) {
+            if (! $configurator instanceof ConfiguratorInterface) {
+                throw new ERuntimeError(
+                    sprintf(
+                        'Configurator must be an instance of `ConfiguratorInterface` given `%s`',
+                        is_object($configurator) ? StringHelper::className($configurator, true) : gettype($configurator)
+                    )
+                );
+            }
+            $configurator->configure($container);
+        }
+
+        foreach ($this->getRegistry()->get('kernel.definitions', []) as $key => $definition) {
+            $container->addDefinition($key, $definition);
+        }
+        $container->addDefinition('environment', $this->getEnvironment());
+        $container->addDefinition('kernel.project_dir', $this->getProjectDir());
+        $container->addDefinition('kernel.config_dir', $this->getConfigDir());
+        $container->addDefinition('kernel.start', microtime(true));
+        $container->addDefinition('kernel', $this);
+
+        return $container;
     }
 
 }

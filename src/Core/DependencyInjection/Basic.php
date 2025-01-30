@@ -11,10 +11,10 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core\DependencyInjection;
 
-use DI\ContainerBuilder;
-use Scaleum\Config\Config;
+use Psr\Container\ContainerInterface;
 use Scaleum\Config\LoaderResolver;
-use Scaleum\Core\ContainerConfiguratorInterface;
+use Scaleum\DependencyInjection\Container;
+use Scaleum\DependencyInjection\Contract\ConfiguratorInterface;
 use Scaleum\Core\KernelInterface;
 use Scaleum\Events\EventManager;
 use Scaleum\Logger\LoggerManager;
@@ -26,42 +26,30 @@ use Scaleum\Stdlib\SAPI\Explorer;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class Basic implements ContainerConfiguratorInterface {
-    public function configure(ContainerBuilder $builder): void {
-        $builder
-            ->useAttributes(false)
-            ->useAutowiring(true);
-
-        $builder->addDefinitions([
-            # scalar definitions
+class Basic implements ConfiguratorInterface {
+    public function configure(Container $container): void {
+        $container->addDefinitions([
             'kernel.version'       => '1.0.0',
             'kernel.sapi_type'     => Explorer::getType(),
             'kernel.sapi_family'   => Explorer::getTypeFamily(),
-
-            # classes definitions
-            KernelInterface::class => \DI\get('kernel'),
-            EventManager::class    => \DI\autowire(),
-            ServiceManager::class  => \DI\autowire(),
-            LoggerManager::class   => \DI\autowire(),
-            
-            LoaderResolver::class  => \DI\autowire()
-                ->constructor(\DI\get('environment')),
-            Config::class          => \DI\autowire()
-                ->constructorParameter('resolver', \DI\get(LoaderResolver::class)),
-
-            // FileResolver::class    => \DI\autowire()
-            //     ->method('addPath', \DI\get('kernel.project_dir')),
-
-            # aliases definitions
-            'event.manager'        => \DI\get(EventManager::class),
-            'log.manager'          => \DI\get(LoggerManager::class),
-            // 'file.resolver'        => \DI\get(FileResolver::class),
-            // 'config'               => \DI\get(Config::class),
-            // 'config.separator'     => '.',
-
-            # services
-            'service.manager'      => \DI\get(ServiceManager::class),
-
+            KernelInterface::class => function (ContainerInterface $c) {
+                return $c->get('kernel');
+            },
+            EventManager::class    => function (ContainerInterface $c) {
+                return new EventManager();
+            },
+            'event.manager'        => EventManager::class,
+            ServiceManager::class  => function (ContainerInterface $c) {
+                return new ServiceManager();
+            },
+            'service.manager'      => ServiceManager::class,
+            LoggerManager::class   => function (ContainerInterface $c) {
+                return new LoggerManager();
+            },
+            'log.manager'          => LoggerManager::class,
+            LoaderResolver::class  => function (ContainerInterface $c) {
+                return new LoaderResolver($c->get('environment'));
+            },
         ]);
     }
 }

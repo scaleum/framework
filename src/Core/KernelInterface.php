@@ -47,15 +47,6 @@ interface KernelInterface {
      */
     public function getContainer(): ContainerInterface;
 
-    /**
-     * Retrieves an entry from the kernel container.
-     *
-     * @param string $string The key or identifier for the entry.
-     * @param mixed $default The default value to return if the entry is not found. Defaults to null.
-     * @return mixed The value of the entry, or the default value if the entry is not found.
-     */
-    public function get(string $string, mixed $default = null): mixed;
-
     public function bootstrap(array $config = []): self;
     public function run(): void;
     public function halt($status, $message = null): void;

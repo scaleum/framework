@@ -9,17 +9,19 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core;
+namespace Scaleum\DependencyInjection\Exception;
 
-use DI\ContainerBuilder;
+use Exception;
+use Psr\Container\NotFoundExceptionInterface;
+
 
 /**
- * ContainerConfiguratorInterface
+ * NotFoundException
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface ContainerConfiguratorInterface
+class NotFoundException extends Exception implements NotFoundExceptionInterface
 {
-    public function configure(ContainerBuilder $builder): void;
+
 }
-/** End of ContainerConfiguratorInterface **/   
+/** End of NotFoundException **/

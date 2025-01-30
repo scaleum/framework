@@ -29,19 +29,20 @@ use Scaleum\Stdlib\Exception\ERuntimeError;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
-    public function register(EventManagerInterface $eventManager): void {;
-        $eventManager->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9999);}
+    public function register(EventManagerInterface $eventManager): void {
+        $eventManager->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9999);
+    }
 
     public function onBootstrap(Event $event): void {
         # Accosiate service manager with service gateway
-        if (! ($provider = $this->getKernel()->get('service.manager')) instanceof ServiceProviderInterface) {
+        if (! ($provider = $this->getKernel()->getContainer()->get('service.manager')) instanceof ServiceProviderInterface) {
             throw new ERuntimeError('Service manager must implement ServiceProviderInterface');
         }
         ServiceGateway::setProvider($provider);
-        ServiceGateway::set('config', $this->getKernel()->get(Config::class));
-        
+        ServiceGateway::set('config', $this->getKernel()->getContainer()->get(Config::class));
+
         # Accosiate logger manager with logger gateway
-        if (! ($provider = $this->getKernel()->get('log.manager')) instanceof LoggerProviderInterface) {
+        if (! ($provider = $this->getKernel()->getContainer()->get('log.manager')) instanceof LoggerProviderInterface) {
             throw new ERuntimeError('Logger manager must implement LoggerProviderInterface');
         }
         LoggerGateway::setProvider($provider);
@@ -57,9 +58,8 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
 //             var_export($config2);
 //         }
 
-
         // var_dump($this->getKernel()->getContainer());
-        
+        // echo 'App::onBoot';
     }
 }
 /** End of KernelBehavior **/

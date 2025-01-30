@@ -31,7 +31,7 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
         $eventManager->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9998);}
 
     public function onBootstrap(Event $event): void {
-        if ($handler = $this->getKernel()->get(ExceptionHandlerInterface::class)) {
+        if ($handler = $this->getKernel()->getContainer()->get(ExceptionHandlerInterface::class)) {
             if ($handler instanceof ExceptionHandlerInterface) {
                 $this->handler = $handler;
                 set_error_handler([$this, 'handlerError']);

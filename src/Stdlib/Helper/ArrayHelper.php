@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum\Stdlib.
  *
@@ -8,13 +8,12 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
- namespace Scaleum\Stdlib\Helper;
+namespace Scaleum\Stdlib\Helper;
 
 /**
  * This class provides helper methods for working with arrays.
  */
-class ArrayHelper
-{
+class ArrayHelper {
     /**
      * Retrieves the value of a specified key from an array.
      *
@@ -24,16 +23,15 @@ class ArrayHelper
      * @param mixed $expected_type The expected type of the value (optional).
      * @return mixed The value of the specified key, or the default value if the key is not found.
      */
-    public static function element($key, array $haystack, $default = false, $expected_type = null):mixed
-    {
-        if (!is_array( $haystack )) {
+    public static function element($key, array $haystack, $default = false, $expected_type = null): mixed {
+        if (! is_array($haystack)) {
             return $default;
         }
 
         $result = $default;
-        if (array_key_exists( $key, $haystack )) {
-            if (in_array( $expected_type, TypeHelper::TYPES )) {
-                if (TypeHelper::isType( $haystack[$key], $expected_type )) {
+        if (array_key_exists($key, $haystack)) {
+            if (in_array($expected_type, TypeHelper::TYPES)) {
+                if (TypeHelper::isType($haystack[$key], $expected_type)) {
                     $result = $haystack[$key];
                 }
             } else {
@@ -44,7 +42,6 @@ class ArrayHelper
         return $result;
     }
 
-    
     /**
      * Extracts specified elements from an array.
      *
@@ -55,33 +52,32 @@ class ArrayHelper
      * @param bool $keys_preserve Whether to preserve the keys of the extracted elements.
      * @return array The extracted elements as an associative array.
      */
-    public static function elements(mixed $keys, array $haystack,mixed $default = false, mixed $expected_type = null, bool $keys_preserve = false):array
-    {
-        if (!is_array( $haystack )) {
+    public static function elements(mixed $keys, array $haystack, mixed $default = false, mixed $expected_type = null, bool $keys_preserve = false): array {
+        if (! is_array($haystack)) {
             return $haystack;
         }
 
         $result = [];
 
-        if (!is_array( $keys )) {
+        if (! is_array($keys)) {
             $keys = [$keys];
         }
-        $keysCount = count( $keys );
+        $keysCount = count($keys);
 
-        if (!is_array( $default )) {
-            $default = array_fill( 0, $keysCount, $default );
+        if (! is_array($default)) {
+            $default = array_fill(0, $keysCount, $default);
         }
 
-        if (!is_array( $expected_type )) {
-            $expected_type = array_fill( 0, $keysCount, $expected_type );
+        if (! is_array($expected_type)) {
+            $expected_type = array_fill(0, $keysCount, $expected_type);
         }
 
         for ($i = 0; $i < $keysCount; $i++) {
-            $keyPlaceholder = isset( $default[$i] ) ? $default[$i] : null;
-            if (array_key_exists( $keys[$i], $haystack )) {
+            $keyPlaceholder = isset($default[$i]) ? $default[$i] : null;
+            if (array_key_exists($keys[$i], $haystack)) {
                 $keyValue = $haystack[$keys[$i]];
-                if (isset( $expected_type[$i] ) && in_array( $expected_type[$i], TypeHelper::TYPES )) {
-                    if (!TypeHelper::isType( $haystack[$keys[$i]], $expected_type[$i] )) {
+                if (isset($expected_type[$i]) && in_array($expected_type[$i], TypeHelper::TYPES)) {
+                    if (! TypeHelper::isType($haystack[$keys[$i]], $expected_type[$i])) {
                         $keyValue = $keyPlaceholder;
                     }
                 }
@@ -110,27 +106,26 @@ class ArrayHelper
      * @param array $haystack The array to filter.
      * @return array The filtered array.
      */
-    public static function filter(mixed $keys, array $haystack):array
-    {
-        if (!is_array( $haystack )) {
+    public static function filter(mixed $keys, array $haystack): array {
+        if (! is_array($haystack)) {
             return $haystack;
         }
 
         $result = [];
 
-        if (!is_array( $keys )) {
+        if (! is_array($keys)) {
             $keys = [$keys];
         }
 
         foreach ($haystack as $key => $value) {
-            if (!in_array( $key, $keys )) {
+            if (! in_array($key, $keys)) {
                 $result[$key] = $value;
             }
         }
 
         return $result;
     }
-    
+
     /**
      * Get the first key of the given array without affecting
      * the internal array pointer.
@@ -139,12 +134,11 @@ class ArrayHelper
      *
      * @return mixed|null
      */
-    public static function keyFirst(array $array):mixed
-    {
-        if (is_array( $array ) && count( $array )) {
-            reset( $array );
+    public static function keyFirst(array $array): mixed {
+        if (is_array($array) && count($array)) {
+            reset($array);
 
-            return key( $array );
+            return key($array);
         }
 
         return null;
@@ -158,17 +152,15 @@ class ArrayHelper
      *
      * @return mixed|null
      */
-    public static function keyLast(array $array):mixed
-    {
+    public static function keyLast(array $array): mixed {
         $result = null;
-        if (is_array( $array )) {
-            end( $array );
-            $result = key( $array );
+        if (is_array($array)) {
+            end($array);
+            $result = key($array);
         }
 
         return $result;
     }
-
 
     /**
      * Checks if all the specified keys exist in the given array.
@@ -177,11 +169,9 @@ class ArrayHelper
      * @param array $haystack The array to search for the keys.
      * @return bool Returns true if all the keys exist, false otherwise.
      */
-    public static function keysExists(array $keys, array $haystack):bool
-    {
-        return count( array_intersect_key( array_flip( $keys ), $haystack ) ) > 0;
+    public static function keysExists(array $keys, array $haystack): bool {
+        return count(array_intersect_key(array_flip($keys), $haystack)) > 0;
     }
-
 
     /**
      * Searches for a value in an array.
@@ -192,9 +182,8 @@ class ArrayHelper
      * @param mixed $column (optional) The column to search in multi-dimensional arrays. Default is null.
      * @return mixed|false The key of the found element, or false if not found.
      */
-    public static function search(mixed $needle, array $haystack, bool $strict = false, mixed $column = null)
-    {
-        return array_search( $needle, $column !== null ? array_column( $haystack, $column ) : $haystack, $strict );
+    public static function search(mixed $needle, array $haystack, bool $strict = false, mixed $column = null) {
+        return array_search($needle, $column !== null ? array_column($haystack, $column) : $haystack, $strict);
     }
 
     /**
@@ -205,17 +194,52 @@ class ArrayHelper
      * @param array $array The array to check.
      * @return bool True if the array is associative, false otherwise.
      */
-    public static function isAssociative(array $array): bool
-    {
+    public static function isAssociative(array $array): bool {
         // foreach (array_keys($array) as $key) {
         //     if (is_string($key)) {
         //         return true;
         //     }
         // }
         // return false;
-        
-        return (bool)array_filter(array_keys($array), 'is_string');        
+
+        return (bool) array_filter(array_keys($array), 'is_string');
     }
+
+    /**
+     * Smart-merges multiple arrays into one.
+     *
+     * This method takes multiple arrays as arguments and merges them into a single array.
+     * If the arrays have overlapping keys, the later arrays will overwrite the values of the earlier ones.
+     *
+     * @param array ...$arrays Variable number of arrays to merge.
+     * @return array The merged array.
+     */
+    public static function merge(array ...$arrays): array {
+        $result = [];
+
+        foreach ($arrays as $array) {
+            foreach ($array as $key => $value) {
+                if (isset($result[$key])) {
+                    if (is_array($result[$key]) && is_array($value)) {
+                        // if both arrays are indexed → merge them
+                        if (! self::isAssociative($result[$key]) && ! self::isAssociative($value)) {
+                            $result[$key] = array_merge($result[$key], $value);
+                        } else {
+                            // if one array is indexed and the other is associative → merge them
+                            $result[$key] = self::merge($result[$key], $value);
+                        }
+                    } else {
+                        $result[$key] = $value; // replace value
+                    }
+                } else {
+                    $result[$key] = $value;
+                }
+            }
+        }
+
+        return $result;
+    }
+
 }
 
 /* End of file ArrayHelper.php */

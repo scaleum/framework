@@ -9,17 +9,17 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Stdlib\Exception;
+namespace Scaleum\DependencyInjection\Contract;
 
-use Psr\Container\NotFoundExceptionInterface;
+use Scaleum\DependencyInjection\Container;
 
 /**
- * NotFoundException
+ * ConfiguratorInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class NotFoundException extends EBasicException implements NotFoundExceptionInterface
+interface ConfiguratorInterface
 {
-
+    public function configure(Container $container): void;
 }
-/** End of NotFoundException **/
+/** End of ConfiguratorInterface **/

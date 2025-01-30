@@ -11,26 +11,30 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core\DependencyInjection;
 
-use DI\ContainerBuilder;
+use Psr\Container\ContainerInterface;
 use Scaleum\Core\Behaviors\Exceptions;
-use Scaleum\Core\ContainerConfiguratorInterface;
 use Scaleum\Core\Behaviors\Kernel;
+use Scaleum\DependencyInjection\Container;
+use Scaleum\DependencyInjection\Contract\ConfiguratorInterface;
 
 /**
  * Behaviors
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class Behaviors implements ContainerConfiguratorInterface {
-    public function configure(ContainerBuilder $builder): void {
-        $builder->addDefinitions([
-            Kernel::class => \DI\autowire()
-                ->constructor(\DI\get('kernel'))
-                ->method('register', \DI\get('event.manager')),
-            Exceptions::class => \DI\autowire()
-                ->constructor(\DI\get('kernel'))
-                ->method('register', \DI\get('event.manager')),
-        ]);
+class Behaviors implements ConfiguratorInterface {
+    public function configure(Container $container): void {
+        $container
+            ->addDefinition(Kernel::class, function (ContainerInterface $container) {
+                $result = new Kernel($container->get('kernel'));
+                $result->register($container->get('event.manager'));
+                return $result;
+            })
+            ->addDefinition(Exceptions::class, function (ContainerInterface $container) {
+                $result = new Exceptions($container->get('kernel'));
+                $result->register($container->get('event.manager'));
+                return $result;
+            });
     }
 }
 /** End of Behaviors **/
