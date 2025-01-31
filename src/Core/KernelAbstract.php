@@ -13,8 +13,6 @@ namespace Scaleum\Core;
 
 use Psr\Container\ContainerInterface;
 use Scaleum\Config\LoaderResolver;
-use Scaleum\DependencyInjection\Container;
-use Scaleum\DependencyInjection\Contracts\ConfiguratorInterface;
 use Scaleum\DependencyInjection\Factories\ContainerFactory;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
@@ -195,26 +193,21 @@ abstract class KernelAbstract implements KernelInterface {
      */
     public function getContainer(): ContainerInterface {
         if (! $this->container instanceof ContainerInterface) {
-            $this->container = $this->createContainer();
+            ContainerFactory::reset();
+            ContainerFactory::addConfigurators($this->getRegistry()->get('kernel.configurators', []));
+            ContainerFactory::addDefinitions($this->getRegistry()->get('kernel.definitions', []));
+            ContainerFactory::addDefinitions([
+                'environment'        => $this->getEnvironment(),
+                'kernel.project_dir' => $this->getProjectDir(),
+                'kernel.config_dir'  => $this->getConfigDir(),
+                'kernel.start'       => microtime(true),
+                'kernel'             => $this,
+            ]);
+
+            $this->container = ContainerFactory::create();
         }
 
         return $this->container;
     }
-
-    protected function createContainer(): ContainerInterface {
-        ContainerFactory::reset();
-        ContainerFactory::addConfigurators($this->getRegistry()->get('kernel.configurators', []));
-        ContainerFactory::addDefinitions($this->getRegistry()->get('kernel.definitions', []));
-        ContainerFactory::addDefinitions([
-            'environment'        => $this->getEnvironment(),
-            'kernel.project_dir' => $this->getProjectDir(),
-            'kernel.config_dir'  => $this->getConfigDir(),
-            'kernel.start'       => microtime(true),
-            'kernel'             => $this,
-        ]);
-
-        return ContainerFactory::create();
-    }
-
 }
 /** End of KernelAbstract **/

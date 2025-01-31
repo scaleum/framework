@@ -66,14 +66,14 @@ class ContainerFactory {
 
     public static function create(): Container {
         $container = new Container();
+        foreach (static::getDefinitions() as $id => $definition) {
+            $container->addDefinition($id, $definition['value'], $definition['singleton']);
+        }
 
         foreach (static::getConfigurators() as $configurator) {
             $configurator->configure($container);
         }
-
-        foreach (static::getDefinitions() as $id => $definition) {
-            $container->addDefinition($id, $definition['value'], $definition['singleton']);
-        }
+                
         static::reset();
 
         return $container;
