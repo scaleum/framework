@@ -14,16 +14,17 @@ namespace Scaleum\Core;
 use Psr\Container\ContainerInterface;
 use Scaleum\Config\LoaderResolver;
 use Scaleum\DependencyInjection\Container;
-use Scaleum\DependencyInjection\Contract\ConfiguratorInterface;
+use Scaleum\DependencyInjection\Contracts\ConfiguratorInterface;
+use Scaleum\DependencyInjection\Factories\ContainerFactory;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Services\ServiceProviderInterface;
 use Scaleum\Stdlib\Base\Registry;
-use Scaleum\Stdlib\Exception\ERuntimeError;
-use Scaleum\Stdlib\Helper\EnvHelper;
-use Scaleum\Stdlib\Helper\FileHelper;
-use Scaleum\Stdlib\Helper\PathHelper;
-use Scaleum\Stdlib\Helper\StringHelper;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Stdlib\Helpers\EnvHelper;
+use Scaleum\Stdlib\Helpers\FileHelper;
+use Scaleum\Stdlib\Helpers\PathHelper;
+use Scaleum\Stdlib\Helpers\StringHelper;
 
 /**
  * KernelAbstract
@@ -201,29 +202,18 @@ abstract class KernelAbstract implements KernelInterface {
     }
 
     protected function createContainer(): ContainerInterface {
-        $container = new Container();
-        foreach ($this->getRegistry()->get('kernel.configurators', []) as $configurator) {
-            if (! $configurator instanceof ConfiguratorInterface) {
-                throw new ERuntimeError(
-                    sprintf(
-                        'Configurator must be an instance of `ConfiguratorInterface` given `%s`',
-                        is_object($configurator) ? StringHelper::className($configurator, true) : gettype($configurator)
-                    )
-                );
-            }
-            $configurator->configure($container);
-        }
+        ContainerFactory::reset();
+        ContainerFactory::addConfigurators($this->getRegistry()->get('kernel.configurators', []));
+        ContainerFactory::addDefinitions($this->getRegistry()->get('kernel.definitions', []));
+        ContainerFactory::addDefinitions([
+            'environment'        => $this->getEnvironment(),
+            'kernel.project_dir' => $this->getProjectDir(),
+            'kernel.config_dir'  => $this->getConfigDir(),
+            'kernel.start'       => microtime(true),
+            'kernel'             => $this,
+        ]);
 
-        foreach ($this->getRegistry()->get('kernel.definitions', []) as $key => $definition) {
-            $container->addDefinition($key, $definition);
-        }
-        $container->addDefinition('environment', $this->getEnvironment());
-        $container->addDefinition('kernel.project_dir', $this->getProjectDir());
-        $container->addDefinition('kernel.config_dir', $this->getConfigDir());
-        $container->addDefinition('kernel.start', microtime(true));
-        $container->addDefinition('kernel', $this);
-
-        return $container;
+        return ContainerFactory::create();
     }
 
 }

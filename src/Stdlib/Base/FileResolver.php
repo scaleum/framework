@@ -11,8 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Base;
 
-use Scaleum\Stdlib\Helper\FileHelper;
-use Scaleum\Stdlib\Helper\PathHelper;
+use Scaleum\Stdlib\Helpers\FileHelper;
+use Scaleum\Stdlib\Helpers\PathHelper;
 
 /**
  * FileResolver

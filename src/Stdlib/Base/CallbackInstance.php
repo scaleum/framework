@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Base;
 
-use Scaleum\Stdlib\Exception\EObjectError;
+use Scaleum\Stdlib\Exceptions\EObjectError;
 
 class CallbackInstance {
     protected $callback;

@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\SAPI;
 
-use Scaleum\Stdlib\Exception\ERuntimeError;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
  * SapiIdentifier

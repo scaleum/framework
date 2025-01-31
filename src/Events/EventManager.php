@@ -11,8 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Events;
 
-use Scaleum\Stdlib\Exception\EObjectError;
-use Scaleum\Stdlib\Exception\ETypeError;
+use Scaleum\Stdlib\Exceptions\EObjectError;
+use Scaleum\Stdlib\Exceptions\ETypeError;
 
 /**
  * EventManager

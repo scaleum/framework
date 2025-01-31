@@ -15,7 +15,7 @@ use Psr\Container\ContainerInterface;
 use Scaleum\Core\Behaviors\Exceptions;
 use Scaleum\Core\Behaviors\Kernel;
 use Scaleum\DependencyInjection\Container;
-use Scaleum\DependencyInjection\Contract\ConfiguratorInterface;
+use Scaleum\DependencyInjection\Contracts\ConfiguratorInterface;
 
 /**
  * Behaviors

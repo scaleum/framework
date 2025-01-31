@@ -14,8 +14,8 @@ namespace Scaleum\Stdlib\Base;
 
 use ReflectionClass;
 use RuntimeException;
-use Scaleum\Stdlib\Exception\ERuntimeError;
-use Scaleum\Stdlib\Helper\StringHelper;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Stdlib\Helpers\StringHelper;
 
 /**
  * Hydrator

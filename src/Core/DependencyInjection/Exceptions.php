@@ -13,12 +13,12 @@ namespace Scaleum\Core\DependencyInjection;
 
 use Psr\Container\ContainerInterface;
 use Scaleum\DependencyInjection\Container;
-use Scaleum\DependencyInjection\Contract\ConfiguratorInterface;
-use Scaleum\Stdlib\Exception\ExceptionHandler;
-use Scaleum\Stdlib\Exception\ExceptionHandlerInterface;
-use Scaleum\Stdlib\Exception\ExceptionOutputConsole;
-use Scaleum\Stdlib\Exception\ExceptionOutputHttp;
-use Scaleum\Stdlib\Exception\ExceptionRendererInterface;
+use Scaleum\DependencyInjection\Contracts\ConfiguratorInterface;
+use Scaleum\Stdlib\Exceptions\ExceptionHandler;
+use Scaleum\Stdlib\Exceptions\ExceptionHandlerInterface;
+use Scaleum\Stdlib\Exceptions\ExceptionOutputConsole;
+use Scaleum\Stdlib\Exceptions\ExceptionOutputHttp;
+use Scaleum\Stdlib\Exceptions\ExceptionRendererInterface;
 use Scaleum\Stdlib\SAPI\SapiMode;
 
 /**

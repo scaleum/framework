@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Base;
 
-use Scaleum\Stdlib\Helper\ArrayHelper;
+use Scaleum\Stdlib\Helpers\ArrayHelper;
 
 /**
  * Class for working with nested arrays using a path

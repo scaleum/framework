@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Scaleum\Stdlib\Base;
 
-use Scaleum\Stdlib\Helper\StringHelper;
+use Scaleum\Stdlib\Helpers\StringHelper;
 
 trait InitTrait
 {

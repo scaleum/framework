@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core;
 
-use Scaleum\Stdlib\Exception\ERuntimeError;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
  * KernelProviderAbstract

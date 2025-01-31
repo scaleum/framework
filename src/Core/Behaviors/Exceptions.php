@@ -16,8 +16,8 @@ use Scaleum\Core\KernelProviderAbstract;
 use Scaleum\Events\Event;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
-use Scaleum\Stdlib\Exception\ExceptionHandlerInterface;
-use Scaleum\Stdlib\Exception\ExceptionRendererInterface;
+use Scaleum\Stdlib\Exceptions\ExceptionHandlerInterface;
+use Scaleum\Stdlib\Exceptions\ExceptionRendererInterface;
 
 /**
  * Exceptions

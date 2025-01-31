@@ -14,7 +14,7 @@ namespace Scaleum\Core\DependencyInjection;
 use Psr\Container\ContainerInterface;
 use Scaleum\Config\LoaderResolver;
 use Scaleum\DependencyInjection\Container;
-use Scaleum\DependencyInjection\Contract\ConfiguratorInterface;
+use Scaleum\DependencyInjection\Contracts\ConfiguratorInterface;
 use Scaleum\Core\KernelInterface;
 use Scaleum\Events\EventManager;
 use Scaleum\Logger\LoggerManager;

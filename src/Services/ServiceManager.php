@@ -13,9 +13,9 @@ namespace Scaleum\Services;
 
 use ReflectionClass;
 use Scaleum\Stdlib\Base\HydratorInterface;
-use Scaleum\Stdlib\Exception\EComponentError;
-use Scaleum\Stdlib\Exception\EMatchError;
-use Scaleum\Stdlib\Exception\ERuntimeError;
+use Scaleum\Stdlib\Exceptions\EComponentError;
+use Scaleum\Stdlib\Exceptions\EMatchError;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
  * InstanceManager

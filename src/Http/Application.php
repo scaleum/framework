@@ -18,9 +18,9 @@ use Scaleum\Core\KernelEvents;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Services\ServiceProviderInterface;
-use Scaleum\Stdlib\Exception\ERuntimeError;
-use Scaleum\Stdlib\Helper\FileHelper;
-use Scaleum\Stdlib\Helper\PathHelper;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Stdlib\Helpers\FileHelper;
+use Scaleum\Stdlib\Helpers\PathHelper;
 
 /**
  * Application

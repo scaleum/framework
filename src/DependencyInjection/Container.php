@@ -15,10 +15,10 @@ use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionFunction;
-use Scaleum\DependencyInjection\Support\Environment;
-use Scaleum\DependencyInjection\Support\Factory;
-use Scaleum\DependencyInjection\Support\Reference;
-use Scaleum\Stdlib\Helper\ArrayHelper;
+use Scaleum\DependencyInjection\Helpers\EntryEnvironment;
+use Scaleum\DependencyInjection\Helpers\EntryFactory;
+use Scaleum\DependencyInjection\Helpers\EntryReference;
+use Scaleum\Stdlib\Helpers\ArrayHelper;
 
 class Container implements ContainerInterface {
     private array $definitions = [];
@@ -59,7 +59,7 @@ class Container implements ContainerInterface {
                     if (is_array($val)) {
                         $array[$key] = $resolveReferences($val);
                     } elseif (is_string($val) && str_starts_with($val, '@')) {
-                        $array[$key] = new Reference(substr($val, 1));
+                        $array[$key] = new EntryReference(substr($val, 1));
                     }
                 }
                 return $array;
@@ -70,7 +70,7 @@ class Container implements ContainerInterface {
 
         // resolve references in strings
         if (is_string($value) && str_starts_with($value, '@')) {
-            $value = new Reference(substr($value, 1));
+            $value = new EntryReference(substr($value, 1));
         }
 
         $this->definitions[$id] = [
@@ -128,11 +128,11 @@ class Container implements ContainerInterface {
                         foreach ($array as $key => $value) {
                             if (is_array($value)) {
                                 $array[$key] = $resolveReferences($value);
-                            } elseif ($value instanceof Environment) {
+                            } elseif ($value instanceof EntryEnvironment) {
                                 $array[$key] = $value->resolve();
-                            } elseif ($value instanceof Reference) {
+                            } elseif ($value instanceof EntryReference) {
                                 $array[$key] = $this->get($value->getId());
-                            } elseif ($value instanceof Factory) {
+                            } elseif ($value instanceof EntryFactory) {
                                 $array[$key] = $value->resolve($this);
                             }
                         }
@@ -143,11 +143,11 @@ class Container implements ContainerInterface {
 
                 // supports
                 switch (true) {
-                case $definition['value'] instanceof Environment:
+                case $definition['value'] instanceof EntryEnvironment:
                     return $definition['value']->resolve();
-                case $definition['value'] instanceof Reference:
+                case $definition['value'] instanceof EntryReference:
                     return $this->get($definition['value']->getId());
-                case $definition['value'] instanceof Factory:
+                case $definition['value'] instanceof EntryFactory:
                     $instance = $definition['value']->resolve($this);
                     if ($definition['singleton']) {
                         $this->instances[$id] = $instance;
@@ -180,7 +180,7 @@ class Container implements ContainerInterface {
             return $this->resolve($id, false);
         }
 
-        throw new Exception\NotFoundException("Entry '{$id}' not found.");
+        throw new Exceptions\NotFoundException("Entry '{$id}' not found.");
     }
 
     /**

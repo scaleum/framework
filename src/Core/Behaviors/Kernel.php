@@ -21,7 +21,7 @@ use Scaleum\Logger\LoggerGateway;
 use Scaleum\Logger\LoggerProviderInterface;
 use Scaleum\Services\ServiceGateway;
 use Scaleum\Services\ServiceProviderInterface;
-use Scaleum\Stdlib\Exception\ERuntimeError;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
  * KernelBehavior
