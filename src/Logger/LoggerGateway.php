@@ -41,7 +41,7 @@ class LoggerGateway {
         return self::$provider->hasLogger($channel);
     }
 
-    public function setLogger(string $channel, LoggerInterface $logger): void {
+    public static function setLogger(string $channel, LoggerInterface $logger): void {
         self::ensureProviderIsSet();
         self::$provider->setLogger($channel, $logger);
     }    

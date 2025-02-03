@@ -11,6 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core;
 
+use Scaleum\Logger\LoggerChannelTrait;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
@@ -19,6 +20,7 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 abstract class KernelProviderAbstract implements KernelProviderInterface {
+    use LoggerChannelTrait;
     protected ?KernelInterface $kernel = null;
 
     public function __construct(?KernelInterface $kernel) {
@@ -36,6 +38,10 @@ abstract class KernelProviderAbstract implements KernelProviderInterface {
 
     public function setKernel(KernelInterface $kernel): void {
         $this->kernel = $kernel;
+    }
+
+    public function getLoggerChannel(): string {
+        return 'kernel';
     }
 }
 /** End of KernelProviderAbstract **/

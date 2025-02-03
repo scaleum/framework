@@ -9,7 +9,7 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Config\Loader;
+namespace Scaleum\Config\Loaders;
 
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\StringHelper;

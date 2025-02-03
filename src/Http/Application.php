@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Http;
 
-use Scaleum\Config\LoaderResolver;
+use Scaleum\Config\LoadersResolver;
 use Scaleum\Core\HandlerInterface;
 use Scaleum\Core\KernelAbstract;
 use Scaleum\Core\KernelEvents;

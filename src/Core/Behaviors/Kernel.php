@@ -11,7 +11,6 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core\Behaviors;
 
-use Scaleum\Config\Config;
 use Scaleum\Core\KernelEvents;
 use Scaleum\Core\KernelProviderAbstract;
 use Scaleum\Events\Event;
@@ -22,6 +21,7 @@ use Scaleum\Logger\LoggerProviderInterface;
 use Scaleum\Services\ServiceGateway;
 use Scaleum\Services\ServiceProviderInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Stdlib\Helpers\BytesHelper;
 
 /**
  * KernelBehavior
@@ -31,6 +31,7 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
 class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
     public function register(EventManagerInterface $eventManager): void {
         $eventManager->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9999);
+        $eventManager->on("*", [$this, 'onEventLog'], -9990);
     }
 
     public function onBootstrap(Event $event): void {
@@ -39,7 +40,7 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
             throw new ERuntimeError('Service manager must implement ServiceProviderInterface');
         }
         ServiceGateway::setProvider($provider);
-        ServiceGateway::set('config', $this->getKernel()->getContainer()->get(Config::class));
+        // ServiceGateway::set('config', $this->getKernel()->getContainer()->get(Config::class));
 
         # Accosiate logger manager with logger gateway
         if (! ($provider = $this->getKernel()->getContainer()->get('log.manager')) instanceof LoggerProviderInterface) {
@@ -47,19 +48,36 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
         }
         LoggerGateway::setProvider($provider);
 
-//         if($config = $this->getKernel()->getContainer()->get(Config::class)) {
-//             $config->set('var1',10);
-//             var_export($config);
-//         }
-// usleep(1000);
-//         if($config2 = $this->getKernel()->getContainer()->get(Config::class)) {
-//             $config2->set('var2',20);
-//             // var_dump($config2->get('var1'),$config2->get('var2'));
-//             var_export($config2);
-//         }
+        // if ($config = $this->getKernel()->getContainer()->get(Config::class)) {
+        //     $config->set('var1', 10);
+        //     var_export($config);
+        // }
+        // usleep(1000);
+        // if ($config2 = $this->getKernel()->getContainer()->get(Config::class)) {
+        //     $config2->set('var2', 20);
+        //     // var_dump($config2->get('var1'),$config2->get('var2'));
+        //     var_export($config2);
+        // }
 
-        // var_dump($this->getKernel()->getContainer());
         // echo 'App::onBoot';
+    }
+
+    public function onEventLog(Event $event): void {
+        switch ($event->getName()) {
+        case KernelEvents::BOOTSTRAP:
+            $this->debug('Application booting up ...');
+            break;
+        case KernelEvents::START:
+            $this->debug('Application start');
+            break;
+        case KernelEvents::FINISH:
+            $this->debug('Application finish');
+            $this->debug( sprintf( 'Application amount of memory allocated for PHP: %s kb.', BytesHelper::bytesTo( memory_get_usage( false ) ) ) );
+            $this->debug( sprintf( 'Application peak value of memory allocated by PHP: %s kb.', BytesHelper::bytesTo( memory_get_peak_usage( false ) ) ) );            
+            break;
+        default:
+            $this->debug('Triggered ' . $event->getName());
+        }
     }
 }
 /** End of KernelBehavior **/

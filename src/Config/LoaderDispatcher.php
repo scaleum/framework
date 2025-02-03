@@ -20,13 +20,13 @@ use Scaleum\Services\ServiceManager;
  */
 class LoaderDispatcher extends ServiceManager {
     protected array $invokableClasses = [
-        'phparray' => Loader\PhpArray::class,
-        'php'      => Loader\PhpArray::class,
-        'json'     => Loader\Json::class,
-        'ini'      => Loader\Ini::class,
-        // 'yaml' => Loader\Yaml::class,
-        // 'yml' => Loader\Yaml::class,
-        'xml'      => Loader\Xml::class,
+        'phparray' => Loaders\PhpArray::class,
+        'php'      => Loaders\PhpArray::class,
+        'json'     => Loaders\Json::class,
+        'ini'      => Loaders\Ini::class,
+        // 'yaml' => Loaders\Yaml::class,
+        // 'yml' => Loaders\Yaml::class,
+        'xml'      => Loaders\Xml::class,
     ];
 
 }

@@ -17,7 +17,6 @@ use Scaleum\Events\Event;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Stdlib\Exceptions\ExceptionHandlerInterface;
-use Scaleum\Stdlib\Exceptions\ExceptionRendererInterface;
 
 /**
  * Exceptions
@@ -28,7 +27,7 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
     protected ?ExceptionHandlerInterface $handler = null;
 
     public function register(EventManagerInterface $eventManager): void {;
-        $eventManager->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9998);}
+        $eventManager->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9990);}
 
     public function onBootstrap(Event $event): void {
         if ($handler = $this->getKernel()->getContainer()->get(ExceptionHandlerInterface::class)) {
@@ -50,14 +49,16 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
         ?int $errline = null,
     ): void {
         if (error_reporting() & $errno) {
-            throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+            $exception = new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+            $this->error($exception->getMessage(), ['exception' => $exception]);
+            throw $exception;
         }
     }
 
     public function handlerException(
         \Throwable $exception
     ): void {
-        # TODO add logging
+        $this->critical($exception->getMessage(), ['exception' => $exception]);
         $this->getHandler()->handle($exception);
         # TODO call Kernel::halt()
     }
@@ -80,7 +81,7 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
         $exception = new \ErrorException($err['errstr'], 0, $err['errno'], $err['errfile'], $err['errline']);
 
         if (error_reporting() & $err['type']) {
-            # TODO add logging
+            $this->emergency($exception->getMessage(), ['exception' => $exception]);
             $this->getHandler()->handle($exception);
             # TODO call Kernel::halt()
             exit(1);

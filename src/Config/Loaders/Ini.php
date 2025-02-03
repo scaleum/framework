@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -9,17 +9,16 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Config\Loader;
+namespace Scaleum\Config\Loaders;
 
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
- * Json
+ * Ini
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class Json extends LoaderAbstract implements LoaderInterface
-{
+class Ini extends LoaderAbstract implements LoaderInterface {
     public function fromFile(string $filename): array {
         $this->validate($filename);
         return $this->fromString(file_get_contents($filename));
@@ -27,11 +26,11 @@ class Json extends LoaderAbstract implements LoaderInterface
 
     public function fromString(string $str): array {
         $result = [];
-        if (! is_array($result = json_decode($str,true))) {
-            throw new ERuntimeError(sprintf("String JSON '%s' cannot be converted to array.", $str));
+        if (! is_array($result = parse_ini_string($str, true))) {
+            throw new ERuntimeError(sprintf("String INI '%s' cannot be converted to array.", $str));
         }
 
         return $result;
     }
 }
-/** End of Json **/
+/** End of Ini **/

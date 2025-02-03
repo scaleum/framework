@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Config;
 
-use Scaleum\Config\Loader\LoaderInterface;
+use Scaleum\Config\Loaders\LoaderInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\FileHelper;
 use Scaleum\Stdlib\Helpers\PathHelper;
