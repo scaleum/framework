@@ -20,30 +20,30 @@ use Psr\Log\LogLevel;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class LoggerGateway {
-    protected static ?LoggerProviderInterface $provider = null;
+    protected static ?LoggerProviderInterface $instance = null;
 
-    public static function setProvider(LoggerProviderInterface $provider): void {
-        self::$provider = $provider;
+    public static function setInstance(LoggerProviderInterface $instance): void {
+        self::$instance = $instance;
     }
 
-    public static function getProvider(): ?LoggerProviderInterface {
+    public static function getInstance(): ?LoggerProviderInterface {
         self::ensureProviderIsSet();
-        return self::$provider;
+        return self::$instance;
     }
 
     public static function getLogger(string $channel): LoggerInterface {
         self::ensureProviderIsSet();
-        return self::$provider->getLogger($channel);
+        return self::$instance->getLogger($channel);
     }
 
     public static function hasLogger(string $channel): bool {
         self::ensureProviderIsSet();
-        return self::$provider->hasLogger($channel);
+        return self::$instance->hasLogger($channel);
     }
 
     public static function setLogger(string $channel, LoggerInterface $logger): void {
         self::ensureProviderIsSet();
-        self::$provider->setLogger($channel, $logger);
+        self::$instance->setLogger($channel, $logger);
     }    
 
     public static function log($level, $message, array $context = []): void {
@@ -83,7 +83,7 @@ class LoggerGateway {
     }
 
     protected static function ensureProviderIsSet(): void {
-        if (self::$provider === null) {
+        if (self::$instance === null) {
             throw new \RuntimeException('Logger provider is not set');
         }
     }

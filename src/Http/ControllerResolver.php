@@ -12,6 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Http;
 
 use Psr\Container\ContainerInterface;
+use Scaleum\Events\EventManagerInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
@@ -20,17 +21,24 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class ControllerResolver {
+    public const EVENT_CONTROLLER_RESOLVED = 'controller::resolved';
+
+    protected EventManagerInterface $events;
     public function __construct(protected ContainerInterface $container) {
+        if (! ($events = $this->container->get('event.manager')) instanceof EventManagerInterface) {
+            throw new \RuntimeException("Event manager is not an instance of EventManagerInterface");
+        }
+        $this->events = $events;
     }
 
-    public function resolve(array $routeInfo):object {
+    public function resolve(array $routeInfo): object {
         if ($callback = $routeInfo['callback']) {
             $controller = $callback['controller'] ?? null;
             $args       = [];
 
             if (is_array($preset = $callback['controller'])) {
                 $controller = $preset['class'] ?? null;
-                $args       = $preset['args'] ?? [];                
+                $args       = $preset['args'] ?? [];
             }
 
             if ($controller === null) {
@@ -41,30 +49,34 @@ class ControllerResolver {
                 throw new ERuntimeError(sprintf('Controller "%s" does not exist', $controller));
             }
 
+            $result = null;
+
             if (empty($args)) {
-                return $this->container->get($controller);
-            }
+                $result = $this->container->get($controller);
+            } else {
+                $reflection = new \ReflectionClass($controller);
+                if (($constructor = $reflection->getConstructor()) !== null) {
+                    $parameters = $constructor->getParameters();
+                    $params     = [];
+                    foreach ($parameters as $parameter) {
+                        $name = $parameter->getName();
+                        if (array_key_exists($name, $args)) {
+                            $params[] = $args[$name];
+                        } elseif ($parameter->isDefaultValueAvailable()) {
+                            $params[] = $parameter->getDefaultValue();
+                        } else {
+                            throw new ERuntimeError(sprintf('Missing required parameter "%s" for "%s"', $name, $controller));
+                        }
+                    }
+                    $result = $reflection->newInstanceArgs($params);
 
-            $reflection  = new \ReflectionClass($controller);
-            $constructor = $reflection->getConstructor();
-            if ($constructor === null) {
-                return $reflection->newInstance();
-            }
-
-            $parameters = $constructor->getParameters();
-            $params     = [];
-            foreach ($parameters as $parameter) {
-                $name = $parameter->getName();
-                if (array_key_exists($name, $args)) {
-                    $params[] = $args[$name];
-                } elseif ($parameter->isDefaultValueAvailable()) {
-                    $params[] = $parameter->getDefaultValue();
                 } else {
-                    throw new ERuntimeError(sprintf('Missing required parameter "%s" for "%s"', $name, $controller));
+                    $result = $reflection->newInstance();
                 }
             }
 
-            return $reflection->newInstanceArgs($params);
+            $this->events->dispatch(self::EVENT_CONTROLLER_RESOLVED, $this, ['controller' => $result]);
+            return $result;
         }
 
         throw new \RuntimeException("Can't resolve controller");

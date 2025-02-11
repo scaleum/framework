@@ -18,7 +18,7 @@ use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Logger\LoggerGateway;
 use Scaleum\Logger\LoggerProviderInterface;
-use Scaleum\Services\ServiceGateway;
+use Scaleum\Services\ServiceLocator;
 use Scaleum\Services\ServiceProviderInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\BytesHelper;
@@ -39,13 +39,13 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
         if (! ($provider = $this->getKernel()->getContainer()->get('log.manager')) instanceof LoggerProviderInterface) {
             throw new ERuntimeError('Logger manager must implement LoggerProviderInterface');
         }
-        LoggerGateway::setProvider($provider);
+        LoggerGateway::setInstance($provider);
 
-        # Accosiate service manager with service gateway
+        # Accosiate service manager with service locator
         if (! ($provider = $this->getKernel()->getContainer()->get('service.manager')) instanceof ServiceProviderInterface) {
             throw new ERuntimeError('Service manager must implement ServiceProviderInterface');
         }
-        ServiceGateway::setProvider($provider);
+        ServiceLocator::setInstance($provider);
         // ServiceGateway::set('config', $this->getKernel()->getContainer()->get(Config::class));
     }
 
@@ -58,7 +58,10 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
             $this->debug('Application start');
             break;
         case KernelEvents::FINISH:
-            $this->debug('Application finish');
+            $start = (float) $this->getKernel()->getContainer()->get('kernel.start');
+            $end   = microtime(true);
+
+            $this->debug(sprintf('Application finished, execution time: %s sec.', number_format($end - $start, 4)));
             $this->debug(sprintf('Application amount of memory allocated for PHP: %s kb.', BytesHelper::bytesTo(memory_get_usage(false))));
             $this->debug(sprintf('Application peak value of memory allocated by PHP: %s kb.', BytesHelper::bytesTo(memory_get_peak_usage(false))));
             break;
