@@ -15,7 +15,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Class EAbort
  * @datetime 09.01.2025
  */
-class EAbort extends EBasicException
+class EAbort extends EBaseException
 {
 
 }

@@ -12,11 +12,11 @@ declare (strict_types = 1);
 namespace Scaleum\Routing;
 
 use Scaleum\Stdlib\Base\Hydrator;
+use Scaleum\Stdlib\Helpers\HttpHelper;
 
 // Example:
 //  [
 //      'path'     => '/api/user(?:/({:any}))?',
-//      'name'     => 'service',
 //      'methods'  => 'GET|POST',
 //      'callback' => [
 //          'controller' => 'Application\Controllers\Service',
@@ -49,26 +49,18 @@ class Route extends Hydrator implements RouteInterface {
         ':slug' => '[a-z\-]+',
         ':text' => '[a-zA-Z]+',
     ];
-    public const HTTP_GET     = 'GET';
-    public const HTTP_POST    = 'POST';
-    public const HTTP_PUT     = 'PUT';
-    public const HTTP_PATCH   = 'PATCH';
-    public const HTTP_DELETE  = 'DELETE';
-    public const HTTP_OPTIONS = 'OPTIONS';
-    public const HTTP_HEAD    = 'HEAD';
 
     public const ALLOWED_HTTP_METHODS = [
-        self::HTTP_GET,
-        self::HTTP_POST,
-        self::HTTP_PUT,
-        self::HTTP_PATCH,
-        self::HTTP_DELETE,
-        self::HTTP_OPTIONS,
-        self::HTTP_HEAD,
+        HttpHelper::METHOD_GET,
+        HttpHelper::METHOD_POST,
+        HttpHelper::METHOD_PUT,
+        HttpHelper::METHOD_PATCH,
+        HttpHelper::METHOD_DELETE,
+        HttpHelper::METHOD_OPTIONS,
+        HttpHelper::METHOD_HEAD
     ];
 
     protected ?string $path    = null;
-    protected ?string $name    = null;
     protected mixed $methods   = null;
     protected ?array $callback = null;
 
@@ -94,7 +86,6 @@ class Route extends Hydrator implements RouteInterface {
         return $this;
     }
 
-
     /**
      * Get the path of the route.
      *
@@ -107,7 +98,6 @@ class Route extends Hydrator implements RouteInterface {
         return $this->path;
     }
 
-
     /**
      * Sets the path for the route.
      *
@@ -119,30 +109,6 @@ class Route extends Hydrator implements RouteInterface {
         return $this;
     }
 
-
-    /**
-     * Get the name of the route.
-     *
-     * @return string The name of the route.
-     */
-    public function getName(): string {
-        if (empty($this->name)) {
-            throw new \RuntimeException('Route `name` is not defined or empty');
-        }
-        return $this->name;
-    }
-
-    /**
-     * Set the name of the route.
-     *
-     * @param string $name The name to set for the route.
-     * @return self Returns the instance of the route for method chaining.
-     */
-    public function setName(string $name): self {
-        $this->name = $name;
-        return $this;
-    }
-
     /**
      * Get the callback for the route.
      *
@@ -151,7 +117,6 @@ class Route extends Hydrator implements RouteInterface {
     public function getCallback(): array {
         return $this->callback;
     }
-
 
     /**
      * Set the callback for the route.

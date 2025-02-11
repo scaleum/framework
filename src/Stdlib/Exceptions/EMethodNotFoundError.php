@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -9,16 +8,16 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core;
+namespace Scaleum\Stdlib\Exceptions;
 
 
 /**
- * HandlerInterface
- *
- * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
+ * Class EMethodNotFound
+ * @datetime 09.01.2025
  */
-interface HandlerInterface
+class EMethodNotFoundError extends ENotFoundError
 {
-    public function handle(): ResponseInterface;
+
 }
-/** End of HandlerInterface **/
+
+/* End of file EMethodNotFound.php */

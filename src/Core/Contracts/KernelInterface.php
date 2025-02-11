@@ -9,16 +9,16 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core;
+namespace Scaleum\Core\Contracts;
 
-use Psr\Container\ContainerInterface;
+use Scaleum\DependencyInjection\Contracts\ContainerProviderInterface;
 
 /**
  * KernelInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface KernelInterface {
+interface KernelInterface extends ContainerProviderInterface {
     /**
      * Gets the project directory.
      *
@@ -39,13 +39,6 @@ interface KernelInterface {
      * @return string The environment name.
      */
     public function getEnvironment(): string;
-
-    /**
-     * Retrieves the service container.
-     *
-     * @return ContainerInterface The service container instance.
-     */
-    public function getContainer(): ContainerInterface;
 
     public function bootstrap(array $config = []): self;
     public function run(): void;

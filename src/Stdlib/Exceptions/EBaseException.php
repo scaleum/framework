@@ -11,13 +11,7 @@
 namespace Scaleum\Stdlib\Exceptions;
 
 
-/**
- * Class EMethodNotFound
- * @datetime 09.01.2025
- */
-class EMethodNotFound extends EMatchError
+class EBaseException extends \ErrorException
 {
 
 }
-
-/* End of file EMethodNotFound.php */

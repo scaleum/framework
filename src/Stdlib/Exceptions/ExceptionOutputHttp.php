@@ -40,11 +40,13 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
         self::FORMAT_XML        => 'application/xml',
     ];
 
+    protected int $statusCode = 500;
+
     public function render(\Throwable $exception): void {
         HttpHelper::setHeader('Content-Type', sprintf('%s; charset=utf-8', $this->formats[$format = $this->getResponseFormat()]));
         HttpHelper::setStatusHeader(
-            HttpHelper::isStatusCode(
-                $code = $exception instanceof ErrorException ? $exception->getSeverity() : $exception->getCode()
+            $this->statusCode = HttpHelper::isStatusCode(
+                $code = $exception instanceof ErrorException ? ($exception instanceof EBaseException ? $exception->getCode() : $exception->getSeverity()) : $exception->getCode()
             ) ? $code : 500
         );
         echo $this->formatException($exception, $format);
@@ -118,16 +120,15 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
     }
 
     protected function formatAsHtml(\Throwable $exception): string {
-        $code = HttpHelper::isStatusCode(
-            $code = $exception instanceof ErrorException ? $exception->getSeverity() : $exception->getCode()
-        ) ? $code : 500;
+        $statusCode    = $this->statusCode;
+        $statusMessage = HttpHelper::getStatusMessage($statusCode);
 
-        $code_str = HttpHelper::getStatusMessage($code);
-
-        $result = "<!DOCTYPE html><html><head><title>HTTP Error {$code} - {$code_str}</title></head><body>";
-        $result .= "<h1>HTTP Error {$code} - {$code_str}</h1>";
+        $result = "<!DOCTYPE html><html><head><title>HTTP Error {$statusCode} - {$statusMessage}</title></head><body>";
+        $result .= "<h2>HTTP Error {$statusCode} - {$statusMessage}</h2>";
         $result .= '<h3 style="color:red">' . $exception->getMessage() . '</h3>';
-        $result .= '<div>' . $this->html_encode($this->errorToArray($exception)) . '</div>';
+        if ($this->includeDetails) {
+            $result .= '<div>' . $this->html_encode($this->errorToArray($exception)) . '</div>';
+        }
         $result .= '</body></html>';
         return $result;
     }
@@ -135,13 +136,13 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
     protected function errorToArray(\Throwable $exception): array {
         # Prepare result
         $result = [
-            'class'   => StringHelper::className($exception, ! $this->allow_fullnamespace) . '(' . $exception->getCode() . ')',
+            'class'   => StringHelper::className($exception, ! $this->allowFullnamespace) . '(' . $exception->getCode() . ')',
             'message' => $exception->getMessage(),
-            'file'    => PathHelper::overlapPath($exception->getFile(), $this->base_path) . ':' . $exception->getLine(),
+            'file'    => PathHelper::overlapPath($exception->getFile(), $this->basePath) . ':' . $exception->getLine(),
         ];
 
         # Add trace
-        if ($this->include_traces) {
+        if ($this->includeTraces) {
             $result['trace'] = $this->errorTraceToArray($exception->getTrace());
         }
 
@@ -163,10 +164,10 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
             // ];
 
             $result = '';
-            $result .= $item['class'] ? StringHelper::className($item['class'], ! $this->allow_fullnamespace) : '';
+            $result .= $item['class'] ? StringHelper::className($item['class'], ! $this->allowFullnamespace) : '';
             $result .= $item['type'] ?: "::";
             $result .= $item['function'] ? "{$item['function']}()" : '';
-            $result .= $item['file'] ? " in " . PathHelper::overlapPath($item['file'], $this->base_path) . ($item['line'] ? ":{$item['line']}" : '') : '';
+            $result .= $item['file'] ? " in " . PathHelper::overlapPath($item['file'], $this->basePath) . ($item['line'] ? ":{$item['line']}" : '') : '';
 
             return $result;
         }, $trace);

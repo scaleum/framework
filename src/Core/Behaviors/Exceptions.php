@@ -26,8 +26,9 @@ use Scaleum\Stdlib\Exceptions\ExceptionHandlerInterface;
 class Exceptions extends KernelProviderAbstract implements EventHandlerInterface {
     protected ?ExceptionHandlerInterface $handler = null;
 
-    public function register(EventManagerInterface $eventManager): void {;
-        $eventManager->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9990);}
+    public function register(EventManagerInterface $events): void {
+        $events->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9990);
+    }
 
     public function onBootstrap(Event $event): void {
         if ($handler = $this->getKernel()->getContainer()->get(ExceptionHandlerInterface::class)) {
@@ -58,7 +59,7 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
     public function handlerException(
         \Throwable $exception
     ): void {
-        $this->critical($exception->getMessage(), ['exception' => $exception]);
+        $this->error($exception->getMessage(), ['exception' => $exception]);
         $this->getHandler()->handle($exception);
         # TODO call Kernel::halt()
     }

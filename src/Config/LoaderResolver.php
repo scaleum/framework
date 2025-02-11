@@ -13,6 +13,7 @@ namespace Scaleum\Config;
 
 use Scaleum\Config\Loaders\LoaderInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Stdlib\Helpers\ArrayHelper;
 use Scaleum\Stdlib\Helpers\FileHelper;
 use Scaleum\Stdlib\Helpers\PathHelper;
 
@@ -23,7 +24,7 @@ use Scaleum\Stdlib\Helpers\PathHelper;
  */
 class LoaderResolver {
     protected static ?LoaderDispatcher $loaders = null;
-    protected static array $extensions       = [
+    protected static array $extensions          = [
         'php'      => 'php',
         'phparray' => 'php',
         'ini'      => 'ini',
@@ -36,25 +37,29 @@ class LoaderResolver {
         protected ?string $env = null,
     ) {}
 
-    public function fromFile(string $filename): array {
-        // if (! is_file($filename) || ! is_readable($filename)) {
-        //     throw new ERuntimeError(sprintf(
-        //         "File '%s' doesn't exist or not readable",
-        //         $filename
-        //     ));
-        // }
+    public function fromDir(string $path) {
+        $result     = [];
+        $path       = FileHelper::prepPath($path);
+        $extensions = implode(',', array_keys(static::$extensions));
+        $files      = glob("$path/*.{{$extensions}}", GLOB_BRACE);
+        foreach ($files as $file) {
+            $result = ArrayHelper::merge($result, $this->fromFile($file));
+        }
+        return $result;
+    }
 
+    public function fromFile(string $filename): array {
         $result   = [];
         $filename = FileHelper::prepFilename($filename);
-        
-        $ext      = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         if (isset(static::$extensions[$ext])) {
             $loader = static::$extensions[$ext];
             if (! $loader instanceof LoaderInterface) {
                 $loader                   = static::getDispatcher()->getService($loader);
                 static::$extensions[$ext] = $loader;
             }
-            
+
             $result = $loader->fromFile($filename);
 
             # Extend config with environment specific config
@@ -63,7 +68,7 @@ class LoaderResolver {
                 $filename = str_replace($basename, PathHelper::join($this->env, $basename), $filename);
                 if (file_exists($filename)) {
                     $extended = $loader->fromFile($filename);
-                    $result   = array_replace_recursive($result, $extended);
+                    $result   = ArrayHelper::merge($result, $extended);
                 }
             }
         } else {

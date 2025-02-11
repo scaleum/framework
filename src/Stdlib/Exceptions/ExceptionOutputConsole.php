@@ -11,7 +11,6 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Exceptions;
 
-use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Stdlib\Helpers\ArrayHelper;
 use Scaleum\Stdlib\Helpers\PathHelper;
 use Scaleum\Stdlib\Helpers\StringHelper;
@@ -23,9 +22,9 @@ use Scaleum\Stdlib\Helpers\StringHelper;
  */
 class ExceptionOutputConsole extends ExceptionOutputAbstarct {
     public function render(\Throwable $exception): void {
-        $console = @fopen( "php://stdout", "w" );
-        @fwrite( $console, $this->formatException($exception));
-        @fclose( $console );
+        $console = @fopen("php://stdout", "w");
+        @fwrite($console, $this->formatException($exception));
+        @fclose($console);
     }
 
     /**
@@ -34,24 +33,26 @@ class ExceptionOutputConsole extends ExceptionOutputAbstarct {
      * @param \Throwable $exception The exception to be formalized.
      * @return string The formalized string representation of the exception.
      */
-    public function formatException(\Throwable $exception,?int $level = 0): string {
+    public function formatException(\Throwable $exception, ?int $level = 0): string {
 
         $result = PHP_EOL;
-        $result .= str_pad($level?"[Previous {$level}]":"[Error]", 64, '-', STR_PAD_RIGHT).PHP_EOL;
-        $result .= str_pad("Class: ", 10, ' ', STR_PAD_RIGHT). StringHelper::className($exception, ! $this->allow_fullnamespace) .'('.$exception->getCode().')' .PHP_EOL;
-        $result .= str_pad("Message: ", 10, ' ', STR_PAD_RIGHT). $exception->getMessage() .PHP_EOL;
-        $result .= str_pad("File: ", 10, ' ', STR_PAD_RIGHT). PathHelper::overlapPath($exception->getFile(), $this->base_path) . ':'.$exception->getLine() .PHP_EOL;
-        
-        if ($this->include_traces) {
-            $result .= str_pad("[Backtrace]", 64, '-', STR_PAD_RIGHT).PHP_EOL;
+        $result .= str_pad($level ? "[Previous {$level}]" : "[Error]", 64, '-', STR_PAD_RIGHT) . PHP_EOL;
+        $result .= str_pad("Class: ", 10, ' ', STR_PAD_RIGHT) . StringHelper::className($exception, ! $this->allowFullnamespace) . '(' . $exception->getCode() . ')' . PHP_EOL;
+        $result .= str_pad("Message: ", 10, ' ', STR_PAD_RIGHT) . $exception->getMessage() . PHP_EOL;
+        if ($this->includeDetails) {
+            $result .= str_pad("File: ", 10, ' ', STR_PAD_RIGHT) . PathHelper::overlapPath($exception->getFile(), $this->basePath) . ':' . $exception->getLine() . PHP_EOL;
+        }
+
+        if ($this->includeTraces) {
+            $result .= str_pad("[Backtrace]", 64, '-', STR_PAD_RIGHT) . PHP_EOL;
             $result .= $this->formatTrace($exception->getTrace());
         }
 
         if (($previous = $exception->getPrevious()) instanceof \Throwable) {
-            $result .= $this->formatException($previous,++$level);
+            $result .= $this->formatException($previous, ++$level);
         }
-        
-        return $result;
+
+        return $result.PHP_EOL;
     }
 
     /**
@@ -60,14 +61,14 @@ class ExceptionOutputConsole extends ExceptionOutputAbstarct {
      * @param array $trace The trace array to be formalized.
      * @return string The formalized trace.
      */
-    public function formatTrace(array $trace):string {
+    public function formatTrace(array $trace): string {
         $result = "";
         $pad    = count($trace) + 1;
         foreach ($trace as $key => $value) {
             $result .= sprintf("\t#%-{$pad}d", $key);
 
             if (($class = ArrayHelper::element('class', $value))) {
-                $result .= StringHelper::className($class, ! $this->allow_fullnamespace);
+                $result .= StringHelper::className($class, ! $this->allowFullnamespace);
                 $result .= ArrayHelper::element('type', $value, '::');
             }
 
@@ -75,14 +76,16 @@ class ExceptionOutputConsole extends ExceptionOutputAbstarct {
                 $result .= "$function()";
             }
 
-            if ($file = ArrayHelper::element('file', $value)) {
-                $result .= ' in ' . PathHelper::overlapPath($file, $this->base_path);
-                if ($line = ArrayHelper::element('line', $value)) {
-                    $result .= ":$line";
+            if ($this->includeDetails) {
+                if ($file = ArrayHelper::element('file', $value)) {
+                    $result .= ' in ' . PathHelper::overlapPath($file, $this->basePath);
+                    if ($line = ArrayHelper::element('line', $value)) {
+                        $result .= ":$line";
+                    }
                 }
             }
 
-            $result .= "\n";
+            $result .= PHP_EOL;
         }
         return $result;
     }

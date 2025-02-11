@@ -16,7 +16,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Registration error or rename the component
  * @datetime 09.01.2025
  */
-class EComponentError extends EBasicException
+class EComponentError extends EBaseException
 {
 
 }

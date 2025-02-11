@@ -52,7 +52,7 @@ class Registry {
             $items = &$items[$key];
         }
 
-        $items = (is_array($value)) ? (ArrayHelper::isAssociative($items) ? array_replace_recursive($items, $value) : array_merge($items, $value)) : $value;
+        $items = (is_array($value)) ? ArrayHelper::merge($items, $value) : $value;
         return $this;
     }
 
@@ -75,7 +75,7 @@ class Registry {
         if ($key) {
             $this->set($key, $items);
         } else {
-            $this->items = array_replace_recursive($this->items, $items);
+            $this->items = ArrayHelper::merge($this->items, $items);
         }
         return $this;
     }

@@ -13,6 +13,9 @@ namespace Scaleum\Core;
 
 use Psr\Container\ContainerInterface;
 use Scaleum\Config\LoaderResolver;
+use Scaleum\Core\Contracts\HandlerInterface;
+use Scaleum\Core\Contracts\KernelInterface;
+use Scaleum\Core\Contracts\ResponderInterface;
 use Scaleum\DependencyInjection\Factories\ContainerFactory;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
@@ -32,7 +35,7 @@ use Scaleum\Stdlib\Helpers\StringHelper;
 abstract class KernelAbstract implements KernelInterface {
     protected ?ContainerInterface $container = null;
     protected ?Registry $registry            = null;
-    protected bool $in_readiness             = false;
+    protected bool $inReadiness              = false;
     /**
      * Constructor for the KernelAbstract class.
      *
@@ -45,7 +48,6 @@ abstract class KernelAbstract implements KernelInterface {
     public function bootstrap(array $config = []): self {
         $this->getRegistry()->merge($config);
 
-        # configs
         if (is_array($items = $this->getRegistry()->get('kernel.configs', []))) {
             foreach ($items as $filename) {
                 if ($array = $this->getConfig($filename)) {
@@ -56,8 +58,8 @@ abstract class KernelAbstract implements KernelInterface {
 
         # add main container configurators
         $this->getRegistry()->set('kernel.configurators', [
-            new DependencyInjection\Basic(),
-            new DependencyInjection\Exceptions(),
+            new DependencyInjection\Framework(),
+            new DependencyInjection\ExceptionHandling(),
             new DependencyInjection\Behaviors(),
         ]);
 
@@ -70,6 +72,7 @@ abstract class KernelAbstract implements KernelInterface {
         # init everything behaviors
         $array = $this->getRegistry()->get('behaviors');
         foreach ($array as $definition) {
+            // var_export($definition);
             if ($handler = $this->getContainer()->get($definition)) {
                 if (! $handler instanceof EventHandlerInterface) {
                     throw new ERuntimeError(
@@ -95,20 +98,20 @@ abstract class KernelAbstract implements KernelInterface {
 
         # done
         $this->getEventManager()->dispatch(KernelEvents::BOOTSTRAP);
-        $this->in_readiness = true;
+        $this->inReadiness = true;
         return $this;
     }
 
     public function run(): void {
-        if (! $this->in_readiness) {
+        if (! $this->inReadiness) {
             $this->bootstrap();
-            $this->in_readiness = true;
+            $this->inReadiness = true;
         }
 
         $this->getEventManager()->dispatch(KernelEvents::START);
         if ($response = $this->getHandler()->handle()) {
-            if (! $response instanceof ResponseInterface) {
-                throw new ERuntimeError("Handler must return an instance of ResponseInterface");
+            if (! $response instanceof ResponderInterface) {
+                throw new ERuntimeError("Handler must return an instance of `ResponderInterface`");
             }
             $response->send();
         }

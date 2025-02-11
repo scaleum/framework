@@ -14,7 +14,7 @@ namespace Scaleum\Services;
 use ReflectionClass;
 use Scaleum\Stdlib\Base\HydratorInterface;
 use Scaleum\Stdlib\Exceptions\EComponentError;
-use Scaleum\Stdlib\Exceptions\EMatchError;
+use Scaleum\Stdlib\Exceptions\ENotFoundError;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
@@ -107,7 +107,7 @@ class ServiceManager implements ServiceProviderInterface {
         $invokable = $this->invokableClasses[$normalizeName];
 
         if (! class_exists((string) $invokable)) {
-            throw new EMatchError(sprintf('%s: failed retrieving "%s" via invokable class "%s"; class does not exist', __METHOD__, $normalizeName, $invokable));
+            throw new ENotFoundError(sprintf('%s: failed retrieving "%s" via invokable class "%s"; class does not exist', __METHOD__, $normalizeName, $invokable));
         }
 
         if (isset($this->configs[$normalizeName])) {

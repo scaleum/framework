@@ -52,33 +52,33 @@ class FileHelper {
      * Deletes files and optionally directories recursively from the specified path.
      *
      * @param string $path The path to the directory where the files should be deleted.
-     * @param bool $del_dir Whether to delete the directories as well. Default is false.
+     * @param bool $deleteDir Whether to delete the directories as well. Default is false.
      * @param int $level The recursion level. Default is 0 (no recursion).
      * @return bool Returns true if the files were successfully deleted, false otherwise.
      */
-    public static function deleteFiles(string $path, bool $del_dir = false, int $level = 0): bool {
+    public static function deleteFiles(string $path, bool $deleteDir = false, int $level = 0): bool {
         // Trim the trailing slash
         $path = rtrim($path, DIRECTORY_SEPARATOR);
 
-        if (! $current_dir = @opendir($path)) {
+        if (! $currentDir = @opendir($path)) {
             return false;
         }
 
-        while (false !== ($filename = @readdir($current_dir))) {
+        while (false !== ($filename = @readdir($currentDir))) {
             if ($filename != "." and $filename != "..") {
                 if (is_dir($path . DIRECTORY_SEPARATOR . $filename)) {
                     // Ignore empty folders
                     if (substr($filename, 0, 1) != '.') {
-                        self::deleteFiles($path . DIRECTORY_SEPARATOR . $filename, $del_dir, $level + 1);
+                        self::deleteFiles($path . DIRECTORY_SEPARATOR . $filename, $deleteDir, $level + 1);
                     }
                 } else {
                     self::deleteFile($path . DIRECTORY_SEPARATOR . $filename);
                 }
             }
         }
-        @closedir($current_dir);
+        @closedir($currentDir);
 
-        if ($del_dir && ($level > 0)) {
+        if ($deleteDir && ($level > 0)) {
             return @rmdir($path);
         }
 
@@ -98,7 +98,7 @@ class FileHelper {
         // Trim the trailing slash
         $path = rtrim($path, DIRECTORY_SEPARATOR);
 
-        $relative_path = $path;
+        $relativePath = $path;
 
         if ($fp = @opendir($path)) {
             if ($recursion === false) {
@@ -111,7 +111,7 @@ class FileHelper {
                     self::getDir($path . DIRECTORY_SEPARATOR . $filename, $onlyTop, $recursion);
                 } elseif (strncmp($filename, '.', 1) !== 0) {
                     $filedata[$filename]                  = self::getFileInfo($path . DIRECTORY_SEPARATOR . $filename);
-                    $filedata[$filename]['relative_path'] = $relative_path;
+                    $filedata[$filename]['relative_path'] = $relativePath;
                 }
             }
 
@@ -137,21 +137,21 @@ class FileHelper {
      * Retrieves information about a file.
      *
      * @param string $file The path to the file.
-     * @param array $returned_values The values to be returned. Default is ['name', 'path', 'size', 'type'].
+     * @param array $returnedValues The values to be returned. Default is ['name', 'path', 'size', 'type'].
      * @return array|bool An array containing the requested file information, or false if the file does not exist.
      */
-    public static function getFileInfo(string $file, array $returned_values = ['name', 'path', 'size', 'type']): array | bool {
+    public static function getFileInfo(string $file, array $returnedValues = ['name', 'path', 'size', 'type']): array | bool {
         $result = [];
 
         if (! file_exists($file)) {
             return false;
         }
 
-        if (is_string($returned_values)) {
-            $returned_values = explode(',', $returned_values);
+        if (is_string($returnedValues)) {
+            $returnedValues = explode(',', $returnedValues);
         }
 
-        foreach ($returned_values as $key) {
+        foreach ($returnedValues as $key) {
             switch ($key) {
             case 'name':
                 $result['name'] = basename($file);
@@ -228,26 +228,26 @@ class FileHelper {
     /**
      * Retrieves a list of files from a specified directory.
      *
-     * @param string $source_dir The directory path to retrieve files from.
-     * @param bool $include_path (Optional) Whether to include the full path of each file in the result. Default is false.
+     * @param string $sourceDir The directory path to retrieve files from.
+     * @param bool $includePath (Optional) Whether to include the full path of each file in the result. Default is false.
      * @param bool $recursion (Optional) Whether to search for files recursively in subdirectories. Default is false.
      * @return array|bool An array of file paths if successful, or false if the directory does not exist or is not readable.
      */
-    public static function getFiles(string $source_dir, bool $include_path = false, bool $recursion = false): array | bool {
+    public static function getFiles(string $sourceDir, bool $includePath = false, bool $recursion = false): array | bool {
         static $result = [];
 
-        if ($fp = @opendir($source_dir)) {
-            // reset the array and make sure $source_dir has a trailing slash on the initial call
+        if ($fp = @opendir($sourceDir)) {
+            // reset the array and make sure $sourceDir has a trailing slash on the initial call
             if ($recursion === false) {
                 $result     = [];
-                $source_dir = rtrim(realpath($source_dir), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+                $sourceDir = rtrim(realpath($sourceDir), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
             }
 
             while (false !== ($file = readdir($fp))) {
-                if (@is_dir($source_dir . $file) && strncmp($file, '.', 1) !== 0) {
-                    self::getFiles($source_dir . $file . DIRECTORY_SEPARATOR, $include_path, true);
+                if (@is_dir($sourceDir . $file) && strncmp($file, '.', 1) !== 0) {
+                    self::getFiles($sourceDir . $file . DIRECTORY_SEPARATOR, $includePath, true);
                 } elseif (strncmp($file, '.', 1) !== 0) {
-                    $result[] = ($include_path == true) ? $source_dir . $file : $file;
+                    $result[] = ($includePath == true) ? "$sourceDir$file" : $file;
                 }
             }
 
@@ -319,7 +319,7 @@ class FileHelper {
 
         $file = PathHelper::join(...$parts);
         if (function_exists('realpath') && $normalize) {
-            $file = realpath($file);
+            $file = (string)realpath($file);
         }
         return $file;
     }
@@ -345,9 +345,9 @@ class FileHelper {
      */
     public static function prepPath(string $path, bool $normalize = true): string {
         if (function_exists('realpath') && $normalize) {
-            $path = realpath($path);
+            $path = (string)realpath($path);
         }
-        return rtrim(self::prepLocation($path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        return trim(self::prepLocation($path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     }
 
     /**

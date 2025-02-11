@@ -15,7 +15,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Class EAssertionFailed
  * @datetime 09.01.2025
  */
-class EAssertionFailed extends EBasicException
+class EAssertionFailed extends EBaseException
 {
 
 }

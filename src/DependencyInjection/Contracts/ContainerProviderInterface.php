@@ -9,24 +9,20 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\DependencyInjection\Helpers;
-
+namespace Scaleum\DependencyInjection\Contracts;
 use Psr\Container\ContainerInterface;
 
 /**
- * Factory
+ * ContainerProviderInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class EntryFactory {
-    private \Closure $factory;
-
-    public function __construct(\Closure $factory) {
-        $this->factory = $factory;
-    }
-
-    public function resolve(ContainerInterface $container): mixed {
-        return ($this->factory)($container);
-    }
+interface ContainerProviderInterface {
+    /**
+     * Retrieves the service container.
+     *
+     * @return ContainerInterface The service container instance.
+     */
+    public function getContainer(): ContainerInterface;
 }
-/** End of Factory **/
+/** End of ContainerProviderInterface **/

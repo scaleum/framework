@@ -15,7 +15,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Class EParserError
  * @datetime 09.01.2025
  */
-class EParserError extends EBasicException
+class EParserError extends EBaseException
 {
 
 }

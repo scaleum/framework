@@ -1,4 +1,5 @@
 <?php
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -8,10 +9,14 @@
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Stdlib\Exceptions;
+namespace Scaleum\Core\Contracts;
 
-
-class EBasicException extends \ErrorException
-{
-
+/**
+ * ResponderInterface
+ *
+ * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
+ */
+interface ResponderInterface {
+    public function send(): void;
 }
+/** End of ResponderInterface **/

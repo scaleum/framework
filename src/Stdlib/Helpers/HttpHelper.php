@@ -20,6 +20,13 @@ use Scaleum\Stdlib\SAPI\SapiIdentifier;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class HttpHelper {
+    public const METHOD_GET     = 'GET';
+    public const METHOD_POST    = 'POST';
+    public const METHOD_PUT     = 'PUT';
+    public const METHOD_PATCH   = 'PATCH';
+    public const METHOD_DELETE  = 'DELETE';
+    public const METHOD_OPTIONS = 'OPTIONS';
+    public const METHOD_HEAD    = 'HEAD';    
     public static $statuses = [
         100 => 'Continue',
         101 => 'Switching Protocols',
@@ -96,18 +103,18 @@ class HttpHelper {
      * @param string $header The header string.
      * @param string|null $text The optional text to include with the header.
      * @param bool $replace Whether to replace a previous similar header, or add a second header of the same type.
-     * @param int $response_code The optional response code to send with the header.
+     * @param int $responseCode The optional response code to send with the header.
      *
      * @return void
      */
-    public static function setHeader(string $header, ?string $text = null, bool $replace = true, int $response_code = 0): void {
+    public static function setHeader(string $header, ?string $text = null, bool $replace = true, int $responseCode = 0): void {
         if (! headers_sent()) {
             switch ($text) {
             case null:
-                header($header, $replace, $response_code);
+                header($header, $replace, $responseCode);
                 break;
             default:
-                header("{$header}: {$text}", $replace, $response_code);
+                header("{$header}: {$text}", $replace, $responseCode);
                 break;
             }
         }
@@ -126,14 +133,14 @@ class HttpHelper {
             if ($text == null) {
                 $text = self::getStatusMessage($code);
             }
-            $server_protocol = $_SERVER['SERVER_PROTOCOL'] ?? false;
+            $serverProtocol = $_SERVER['SERVER_PROTOCOL'] ?? false;
 
             if (Explorer::getType() == SapiIdentifier::CGI) {
                 self::setHeader("Status", "{$code} {$text}");
-            } elseif ($server_protocol == 'HTTP/1.1' || $server_protocol == 'HTTP/1.0') {
-                self::setHeader($server_protocol . " {$code} {$text}", replace: true, response_code: $code);
+            } elseif ($serverProtocol == 'HTTP/1.1' || $serverProtocol == 'HTTP/1.0') {
+                self::setHeader($serverProtocol . " {$code} {$text}", replace: true, responseCode: $code);
             } else {
-                self::setHeader("HTTP/1.1 {$code} {$text}", replace: true, response_code: $code);
+                self::setHeader("HTTP/1.1 {$code} {$text}", replace: true,  responseCode: $code);
             }
         }
     }

@@ -63,25 +63,25 @@ class StringHelper
      * Removes invisible characters from a string.
      *
      * @param string $str The input string to be processed.
-     * @param bool $url_encoded Whether the input string is URL encoded. Default is true.
+     * @param bool $isUrlEncoded Whether the input string is URL encoded. Default is true.
      * @return string The processed string with invisible characters removed.
      */
-    public static function clearInvisibleChars(string $str, bool $url_encoded = true): string
+    public static function cleanInvisibleChars(string $str, bool $isUrlEncoded = true): string
     {
-        $non_displayables = [];
+        $nonDisplayables = [];
 
         // every control character except newline (dec 10)
         // carriage return (dec 13), and horizontal tab (dec 09)
 
-        if ($url_encoded) {
-            $non_displayables[] = '/%0[0-8bcef]/'; // url encoded 00-08, 11, 12, 14, 15
-            $non_displayables[] = '/%1[0-9a-f]/'; // url encoded 16-31
+        if ($isUrlEncoded) {
+            $nonDisplayables[] = '/%0[0-8bcef]/'; // url encoded 00-08, 11, 12, 14, 15
+            $nonDisplayables[] = '/%1[0-9a-f]/'; // url encoded 16-31
         }
 
-        $non_displayables[] = '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/S'; // 00-08, 11, 12, 14-31, 127
+        $nonDisplayables[] = '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/S'; // 00-08, 11, 12, 14-31, 127
 
         do {
-            $str = preg_replace($non_displayables, '', $str, -1, $count);
+            $str = preg_replace($nonDisplayables, '', $str, -1, $count);
             if (null === $str) {
                 self::throwPregError(preg_last_error());
             }

@@ -16,7 +16,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Error when reading/writing property values
  * @datetime 09.01.2025
  */
-class EPropertyError extends EBasicException
+class EPropertyError extends EBaseException
 {
 
 }

@@ -29,16 +29,16 @@ class JsonHelper
      * Encodes the given data into a JSON string.
      *
      * @param mixed $data The data to be encoded.
-     * @param int|null $encode_flags Optional. Bitmask consisting of JSON constants to control the encoding process.
+     * @param int|null $encodeFlags Optional. Bitmask consisting of JSON constants to control the encoding process.
      * @return string The JSON string representation of the data.
      */
-    public static function encode(mixed $data, ?int $encode_flags = null): string
+    public static function encode(mixed $data, ?int $encodeFlags = null): string
     {
-        if ($encode_flags === null) {
-            $encode_flags = self::DEFAULT_JSON_FLAGS;
+        if ($encodeFlags === null) {
+            $encodeFlags = self::DEFAULT_JSON_FLAGS;
         }
 
-        $json = json_encode($data, $encode_flags);
+        $json = json_encode($data, $encodeFlags);
         if ($json === false) {
             self::throwEncodeError(json_last_error(), $data);
         }

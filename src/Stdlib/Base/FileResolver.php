@@ -29,8 +29,8 @@ class FileResolver implements FileResolverInterface {
         }
 
         $filename = FileHelper::prepFilename($filename);
-        foreach ($this->getPaths() as $base_path) {
-            $path = PathHelper::join($base_path, $filename);
+        foreach ($this->getPaths() as $basePath) {
+            $path = PathHelper::join($basePath, $filename);
             if (is_file($path)) {
                 return $path;
             }

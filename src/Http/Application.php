@@ -11,16 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Http;
 
-use Scaleum\Config\LoadersResolver;
-use Scaleum\Core\HandlerInterface;
+use Scaleum\Core\Contracts\HandlerInterface;
 use Scaleum\Core\KernelAbstract;
-use Scaleum\Core\KernelEvents;
-use Scaleum\Events\EventHandlerInterface;
-use Scaleum\Events\EventManagerInterface;
-use Scaleum\Services\ServiceProviderInterface;
-use Scaleum\Stdlib\Exceptions\ERuntimeError;
-use Scaleum\Stdlib\Helpers\FileHelper;
-use Scaleum\Stdlib\Helpers\PathHelper;
 
 /**
  * Application
@@ -30,13 +22,22 @@ use Scaleum\Stdlib\Helpers\PathHelper;
 class Application extends KernelAbstract {
     protected ?HandlerInterface $handler = null;
 
-    public function __construct(array $array = []) {
-        parent::__construct($array);
+    public function bootstrap(array $config = []): self {
+        $this->getRegistry()->set('kernel.configurators', [
+            new DependencyInjection\Routing(),
+        ]);
+
+        $this->getRegistry()->set('behaviors', [
+            Behaviors\RoutingService::class,
+        ]);
+
+        parent::bootstrap($config);
+        return $this;
     }
 
-    public function getHandler():HandlerInterface{
-        if($this->handler === null){
-            $this->handler = new RequestHandler(new Request());
+    public function getHandler(): HandlerInterface {
+        if ($this->handler === null) {
+            $this->handler = new RequestHandler($this->getContainer());
         }
         return $this->handler;
     }

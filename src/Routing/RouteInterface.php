@@ -21,8 +21,6 @@ interface RouteInterface
 {
     public function getPath():string;
     public function setPath(string $path):self;
-    public function getName():?string;
-    public function setName(string $name):self;
     public function getMethods():array;
     public function setMethods(string | array $methods):self;
     public function getCallback():?array;

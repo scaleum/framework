@@ -22,11 +22,11 @@ use Scaleum\Stdlib\Exceptions\ExceptionRendererInterface;
 use Scaleum\Stdlib\SAPI\SapiMode;
 
 /**
- * Framework
+ * ExceptionHandling
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class Exceptions implements ConfiguratorInterface {
+class ExceptionHandling implements ConfiguratorInterface {
     public function configure(Container $container): void {
         $container
             ->addDefinitions([
@@ -51,11 +51,11 @@ class Exceptions implements ConfiguratorInterface {
                 'error_renderer.console'          => ExceptionOutputConsole::class,
                 'error_renderer.http'             => ExceptionOutputHttp::class,
                 'error_renderer.config'           => [
-                    'base_path'           => '@kernel.project_dir',
-                    'include_traces'      => false,
-                    'allow_fullnamespace' => true,
+                    'basePath'           => '@kernel.project_dir',
+                    'includeTraces'      => false,
+                    'allowFullnamespace' => true,
                 ],
             ], true);
     }
 }
-/** End of Framework **/
+/** End of ExceptionHandling **/

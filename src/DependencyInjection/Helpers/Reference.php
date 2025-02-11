@@ -18,11 +18,11 @@ use Scaleum\DependencyInjection\Contract\ResolvableReference;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class EntryReference {
+class Reference extends EntityAbstract {
     private string $id;
 
     public function __construct(string $id) {
-        $this->id = $id;
+        $this->id = $id; 
     }
 
     public function getId(): string {

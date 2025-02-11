@@ -15,9 +15,11 @@ use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionFunction;
-use Scaleum\DependencyInjection\Helpers\EntryEnvironment;
-use Scaleum\DependencyInjection\Helpers\EntryFactory;
-use Scaleum\DependencyInjection\Helpers\EntryReference;
+use Scaleum\DependencyInjection\Contracts\EntityInterface;
+use Scaleum\DependencyInjection\Helpers\Autowire;
+use Scaleum\DependencyInjection\Helpers\Environment;
+use Scaleum\DependencyInjection\Helpers\Factory;
+use Scaleum\DependencyInjection\Helpers\Reference;
 use Scaleum\Stdlib\Helpers\ArrayHelper;
 
 class Container implements ContainerInterface {
@@ -34,7 +36,7 @@ class Container implements ContainerInterface {
      */
     public function addDefinition(string $id, mixed $value, bool $singleton = true): self {
         // object instances are always singletons
-        if (is_object($value) && ! is_callable($value)) {
+        if (is_object($value) && ! is_callable($value) && ! $value instanceof EntityInterface) {
             $this->instances[$id] = $value;
             return $this;
         }
@@ -59,7 +61,7 @@ class Container implements ContainerInterface {
                     if (is_array($val)) {
                         $array[$key] = $resolveReferences($val);
                     } elseif (is_string($val) && str_starts_with($val, '@')) {
-                        $array[$key] = new EntryReference(substr($val, 1));
+                        $array[$key] = new Reference(substr($val, 1));
                     }
                 }
                 return $array;
@@ -70,7 +72,7 @@ class Container implements ContainerInterface {
 
         // resolve references in strings
         if (is_string($value) && str_starts_with($value, '@')) {
-            $value = new EntryReference(substr($value, 1));
+            $value = new Reference(substr($value, 1));
         }
 
         $this->definitions[$id] = [
@@ -110,7 +112,7 @@ class Container implements ContainerInterface {
         // if the entry is a definition, resolve it
         if ($this->has($id)) {
             $definition = $this->definitions[$id];
-            
+
             // if the value is not a callable, return it
             if (! is_callable($definition['value'])) {
 
@@ -124,30 +126,34 @@ class Container implements ContainerInterface {
 
                 // supports in arrays
                 if (is_array($definition['value'])) {
-                    $resolveReferences = function (array $array) use (&$resolveReferences) {
+                    $resolveEntry = function (array $array, bool $singleton = false) use (&$resolveEntry) {
                         foreach ($array as $key => $value) {
                             if (is_array($value)) {
-                                $array[$key] = $resolveReferences($value);
-                            } elseif ($value instanceof EntryEnvironment) {
+                                $array[$key] = $resolveEntry($value);
+                            } elseif ($value instanceof Autowire) {
+                                $array[$key] = $this->resolve($value->getClass() ?? $key, $singleton);
+                            } elseif ($value instanceof Environment) {
                                 $array[$key] = $value->resolve();
-                            } elseif ($value instanceof EntryReference) {
+                            } elseif ($value instanceof Reference) {
                                 $array[$key] = $this->get($value->getId());
-                            } elseif ($value instanceof EntryFactory) {
+                            } elseif ($value instanceof Factory) {
                                 $array[$key] = $value->resolve($this);
                             }
                         }
                         return $array;
                     };
-                    return $resolveReferences($definition['value']);
+                    return $resolveEntry($definition['value'], $definition['singleton']);
                 }
 
                 // supports
                 switch (true) {
-                case $definition['value'] instanceof EntryEnvironment:
+                case $definition['value'] instanceof Autowire:
+                    return $this->resolve($definition['value']->getClass() ?? $id, $definition['singleton']);
+                case $definition['value'] instanceof Environment:
                     return $definition['value']->resolve();
-                case $definition['value'] instanceof EntryReference:
+                case $definition['value'] instanceof Reference:
                     return $this->get($definition['value']->getId());
-                case $definition['value'] instanceof EntryFactory:
+                case $definition['value'] instanceof Factory:
                     $instance = $definition['value']->resolve($this);
                     if ($definition['singleton']) {
                         $this->instances[$id] = $instance;

@@ -11,6 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core;
 
+use Scaleum\Core\Contracts\KernelInterface;
+use Scaleum\Core\Contracts\KernelProviderInterface;
 use Scaleum\Logger\LoggerChannelTrait;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 

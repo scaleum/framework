@@ -22,7 +22,7 @@ use Scaleum\Stdlib\Base\CallbackInstance;
  */
 class Listener extends CallbackInstance {
     protected string $event = '*';
-    protected bool $one_off = false;
+    protected bool $oneOff = false;
     protected int $priority = 1;
 
     public function __construct(mixed $callback, string $event = '*', int $priority = 1) {
@@ -37,7 +37,7 @@ class Listener extends CallbackInstance {
     }
 
     public function getOneOff(): bool {
-        return $this->one_off;
+        return $this->oneOff;
     }
 
     public function getPriority(): int {
@@ -45,7 +45,7 @@ class Listener extends CallbackInstance {
     }
 
     public function isOneOff(): bool {
-        return $this->one_off == true;
+        return $this->oneOff == true;
     }
 
     public function setEvent(string $event = '*'): self {
@@ -53,8 +53,8 @@ class Listener extends CallbackInstance {
         return $this;
     }
 
-    public function setOneOff(bool $one_off): self {
-        $this->one_off = $one_off;
+    public function setOneOff(bool $oneOff): self {
+        $this->oneOff = $oneOff;
         return $this;
     }
 

@@ -21,25 +21,30 @@ use Scaleum\Stdlib\Base\Hydrator;
 abstract class ExceptionOutputAbstarct extends Hydrator implements ExceptionRendererInterface {
     /**
      * Base path (for overlap).
-     * $base_path property, which can be represents the base path of the project's files.
+     * $basePath property, which can be represents the base path of the project's files.
      * This property is NULL and can be set to a string value representing the base path
      * that will be excluded from filenames when rendering(backtrace).
      *
-     * @var string|null $base_path The base path for rendering.
+     * @var string|null $basePath The base path for rendering.
      */
-    protected ?string $base_path = null;
+    protected ?string $basePath = null;
 
     /**
      * Determines whether traces should be included in the rendered output.
      *
-     * @var bool $include_traces
+     * @var bool $includeTraces
      */
-    protected bool $include_traces = true;
+    protected bool $includeTraces = true;
+
+    /**
+     * @var bool $includeDetails Indicates whether to include detailed information in the exception output.
+     */
+    protected bool $includeDetails = true;
     /**
      * Determines whether the full namespace is allowed.
      *
-     * @var bool $allow_fullnamespace
+     * @var bool $allowFullnamespace
      */
-    protected bool $allow_fullnamespace = false;
+    protected bool $allowFullnamespace = false;
 }
 /** End of ExceptionOutputAbstarct **/

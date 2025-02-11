@@ -15,7 +15,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Class EMatchError
  * @datetime 09.01.2025
  */
-class EMatchError extends EBasicException
+class ENotFoundError extends EBaseException
 {
 
 }

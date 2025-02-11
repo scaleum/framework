@@ -20,18 +20,18 @@ class ArrayHelper {
      * @param mixed $key The key to retrieve the value for.
      * @param array $haystack The array to search for the key.
      * @param mixed $default The default value to return if the key is not found (optional).
-     * @param mixed $expected_type The expected type of the value (optional).
+     * @param mixed $expectedType The expected type of the value (optional).
      * @return mixed The value of the specified key, or the default value if the key is not found.
      */
-    public static function element($key, array $haystack, $default = false, $expected_type = null): mixed {
+    public static function element($key, array $haystack, $default = false, $expectedType = null): mixed {
         if (! is_array($haystack)) {
             return $default;
         }
 
         $result = $default;
         if (array_key_exists($key, $haystack)) {
-            if (in_array($expected_type, TypeHelper::TYPES)) {
-                if (TypeHelper::isType($haystack[$key], $expected_type)) {
+            if (in_array($expectedType, TypeHelper::TYPES)) {
+                if (TypeHelper::isType($haystack[$key], $expectedType)) {
                     $result = $haystack[$key];
                 }
             } else {
@@ -48,11 +48,11 @@ class ArrayHelper {
      * @param mixed $keys The keys of the elements to extract.
      * @param array $haystack The array to extract elements from.
      * @param mixed $default The default value to return if an element is not found.
-     * @param mixed $expected_type The expected type of the extracted elements.
-     * @param bool $keys_preserve Whether to preserve the keys of the extracted elements.
+     * @param mixed $expectedType The expected type of the extracted elements.
+     * @param bool $keysPreserve Whether to preserve the keys of the extracted elements.
      * @return array The extracted elements as an associative array.
      */
-    public static function elements(mixed $keys, array $haystack, mixed $default = false, mixed $expected_type = null, bool $keys_preserve = false): array {
+    public static function elements(mixed $keys, array $haystack, mixed $default = false, mixed $expectedType = null, bool $keysPreserve = false): array {
         if (! is_array($haystack)) {
             return $haystack;
         }
@@ -68,27 +68,27 @@ class ArrayHelper {
             $default = array_fill(0, $keysCount, $default);
         }
 
-        if (! is_array($expected_type)) {
-            $expected_type = array_fill(0, $keysCount, $expected_type);
+        if (! is_array($expectedType)) {
+            $expectedType = array_fill(0, $keysCount, $expectedType);
         }
 
         for ($i = 0; $i < $keysCount; $i++) {
             $keyPlaceholder = isset($default[$i]) ? $default[$i] : null;
             if (array_key_exists($keys[$i], $haystack)) {
                 $keyValue = $haystack[$keys[$i]];
-                if (isset($expected_type[$i]) && in_array($expected_type[$i], TypeHelper::TYPES)) {
-                    if (! TypeHelper::isType($haystack[$keys[$i]], $expected_type[$i])) {
+                if (isset($expectedType[$i]) && in_array($expectedType[$i], TypeHelper::TYPES)) {
+                    if (! TypeHelper::isType($haystack[$keys[$i]], $expectedType[$i])) {
                         $keyValue = $keyPlaceholder;
                     }
                 }
 
-                if ($keys_preserve == true) {
+                if ($keysPreserve == true) {
                     $result[$keys[$i]] = $keyValue;
                 } else {
                     $result[] = $keyValue;
                 }
             } else {
-                if ($keys_preserve == true) {
+                if ($keysPreserve == true) {
                     $result[$keys[$i]] = $keyPlaceholder;
                 } else {
                     $result[] = $keyPlaceholder;
@@ -221,15 +221,15 @@ class ArrayHelper {
             foreach ($array as $key => $value) {
                 if (isset($result[$key])) {
                     if (is_array($result[$key]) && is_array($value)) {
-                        // if both arrays are indexed → merge them
-                        if (! self::isAssociative($result[$key]) && ! self::isAssociative($value)) {
-                            $result[$key] = array_merge($result[$key], $value);
-                        } else {
-                            // if one array is indexed and the other is associative → merge them
-                            $result[$key] = self::merge($result[$key], $value);
-                        }
+                        $result[$key] = self::merge($result[$key], $value);
                     } else {
-                        $result[$key] = $value; // replace value
+                        if (!is_numeric($key)) {
+                            $result[$key] = $value;
+                        } else {
+                            if (! in_array($value, $result,true)) {
+                                $result[] = $value;
+                            }
+                        }
                     }
                 } else {
                     $result[$key] = $value;

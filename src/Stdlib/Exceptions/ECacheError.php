@@ -15,7 +15,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Class ECacheError
  * @datetime 09.01.2025
  */
-class ECacheError extends EBasicException
+class ECacheError extends EBaseException
 {
 
 }

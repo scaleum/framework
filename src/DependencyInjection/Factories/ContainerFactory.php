@@ -69,11 +69,10 @@ class ContainerFactory {
         foreach (static::getDefinitions() as $id => $definition) {
             $container->addDefinition($id, $definition['value'], $definition['singleton']);
         }
-
+        
         foreach (static::getConfigurators() as $configurator) {
             $configurator->configure($container);
-        }
-                
+        }        
         static::reset();
 
         return $container;

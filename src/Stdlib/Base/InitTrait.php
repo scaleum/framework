@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Scaleum\Stdlib\Base;
 
+use Scaleum\Stdlib\Exceptions\EPropertyError;
 use Scaleum\Stdlib\Helpers\StringHelper;
 
 trait InitTrait
@@ -39,7 +40,7 @@ trait InitTrait
                     call_user_func([$context, $method], $val);
                 } else {
                     if (!property_exists($context, $key) && (!$context instanceof \stdClass)) {
-                        throw new \Exception(sprintf('Class  "%s" does not have the "%s" property, dynamic creation of properties is not supported', StringHelper::className($context, false), $key));
+                        throw new EPropertyError(sprintf('Class  "%s" does not have the "%s" property, dynamic creation of properties is not supported', StringHelper::className($context, false), $key));
                     }
 
                     $context->{$key} = $val;

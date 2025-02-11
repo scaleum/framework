@@ -16,7 +16,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * I/O error in the file
  * @datetime 09.01.2025
  */
-class EInOutError extends EBasicException
+class EInOutError extends EBaseException
 {
 
 }

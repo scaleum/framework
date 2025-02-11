@@ -17,7 +17,7 @@ namespace Scaleum\DependencyInjection\Helpers;
  * It is responsible for managing the environment configurations and settings.
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class EntryEnvironment
+class Environment extends EntityAbstract
 {
     private string $key;
     private mixed $default;

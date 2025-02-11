@@ -9,7 +9,7 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core;
+namespace Scaleum\Core\Contracts;
 
 /**
  * KernelProviderInterface

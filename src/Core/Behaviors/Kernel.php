@@ -29,40 +29,27 @@ use Scaleum\Stdlib\Helpers\BytesHelper;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
-    public function register(EventManagerInterface $eventManager): void {
-        $eventManager->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9999);
-        $eventManager->on("*", [$this, 'onEventLog'], -9990);
+    public function register(EventManagerInterface $events): void {
+        $events->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9999);
+        $events->on("*", [$this, 'onEvent'], -9990);
     }
 
     public function onBootstrap(Event $event): void {
-        # Accosiate service manager with service gateway
-        if (! ($provider = $this->getKernel()->getContainer()->get('service.manager')) instanceof ServiceProviderInterface) {
-            throw new ERuntimeError('Service manager must implement ServiceProviderInterface');
-        }
-        ServiceGateway::setProvider($provider);
-        // ServiceGateway::set('config', $this->getKernel()->getContainer()->get(Config::class));
-
         # Accosiate logger manager with logger gateway
         if (! ($provider = $this->getKernel()->getContainer()->get('log.manager')) instanceof LoggerProviderInterface) {
             throw new ERuntimeError('Logger manager must implement LoggerProviderInterface');
         }
         LoggerGateway::setProvider($provider);
 
-        // if ($config = $this->getKernel()->getContainer()->get(Config::class)) {
-        //     $config->set('var1', 10);
-        //     var_export($config);
-        // }
-        // usleep(1000);
-        // if ($config2 = $this->getKernel()->getContainer()->get(Config::class)) {
-        //     $config2->set('var2', 20);
-        //     // var_dump($config2->get('var1'),$config2->get('var2'));
-        //     var_export($config2);
-        // }
-
-        // echo 'App::onBoot';
+        # Accosiate service manager with service gateway
+        if (! ($provider = $this->getKernel()->getContainer()->get('service.manager')) instanceof ServiceProviderInterface) {
+            throw new ERuntimeError('Service manager must implement ServiceProviderInterface');
+        }
+        ServiceGateway::setProvider($provider);
+        // ServiceGateway::set('config', $this->getKernel()->getContainer()->get(Config::class));
     }
 
-    public function onEventLog(Event $event): void {
+    public function onEvent(Event $event): void {
         switch ($event->getName()) {
         case KernelEvents::BOOTSTRAP:
             $this->debug('Application booting up ...');
@@ -72,11 +59,11 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
             break;
         case KernelEvents::FINISH:
             $this->debug('Application finish');
-            $this->debug( sprintf( 'Application amount of memory allocated for PHP: %s kb.', BytesHelper::bytesTo( memory_get_usage( false ) ) ) );
-            $this->debug( sprintf( 'Application peak value of memory allocated by PHP: %s kb.', BytesHelper::bytesTo( memory_get_peak_usage( false ) ) ) );            
+            $this->debug(sprintf('Application amount of memory allocated for PHP: %s kb.', BytesHelper::bytesTo(memory_get_usage(false))));
+            $this->debug(sprintf('Application peak value of memory allocated by PHP: %s kb.', BytesHelper::bytesTo(memory_get_peak_usage(false))));
             break;
         default:
-            $this->debug('Triggered ' . $event->getName());
+            $this->debug(sprintf('Event `%s` has been triggered', $event->getName()));
         }
     }
 }

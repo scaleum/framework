@@ -95,10 +95,10 @@ class UrlHelper {
      *
      * @param string $uri The URI to redirect to. Default is an empty string.
      * @param string $method The method to use for redirection. Default is 'location'.
-     * @param int $http_response_code The HTTP response code to use for redirection. Default is 302.
+     * @param int $httpResponseCode The HTTP response code to use for redirection. Default is 302.
      * @return void
      */
-    public static function redirect(string $uri = '', string $method = 'location', int $http_response_code = 302) {
+    public static function redirect(string $uri = '', string $method = 'location', int $httpResponseCode = 302) {
         if (!headers_sent()) {
             if (!preg_match('#^https?://#i', $uri)) {
                 $uri = self::baseUrl($uri);
@@ -109,7 +109,7 @@ class UrlHelper {
                 header("Refresh:0;url=$uri");
                 break;
             default:
-                header("Location: $uri", true, $http_response_code);
+                header("Location: $uri", true, $httpResponseCode);
                 break;
             }
         }

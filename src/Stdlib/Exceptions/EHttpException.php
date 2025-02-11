@@ -18,7 +18,7 @@ use Scaleum\Stdlib\Helpers\HttpHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class EHttpException extends EBasicException
+class EHttpException extends EBaseException
 {
     public function __construct(int $code = 500, string $message = '', \Throwable $previous = null)
     {
@@ -26,8 +26,7 @@ class EHttpException extends EBasicException
         if(HttpHelper::isStatusCode($code) === false) {
             $code = 500;
         }
-
-        # 
+ 
         if($message === '') {
             $message = HttpHelper::getStatusMessage($code);
         }

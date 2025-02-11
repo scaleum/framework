@@ -11,6 +11,12 @@ declare (strict_types = 1);
 
 namespace Scaleum\Routing;
 
+use Scaleum\Stdlib\Exceptions\EHttpException;
+use Scaleum\Stdlib\Exceptions\ENotFoundError;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Stdlib\Helpers\HttpHelper;
+use Scaleum\Stdlib\Helpers\StringHelper;
+
 /**
  * Router
  *
@@ -22,21 +28,28 @@ class Router {
      */
     protected array $routes = [];
 
-    public function addRoute(RouteInterface $route): void {
-        $this->routes[$route->getName()] = $route;
+    public function addRoutes(array $routes): void {
+        foreach ($routes as $alias => $route) {
+            if (! $route instanceof RouteInterface) {
+                throw new ERuntimeError('Route must be instance of RouteInterface');
+            }
+            $this->addRoute($alias, $route);
+        }
+    }
+    public function addRoute(string $alias, RouteInterface $route): void {
+        $this->routes[$alias] = $route;
     }
 
     public function getRoutes(): array {
         return $this->routes;
     }
 
-    public function getRoute(string $name): RouteInterface {
-        foreach ($this->routes as $route) {
-            if ($route->getName() === $name) {
-                return $route;
-            }
+    public function getRoute(string $alias): RouteInterface {
+        if (isset($this->routes[$alias])) {
+            return $this->routes[$alias];
         }
-        throw new \RuntimeException('Route not found');
+
+        throw new ERuntimeError('Route not found');
     }
 
     /**
@@ -58,10 +71,15 @@ class Router {
      * @param string $method The HTTP method to match (e.g., GET, POST).
      * @return array An array containing the matched route information.
      */
-    public function match(string $uri, string $method = Route::HTTP_GET): array {
+    public function match(string $uri, string $method = HttpHelper::METHOD_GET): array {
         foreach ($this->routes as $route) {
             if (! $route instanceof RouteInterface) {
-                throw new \RuntimeException('Route must be instance of RouteInterface');
+                throw new ERuntimeError(
+                    sprintf(
+                        'Route must be an instance of `RouteInterface` given `%s`',
+                        is_object($route) ? StringHelper::className($route, true) : gettype($route)
+                    )
+                );                
             }
 
             if ($method && ! in_array($method, $route->getMethods())) {
@@ -73,7 +91,7 @@ class Router {
 
                 if (is_array($callback = $route->getCallback())) {
                     if (! isset($callback['controller'])) {
-                        throw new \RuntimeException('Route callback controller is not defined');
+                        throw new ERuntimeError('Controller is not defined');
                     } elseif (! is_array($callback['controller'])) {
                         $callback['controller'] = ['class' => $callback['controller'], 'args' => []];
                     }
@@ -104,10 +122,10 @@ class Router {
                         'callback' => $callback,
                     ];
                 }
-                throw new \RuntimeException('Route callback is not defined or not an array');
+                throw new ERuntimeError('Callback is not defined or not an array');
             }
         }
-        throw new \RuntimeException('Route not found');
+        throw new ENotFoundError(sprintf('Requested URL "%s" is not found on server', $uri));
     }
 }
 /** End of Router **/
