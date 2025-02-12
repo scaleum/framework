@@ -13,8 +13,6 @@ namespace Scaleum\Storages\PDO;
 
 use Scaleum\Stdlib\Base\Hydrator;
 
-
-
 /**
  * Database
  *
