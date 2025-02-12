@@ -11,6 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Core\Behaviors;
 
+use Scaleum\Core\DependencyInjection\Framework;
 use Scaleum\Core\KernelEvents;
 use Scaleum\Core\KernelProviderAbstract;
 use Scaleum\Events\Event;
@@ -29,6 +30,7 @@ use Scaleum\Stdlib\Helpers\BytesHelper;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
+    protected float $time_start, $time_end;
     public function register(EventManagerInterface $events): void {
         $events->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9999);
         $events->on("*", [$this, 'onEvent'], -9990);
@@ -36,17 +38,19 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
 
     public function onBootstrap(Event $event): void {
         # Accosiate logger manager with logger gateway
-        if (! ($provider = $this->getKernel()->getContainer()->get('log.manager')) instanceof LoggerProviderInterface) {
+        if (! ($loggerManager = $this->getKernel()->getContainer()->get(Framework::SVC_LOGGERS)) instanceof LoggerProviderInterface) {
             throw new ERuntimeError('Logger manager must implement LoggerProviderInterface');
         }
-        LoggerGateway::setInstance($provider);
+        LoggerGateway::setInstance($loggerManager);
 
         # Accosiate service manager with service locator
-        if (! ($provider = $this->getKernel()->getContainer()->get('service.manager')) instanceof ServiceProviderInterface) {
+        if (! ($services = $this->getKernel()->getContainer()->get(Framework::SVC_POOL)) instanceof ServiceProviderInterface) {
             throw new ERuntimeError('Service manager must implement ServiceProviderInterface');
         }
-        ServiceLocator::setInstance($provider);
-        // ServiceGateway::set('config', $this->getKernel()->getContainer()->get(Config::class));
+        $services->setService(Framework::SVC_LOGGERS, $loggerManager);
+        $services->setService(Framework::SVC_EVENTS, $this->getKernel()->getContainer()->get(Framework::SVC_EVENTS));
+
+        ServiceLocator::setInstance($services);
     }
 
     public function onEvent(Event $event): void {
@@ -56,12 +60,12 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
             break;
         case KernelEvents::START:
             $this->debug('Application start');
+            $this->time_start = microtime(true);
             break;
         case KernelEvents::FINISH:
-            $start = (float) $this->getKernel()->getContainer()->get('kernel.start');
-            $end   = microtime(true);
+            $this->time_end = microtime(true);
 
-            $this->debug(sprintf('Application finished, execution time: %s sec.', number_format($end - $start, 4)));
+            $this->debug(sprintf('Application finished, execution time: %s sec.', number_format($this->time_end - $this->time_start, 4)));
             $this->debug(sprintf('Application amount of memory allocated for PHP: %s kb.', BytesHelper::bytesTo(memory_get_usage(false))));
             $this->debug(sprintf('Application peak value of memory allocated by PHP: %s kb.', BytesHelper::bytesTo(memory_get_peak_usage(false))));
             break;

@@ -16,6 +16,7 @@ use Scaleum\Config\LoaderResolver;
 use Scaleum\Core\Contracts\HandlerInterface;
 use Scaleum\Core\Contracts\KernelInterface;
 use Scaleum\Core\Contracts\ResponderInterface;
+use Scaleum\Core\DependencyInjection\Framework;
 use Scaleum\DependencyInjection\Factories\ContainerFactory;
 use Scaleum\Events\EventHandlerInterface;
 use Scaleum\Events\EventManagerInterface;
@@ -130,14 +131,14 @@ abstract class KernelAbstract implements KernelInterface {
      * @return EventManagerInterface The event manager instance.
      */
     public function getEventManager(): EventManagerInterface {
-        if (! ($result = $this->getContainer()->get('event.manager')) instanceof EventManagerInterface) {
+        if (! ($result = $this->getContainer()->get(Framework::SVC_EVENTS)) instanceof EventManagerInterface) {
             throw new \RuntimeException("Event manager is not an instance of EventManagerInterface");
         }
         return $result;
     }
 
     public function getServiceManager(): ServiceProviderInterface {
-        if (! ($result = $this->getContainer()->get('service.manager')) instanceof ServiceProviderInterface) {
+        if (! ($result = $this->getContainer()->get(Framework::SVC_POOL)) instanceof ServiceProviderInterface) {
             throw new ERuntimeError("Service manager is not an instance of ServiceProviderInterface");
         }
         return $result;
@@ -203,7 +204,7 @@ abstract class KernelAbstract implements KernelInterface {
                 'environment'        => $this->getEnvironment(),
                 'kernel.project_dir' => $this->getProjectDir(),
                 'kernel.config_dir'  => $this->getConfigDir(),
-                'kernel.start'       => microtime(true),
+                // 'kernel.start'       => microtime(true),
                 'kernel'             => $this,
             ]);
 
