@@ -27,14 +27,19 @@ use Scaleum\Stdlib\SAPI\Explorer;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Framework implements ConfiguratorInterface {
+    public const SVC_EVENTS  = 'event.manager';
+    public const SVC_POOL    = 'service.manager';
+    public const SVC_LOGGERS = 'log.manager';
+
     public function configure(Container $container): void {
         $container->addDefinitions([
             'kernel.version'       => '1.0.0',
             'kernel.sapi_type'     => Explorer::getType(),
             'kernel.sapi_family'   => Explorer::getTypeFamily(),
-            'event.manager'        => EventManager::class,
-            'service.manager'      => ServiceManager::class,
-            'log.manager'          => LoggerManager::class,
+
+            self::SVC_EVENTS       => EventManager::class,
+            self::SVC_POOL         => ServiceManager::class,
+            self::SVC_LOGGERS      => LoggerManager::class,
 
             KernelInterface::class => function (ContainerInterface $c) {
                 return $c->get('kernel');
