@@ -64,14 +64,22 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
     protected ?string $onDelete     = null;
     protected ?string $onUpdate     = null;
 
-    public function __construct(string $type = self::TYPE_KEY, ?Database $database = null) {
-        parent::__construct($database);
-
+    public function __construct(string $type = self::TYPE_KEY, array | string | null $column = null, ?string $indexName = null, ?Database $database = null) {
         // check if type is supported
         if (! $this->mapType($type)) {
             throw new EDatabaseError(sprintf('Index type `%s` is not supported', strtoupper($type)));
         }
         $this->type = $type;
+
+        if ($column !== null) {
+            $this->column($column);
+        }
+
+        if ($indexName !== null) {
+            $this->name($indexName);
+        }
+
+        parent::__construct($database);
     }
 
     public function reference(string $tableName, array | string $column): self {
@@ -104,9 +112,9 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
         return $this;
     }
 
-    public function name(string $index_name): self {
-        if (! empty($index_name) && $this->indexName != $index_name) {
-            $this->indexName = $index_name;
+    public function name(string $indexName): self {
+        if (! empty($indexName) && $this->indexName != $indexName) {
+            $this->indexName = $indexName;
         }
 
         return $this;
@@ -163,7 +171,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
 
     protected function makeUnique(): string {
         $column    = implode(',', $this->protectIdentifiers($this->columns));
-        $indexName = $this->protectIdentifiers($this->indexName);
+        $indexName = $this->protectIdentifiers($this->indexName ?? "un_" . implode('_', $this->columns));
         return ($indexName ? "CONSTRAINT $indexName " : "") . "UNIQUE ($column)";
     }
 
@@ -172,7 +180,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
             throw new EDatabaseError('Foreign key requires a referenced table');
         }
 
-        $indexName = $this->protectIdentifiers($this->indexName);
+        $indexName = $this->protectIdentifiers($this->indexName ?? "fk_" . implode('_', $this->columns));
         $column    = implode(',', $this->protectIdentifiers($this->columns));
         $refTable  = $this->protectIdentifiers($this->refTableName);
         $refColumn = implode(',', $this->protectIdentifiers($this->refColumns));
@@ -191,7 +199,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
     }
 
     protected function makeFulltext(): string {
-        $indexName = $this->protectIdentifiers($this->indexName);
+        $indexName = $this->protectIdentifiers($this->indexName ?? "ft_" . implode('_', $this->columns));
         $column    = implode(',', $this->protectIdentifiers($this->columns));
         return "FULLTEXT " . ($indexName ? "$indexName " : "") . "($column)";
     }
@@ -200,7 +208,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
         if (! $type = $this->mapType($this->type)) {
             throw new EDatabaseError(sprintf('Index type `%s` is not supported', strtoupper($this->type)));
         }
-        $indexName = $this->protectIdentifiers($this->indexName);
+        $indexName = $this->protectIdentifiers($this->indexName ?? "key_" . implode('_', $this->columns));
         $column    = implode(',', $this->protectIdentifiers($this->columns));
 
         return strtoupper($type) . " " . ($indexName ? "$indexName " : "") . "($column)";

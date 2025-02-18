@@ -14,7 +14,9 @@ namespace Scaleum\Storages\PDO;
 use PDO;
 use Scaleum\Cache\Cache;
 use Scaleum\Stdlib\Base\Hydrator;
+use Scaleum\Storages\PDO\Builders\Adapters\SQLServer\Schema;
 use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
+use Scaleum\Storages\PDO\Builders\Contracts\SchemaBuilderInterface;
 use Scaleum\Storages\PDO\Builders\QueryBuilder;
 use Scaleum\Storages\PDO\Exceptions\ESQLError;
 
@@ -26,14 +28,14 @@ class Database extends Hydrator {
     protected string $dsn;
     protected string $user;
     protected string $password;
-    private bool $connected  = false;
-    protected array $options = [];
-    private ?PDO $pdo        = null;
-    protected ?Cache $cache  = null;
-    private int $queryCounter = 0;
-    private array $queryParams = [];
+    private bool $connected        = false;
+    protected array $options       = [];
+    private ?PDO $pdo              = null;
+    protected ?Cache $cache        = null;
+    private int $queryCounter      = 0;
+    private array $queryParams     = [];
     private int $queryRowsAffected = 0;
-    private string $queryStr = '';
+    private string $queryStr       = '';
 
     public function begin(): bool {
         return $this->getPDO()->beginTransaction();
@@ -71,7 +73,7 @@ class Database extends Hydrator {
         $this->pdo       = $instance;
         $this->connected = false;
         return $this;
-    }    
+    }
 
     /**
      * Get the name of the PDO driver.
@@ -203,7 +205,7 @@ class Database extends Hydrator {
         if (count($params) > 0) {
             foreach ($params as $key => $value) {
                 $pattern = is_integer($key) ? ':' . ($key + 1) : $key;
-                $sql     = str_replace($pattern, (string)$value, $sql);
+                $sql     = str_replace($pattern, (string) $value, $sql);
             }
         }
 
@@ -260,7 +262,11 @@ class Database extends Hydrator {
     public function getQueryBuilder(): QueryBuilderInterface {
         return QueryBuilder::create($this->getPDODriverName(), [$this]);
     }
-    
+
+    public function getSchemaBuilder(): SchemaBuilderInterface {
+        return Schema::create($this->getPDODriverName(), [$this]);
+    }
+
     protected function __executeInternal(?string $method = null, array $fetchArgs = []) {
         $sql = $this->getSql();
 

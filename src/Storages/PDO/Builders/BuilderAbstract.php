@@ -40,9 +40,8 @@ abstract class BuilderAbstract extends DatabaseProvider {
         }
     }
 
-    public function __construct(?Database $database, bool $prepare = false) {
+    public function __construct(?Database $database) {
         parent::__construct($database);
-        $this->prepare = $prepare;
     }
 
     /**
@@ -108,7 +107,7 @@ abstract class BuilderAbstract extends DatabaseProvider {
         );
 
         return trim($prettySql);
-    }
+    }    
 
     protected function realize(string $sql, array $params = [], string $method = 'execute', array $args = []): mixed {
         if (! method_exists($db = $this->getDatabase(), $method)) {

@@ -9,21 +9,18 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Storages\PDO\Builders\Adapters\PostgreSQL;
+namespace Scaleum\Storages\PDO\Builders\Adapters\MySQL;
 
-use Scaleum\Stdlib\Exceptions\EDatabaseError;
-use Scaleum\Storages\PDO\Builders\IndexBuilder;
+use Scaleum\Storages\PDO\Builders\SchemaBuilder;
 
 
 /**
- * Index
+ * Schema
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class Index extends IndexBuilder
+class Schema extends SchemaBuilder
 {
-    protected function makeFulltext(): string {
-        throw new EDatabaseError('PostgreSQL does not support fulltext indexes');
-    }
+
 }
-/** End of Index **/
+/** End of Schema **/

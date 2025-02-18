@@ -11,6 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Storages\PDO\Builders\Adapters\SQLite;
 
+use Scaleum\Stdlib\Exceptions\EDatabaseError;
 use Scaleum\Storages\PDO\Builders\IndexBuilder;
 
 /**
@@ -20,8 +21,7 @@ use Scaleum\Storages\PDO\Builders\IndexBuilder;
  */
 class Index extends IndexBuilder {
     protected function makeFulltext(): string {
-        $column = implode(',', $this->protectIdentifiers($this->columns));
-        return "VIRTUAL TABLE USING FTS5 ($column)";
+        throw new EDatabaseError('SQLite does not support fulltext indexes');
     }
 }
 /** End of Index **/

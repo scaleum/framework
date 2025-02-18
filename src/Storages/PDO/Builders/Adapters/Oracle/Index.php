@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Scaleum\Storages\PDO\Builders\Adapters\Oracle;
 
+use Scaleum\Stdlib\Exceptions\EDatabaseError;
 use Scaleum\Storages\PDO\Builders\IndexBuilder;
 
 
@@ -22,9 +23,7 @@ use Scaleum\Storages\PDO\Builders\IndexBuilder;
 class Index extends IndexBuilder
 {
     protected function makeFulltext(): string {
-        $indexName = $this->protectIdentifiers($this->indexName);
-        $column    = implode(',', $this->protectIdentifiers($this->columns));
-        return "INDEX $indexName ON $column INDEXTYPE IS CTXSYS.CONTEXT";
+        throw new EDatabaseError('Oracle does not support fulltext indexes');
     }
 }
 /** End of Index **/
