@@ -9,17 +9,16 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Storages\PDO;
-
-use Scaleum\Services\ServiceLocator;
-use Scaleum\Stdlib\Exceptions\ERuntimeError;
+namespace Scaleum\Storages\PDO\Builders\Contracts;
 
 /**
- * ModelAbstract
+ * IndexBuilderInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-abstract class ModelAbstract extends DatabaseProvider {
-
+interface IndexBuilderInterface {
+    public function name(string $index_name): self;
+    public function column(array | string $column): self;
+    public function reference(string $tableName, array | string $column): self;
 }
-/** End of ModelAbstract **/
+/** End of IndexBuilderInterface **/

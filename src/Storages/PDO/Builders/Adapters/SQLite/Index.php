@@ -9,17 +9,19 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Storages\PDO;
+namespace Scaleum\Storages\PDO\Builders\Adapters\SQLite;
 
-use Scaleum\Services\ServiceLocator;
-use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Storages\PDO\Builders\IndexBuilder;
 
 /**
- * ModelAbstract
+ * Index
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-abstract class ModelAbstract extends DatabaseProvider {
-
+class Index extends IndexBuilder {
+    protected function makeFulltext(): string {
+        $column = implode(',', $this->protectIdentifiers($this->columns));
+        return "VIRTUAL TABLE USING FTS5 ($column)";
+    }
 }
-/** End of ModelAbstract **/
+/** End of Index **/

@@ -1,5 +1,5 @@
 <?php
-declare (strict_types = 1);
+declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -9,17 +9,18 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Storages\PDO;
+namespace Scaleum\Storages\PDO\Builders\Adapters\SQLServer;
 
-use Scaleum\Services\ServiceLocator;
-use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Storages\PDO\Builders\IndexBuilder;
+
 
 /**
- * ModelAbstract
+ * Index
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-abstract class ModelAbstract extends DatabaseProvider {
+class Index extends IndexBuilder
+{
 
 }
-/** End of ModelAbstract **/
+/** End of Index **/

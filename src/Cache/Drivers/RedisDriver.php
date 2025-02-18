@@ -12,12 +12,12 @@ declare (strict_types = 1);
 
 namespace Scaleum\Cache\Drivers;
 
-use Scaleum\Cache\CacheDriverInterface;
+use Scaleum\Cache\CacheInterface;
 use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Stdlib\Helpers\ArrayHelper;
 use Scaleum\Storages\Redis\Client;
 
-class RedisDriver extends Hydrator implements CacheDriverInterface {
+class RedisDriver extends Hydrator implements CacheInterface {
     protected int $db           = 0;
     protected string $host      = '127.0.0.1';
     protected int $lifetime     = 60;

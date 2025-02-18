@@ -11,12 +11,13 @@ declare (strict_types = 1);
  */
 namespace Scaleum\Cache;
 
-use Scaleum\Cache\CacheDriverInterface;
+use Scaleum\Cache\CacheInterface;
 use Scaleum\Cache\Drivers\FilesystemDriver;
+use Scaleum\Cache\Drivers\NullDriver;
 use Scaleum\Stdlib\Base\Hydrator;
 
-class Cache extends Hydrator implements CacheDriverInterface {
-    protected ?CacheDriverInterface $driver = null;
+class Cache extends Hydrator implements CacheInterface {
+    protected ?CacheInterface $driver = null;
     protected bool $enabled                 = false;
 
     /**
@@ -135,7 +136,7 @@ class Cache extends Hydrator implements CacheDriverInterface {
     /**
      * Get the value of driver
      */
-    public function getDriver(): CacheDriverInterface {
+    public function getDriver(): CacheInterface {
         if ($this->driver === null) {
             $this->driver = $this->getDriverDefault();
         }
@@ -153,7 +154,7 @@ class Cache extends Hydrator implements CacheDriverInterface {
             $driver = static::createInstance($driver);
         }
 
-        if (! ($driver instanceof CacheDriverInterface)) {
+        if (! ($driver instanceof CacheInterface)) {
             throw new \InvalidArgumentException('Invalid driver');
         }
 
@@ -165,13 +166,10 @@ class Cache extends Hydrator implements CacheDriverInterface {
     /**
      * Retrieves the default driver for the cache.
      *
-     * @return CacheDriverInterface The default driver for the cache.
+     * @return CacheInterface The default driver for the cache.
      */
-    protected function getDriverDefault(): CacheDriverInterface {
-        return new FilesystemDriver([
-            'lifetime' => 60,
-            'path'     => __DIR__,
-        ]);
+    protected function getDriverDefault(): CacheInterface {
+        return new NullDriver();
     }
 }
 

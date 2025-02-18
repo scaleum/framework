@@ -14,11 +14,11 @@ namespace Scaleum\Cache\Drivers;
 
 use Exception;
 use RuntimeException;
-use Scaleum\Cache\CacheDriverInterface;
+use Scaleum\Cache\CacheInterface;
 use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Stdlib\Helpers\FileHelper;
 
-class FilesystemDriver extends Hydrator implements CacheDriverInterface {
+class FilesystemDriver extends Hydrator implements CacheInterface {
     protected int $lifetime = 60; // seconds, default 1 minute
     protected string $path;
 

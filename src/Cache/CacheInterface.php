@@ -12,7 +12,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Cache;
 
-interface CacheDriverInterface {
+interface CacheInterface {
     /**
      * Cleans the cache.
      *
