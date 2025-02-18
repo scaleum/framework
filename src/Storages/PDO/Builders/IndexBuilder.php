@@ -27,12 +27,26 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
     public const TYPE_FULLTEXT = 'fulltext';
     public const TYPE_FOREIGN  = 'foreign';
 
-    protected $tableTypes = [
+    public const ACTION_CASCADE     = 'CASCADE';
+    public const ACTION_SET_NULL    = 'SET NULL';
+    public const ACTION_SET_DEFAULT = 'SET DEFAULT';
+    public const ACTION_RESTRICT    = 'RESTRICT';
+    public const ACTION_NO_ACTION   = 'NO ACTION';
+
+    protected array $tableTypes = [
         self::TYPE_PK       => 'PRIMARY KEY',
         self::TYPE_KEY      => 'KEY',
         self::TYPE_UNIQUE   => 'UNIQUE',
         self::TYPE_FULLTEXT => 'FULLTEXT',
         self::TYPE_FOREIGN  => 'FOREIGN KEY',
+    ];
+
+    protected array $tableActions = [
+        self::ACTION_CASCADE,
+        self::ACTION_SET_NULL,
+        self::ACTION_SET_DEFAULT,
+        self::ACTION_RESTRICT,
+        self::ACTION_NO_ACTION,
     ];
 
     protected static array $adapters = [
@@ -47,6 +61,8 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
     protected string $type          = self::TYPE_KEY;
     protected ?string $refTableName = null;
     protected array $refColumns     = [];
+    protected ?string $onDelete     = null;
+    protected ?string $onUpdate     = null;
 
     public function __construct(string $type = self::TYPE_KEY, ?Database $database = null) {
         parent::__construct($database);
@@ -93,6 +109,24 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
             $this->indexName = $index_name;
         }
 
+        return $this;
+    }
+
+    public function onDelete(string $action): self {
+        $action = strtoupper($action);
+        if (! in_array($action, $this->tableActions)) {
+            throw new EDatabaseError(sprintf('Unsupported ON DELETE action: %s', $action));
+        }
+        $this->onDelete = $action;
+        return $this;
+    }
+
+    public function onUpdate(string $action): self {
+        $action = strtoupper($action);
+        if (! in_array($action, $this->tableActions)) {
+            throw new EDatabaseError(sprintf('Unsupported ON UPDATE action: %s', $action));
+        }
+        $this->onUpdate = $action;
         return $this;
     }
 
@@ -143,7 +177,17 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
         $refTable  = $this->protectIdentifiers($this->refTableName);
         $refColumn = implode(',', $this->protectIdentifiers($this->refColumns));
 
-        return ($indexName ? "CONSTRAINT $indexName " : "") . "FOREIGN KEY ($column) REFERENCES $refTable($refColumn)";
+        $str = ($indexName ? "CONSTRAINT $indexName " : "") . "FOREIGN KEY ($column) REFERENCES $refTable($refColumn)";
+
+        if ($this->onDelete) {
+            $str .= " ON DELETE " . strtoupper($this->onDelete);
+        }
+
+        if ($this->onUpdate) {
+            $str .= " ON UPDATE " . strtoupper($this->onUpdate);
+        }
+
+        return $str;
     }
 
     protected function makeFulltext(): string {

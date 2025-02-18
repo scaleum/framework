@@ -92,7 +92,7 @@ class ColumnBuilder extends BuilderAbstract implements Contracts\ColumnBuilderIn
         'oci'    => Adapters\Oracle\Column::class,
     ];
 
-    public function __construct(string $type = self::TYPE_KEY, mixed $constrain = null, ?Database $database = null) {
+    public function __construct(string $type = self::TYPE_STRING, mixed $constrain = null, ?Database $database = null) {
         parent::__construct($database);
 
         // check if type is supported
@@ -247,11 +247,11 @@ class ColumnBuilder extends BuilderAbstract implements Contracts\ColumnBuilderIn
             return '';
         }
 
-        return "{$this->columnName} ";
+        return "{$this->protectIdentifiers($this->columnName)} ";
     }
 
     protected function makeNotNull(): string {
-        return $this->isNotNull == true ? ' NOT NULL' : ($this->type != static::TYPE_PK && $this->type != static::TYPE_BIGPK ? ' NULL' : '');
+        return $this->type != static::TYPE_PK && $this->type != static::TYPE_BIGPK ? ($this->isNotNull == true ? ' NOT NULL':' NULL') : '';
     }
 
     protected function makeType(): string {

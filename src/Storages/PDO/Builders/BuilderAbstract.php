@@ -32,12 +32,12 @@ abstract class BuilderAbstract extends DatabaseProvider {
         if (! isset(static::$adapters[$driverType])) {
             throw new EDatabaseError(sprintf('Adapter for driver `%s` not found', $driverType));
         }
-        $adapter = static::$adapters[$driverType];
-        if (! is_object($adapter)) {
-            $adapter                       = new $adapter(...$args);
-            static::$adapters[$driverType] = $adapter;
+
+        if (class_exists($className = static::$adapters[$driverType])) {
+            return new $className(...$args);
+        } else {
+            throw new EDatabaseError(sprintf('Adapter class `%s` not found', $className));
         }
-        return $adapter;
     }
 
     public function __construct(?Database $database, bool $prepare = false) {
@@ -195,9 +195,9 @@ abstract class BuilderAbstract extends DatabaseProvider {
     protected function protectIdentifiers(array | string $item, bool $protect = true) {
         if (is_array($item)) {
             $escaped_array = [];
-
-            foreach ($item as $k => $v) {
-                $escaped_array[$this->protectIdentifiers($k)] = $this->protectIdentifiers($v);
+            foreach ($item as $key => $value) {
+                // FIXME: do we need to protect the key?
+                $escaped_array[$this->protectIdentifiers((string)$key)] = $this->protectIdentifiers($value);
             }
 
             return $escaped_array;

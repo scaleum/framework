@@ -21,7 +21,7 @@ use Scaleum\Storages\PDO\Builders\ColumnBuilder;
  */
 class Column extends ColumnBuilder {
 
-    protected $tableTypes = [
+    protected array $tableTypes = [
         self::TYPE_PK          => 'int(%s)%s NOT NULL AUTO_INCREMENT PRIMARY KEY',
         self::TYPE_BIGPK       => 'bigint(%s)%s NOT NULL AUTO_INCREMENT PRIMARY KEY',
         self::TYPE_STRING      => 'varchar(%s)',
@@ -45,7 +45,7 @@ class Column extends ColumnBuilder {
         self::TYPE_JSON        => 'json',
     ];
 
-    protected $tableDefaults = [
+    protected array $tableDefaults = [
         self::TYPE_PK          => 11,
         self::TYPE_BIGPK       => 20,
         self::TYPE_STRING      => 255,

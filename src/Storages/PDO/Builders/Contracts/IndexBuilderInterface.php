@@ -20,5 +20,7 @@ interface IndexBuilderInterface {
     public function name(string $index_name): self;
     public function column(array | string $column): self;
     public function reference(string $tableName, array | string $column): self;
+    public function onDelete(string $action): self;
+    public function onUpdate(string $action): self;
 }
 /** End of IndexBuilderInterface **/
