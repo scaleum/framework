@@ -19,8 +19,7 @@ namespace Scaleum\Storages\PDO\Builders\Contracts;
 interface IndexBuilderInterface {
     public function name(string $index_name): self;
     public function column(array | string $column): self;
-    public function reference(string $tableName, array | string $column): self;
-    public function onDelete(string $action): self;
-    public function onUpdate(string $action): self;
+    public function table(string $table): self;
+    public function reference(string $table, array | string $column, ?string $actionOnDelete = null, ?string $actionOnUpdate = null): self;
 }
 /** End of IndexBuilderInterface **/

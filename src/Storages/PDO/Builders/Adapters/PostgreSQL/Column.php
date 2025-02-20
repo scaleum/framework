@@ -21,7 +21,7 @@ use Scaleum\Storages\PDO\Builders\ColumnBuilder;
 class Column extends ColumnBuilder {
     protected string $identifierQuoteLeft  = '"';
     protected string $identifierQuoteRight = '"';
-    protected $tableTypes                  = [
+    protected array $tableTypes                  = [
         self::TYPE_PK          => 'serial PRIMARY KEY',
         self::TYPE_BIGPK       => 'bigserial PRIMARY KEY',
         self::TYPE_STRING      => 'varchar(%s)',
@@ -45,7 +45,7 @@ class Column extends ColumnBuilder {
         self::TYPE_JSON        => 'jsonb',       // В PostgreSQL лучше использовать jsonb вместо json
     ];
 
-    protected $tableDefaults = [
+    protected array $tableDefaults = [
         self::TYPE_PK          => null, // SERIAL не требует длины
         self::TYPE_BIGPK       => null, // BIGSERIAL тоже
         self::TYPE_STRING      => 255,

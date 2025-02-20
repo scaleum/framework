@@ -133,7 +133,6 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         $this->limit          = 0;
         $this->offset         = 0;
         $this->orderBy        = [];
-        $this->randomKeyword  = '';
         $this->select         = [];
         $this->set            = [];
         $this->tableAliased   = [];

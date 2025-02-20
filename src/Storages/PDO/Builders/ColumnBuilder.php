@@ -12,6 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Storages\PDO\Builders;
 
 use Scaleum\Stdlib\Exceptions\EDatabaseError;
+use Scaleum\Storages\PDO\Builders\Contracts\ColumnBuilderInterface;
 use Scaleum\Storages\PDO\Database;
 
 /**
@@ -19,7 +20,7 @@ use Scaleum\Storages\PDO\Database;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ColumnBuilder extends BuilderAbstract implements Contracts\ColumnBuilderInterface {
+class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
     public const TYPE_PK          = 'pk';
     public const TYPE_BIGPK       = 'bigpk';
     public const TYPE_STRING      = 'string';
@@ -92,15 +93,15 @@ class ColumnBuilder extends BuilderAbstract implements Contracts\ColumnBuilderIn
         'oci'    => Adapters\Oracle\Column::class,
     ];
 
-    public function __construct(string $type = self::TYPE_STRING, mixed $constrain = null, ?Database $database = null) {
-        parent::__construct($database);
-
+    public function __construct(string $type = self::TYPE_STRING, mixed $constrain = null, ?Database $database = null) {        
         // check if type is supported
         if (! $this->mapType($type)) {
             throw new EDatabaseError(sprintf('Column type `%s` is not supported', strtoupper($type)));
         }
         $this->type       = $type;
         $this->constraint = $constrain;
+
+        parent::__construct($database);
     }
 
     /**
@@ -174,7 +175,7 @@ class ColumnBuilder extends BuilderAbstract implements Contracts\ColumnBuilderIn
         return $this->tableTypes[$type] ?? null;
     }
 
-    protected function makeString(): string {
+    protected function makeSQL(): string {
         return
         $this->makeName() .
         $this->makeType() .
@@ -266,46 +267,46 @@ class ColumnBuilder extends BuilderAbstract implements Contracts\ColumnBuilderIn
         return $this->isUnique ? ' UNIQUE' : '';
     }
 
-    /**
-     * Get column size or precision definition. This is what goes into the parenthesis after
-     *
-     * @return  integer|string|array
-     */
-    public function getConstraint(): mixed {
-        return $this->constraint;
-    }
+    // /**
+    //  * Get column size or precision definition. This is what goes into the parenthesis after
+    //  *
+    //  * @return  integer|string|array
+    //  */
+    // public function getConstraint(): mixed {
+    //     return $this->constraint;
+    // }
 
-    /**
-     * Set column size or precision definition. This is what goes into the parenthesis after
-     *
-     * @param  integer|string|array  $constraint  column size or precision definition. This is what goes into the parenthesis after
-     *
-     * @return  self
-     */
-    public function setConstraint(mixed $constraint = null): self {
-        $this->constraint = $constraint;
+    // /**
+    //  * Set column size or precision definition. This is what goes into the parenthesis after
+    //  *
+    //  * @param  integer|string|array  $constraint  column size or precision definition. This is what goes into the parenthesis after
+    //  *
+    //  * @return  self
+    //  */
+    // public function setConstraint(mixed $constraint = null): self {
+    //     $this->constraint = $constraint;
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
-    public function getColumnName(): string {
-        return $this->columnName;
-    }
+    // public function getColumnName(): string {
+    //     return $this->columnName;
+    // }
 
-    public function setColumnName(string $name): self {
-        $this->columnName = $name;
+    // public function setColumnName(string $name): self {
+    //     $this->columnName = $name;
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
-    public function getColumnPrev(): mixed {
-        return $this->columnPrev;
-    }
+    // public function getColumnPrev(): mixed {
+    //     return $this->columnPrev;
+    // }
 
-    public function setColumnPrev(string $name): self {
-        $this->columnPrev = $name;
+    // public function setColumnPrev(string $name): self {
+    //     $this->columnPrev = $name;
 
-        return $this;
-    }
+    //     return $this;
+    // }
 }
 /** End of ColumnBuilder **/

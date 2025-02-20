@@ -21,7 +21,7 @@ use Scaleum\Storages\PDO\Builders\ColumnBuilder;
 class Column extends ColumnBuilder {
     protected string $identifierQuoteLeft  = '"';
     protected string $identifierQuoteRight = '"';
-    protected $tableTypes                  = [
+    protected array $tableTypes                  = [
         self::TYPE_PK          => 'integer PRIMARY KEY AUTOINCREMENT',
         self::TYPE_BIGPK       => 'integer PRIMARY KEY AUTOINCREMENT',
         self::TYPE_STRING      => 'text',
@@ -45,7 +45,7 @@ class Column extends ColumnBuilder {
         self::TYPE_JSON        => 'text', // SQLite не имеет JSON-типа, хранится как text
     ];
 
-    protected $tableDefaults = [
+    protected array $tableDefaults = [
         self::TYPE_PK          => null, // AUTOINCREMENT не требует размера
         self::TYPE_BIGPK       => null,
         self::TYPE_STRING      => 255, // SQLite не имеет VARCHAR(N), но можно указать

@@ -9,7 +9,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Storages\PDO\Builders\Adapters\SQLLite;
+namespace Scaleum\Storages\PDO\Builders\Adapters\SQLite;
 
 use Scaleum\Storages\PDO\Builders\QueryBuilder;
 

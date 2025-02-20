@@ -14,10 +14,10 @@ namespace Scaleum\Storages\PDO;
 use PDO;
 use Scaleum\Cache\Cache;
 use Scaleum\Stdlib\Base\Hydrator;
-use Scaleum\Storages\PDO\Builders\Adapters\SQLServer\Schema;
 use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
 use Scaleum\Storages\PDO\Builders\Contracts\SchemaBuilderInterface;
 use Scaleum\Storages\PDO\Builders\QueryBuilder;
+use Scaleum\Storages\PDO\Builders\SchemaBuilder;
 use Scaleum\Storages\PDO\Exceptions\ESQLError;
 
 /**
@@ -264,7 +264,7 @@ class Database extends Hydrator {
     }
 
     public function getSchemaBuilder(): SchemaBuilderInterface {
-        return Schema::create($this->getPDODriverName(), [$this]);
+        return SchemaBuilder::create($this->getPDODriverName(), [$this]);
     }
 
     protected function __executeInternal(?string $method = null, array $fetchArgs = []) {
@@ -287,7 +287,7 @@ class Database extends Hydrator {
             $this->__afterExecute();
         } catch (\PDOException $e) {
             $errorInfo = $statement->errorInfo();
-            $error     = new ESQLError($errorInfo[2], $errorInfo[1]);
+            $error     = new ESQLError($errorInfo[2], $errorInfo[1] ?? 0);
             if ($errorInfo[0] != $errorInfo[1]) {
                 $error->setSQLState($errorInfo[0]);
             }

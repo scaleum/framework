@@ -20,8 +20,19 @@ use Scaleum\Storages\PDO\Builders\IndexBuilder;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Index extends IndexBuilder {
+    protected string $identifierQuoteLeft  = '"';
+    protected string $identifierQuoteRight = '"';
+    
     protected function makeFulltext(): string {
         throw new EDatabaseError('SQLite does not support fulltext indexes');
     }
+
+    protected function makeForeignKey(): string {
+        // SQLite does not support adding foreign keys to existing tables        
+        if ($this->table !== null) {
+            throw new EDatabaseError('SQLite does not support adding foreign keys to existing tables');
+        }
+        return parent::makeForeignKey();
+    }    
 }
 /** End of Index **/

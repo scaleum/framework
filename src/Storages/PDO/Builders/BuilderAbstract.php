@@ -28,7 +28,7 @@ abstract class BuilderAbstract extends DatabaseProvider {
     protected bool $prepare                = false;
     protected bool $optimize               = true;
 
-    public static function create(string $driverType, array $args = []): self {
+    public static function create(string $driverType, array $args = []): static {
         if (! isset(static::$adapters[$driverType])) {
             throw new EDatabaseError(sprintf('Adapter for driver `%s` not found', $driverType));
         }
@@ -94,7 +94,7 @@ abstract class BuilderAbstract extends DatabaseProvider {
         $sql       = $this->getOptimizedQuery($sql);
         $prettySql = preg_replace(
             [
-                '/\b(FROM|WHERE|GROUP BY|ORDER BY|LIMIT|OFFSET|JOIN|ON|HAVING|VALUES|SET)\b/i',
+                '/\b(FROM|WHERE|GROUP BY|ORDER BY|LIMIT|OFFSET|JOIN|HAVING|VALUES|SET|CREATE|ALTER)\b/i',
                 '/\b(AND|OR|CASE|END)\b/i',
                 '/\b(WHEN|THEN|ELSE)\b/i',
             ],
@@ -121,20 +121,12 @@ abstract class BuilderAbstract extends DatabaseProvider {
         return $result;
     }
 
-    protected function makeArray(): array {
-        return [];
-    }
-
-    protected function makeString(): string {
+    protected function makeSQL(): string {
         return '';
     }
 
-    public function __toArray() {
-        return $this->makeArray();
-    }
-
     public function __toString() {
-        return $this->makeString();
+        return $this->makeSQL();
     }
 
     protected function quote(mixed $value): mixed {

@@ -9,7 +9,7 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Storages\PDO\Builders\Adapters\MySQL;
+namespace Scaleum\Storages\PDO\Builders\Adapters\SQLServer;
 
 use Scaleum\Storages\PDO\Builders\QueryBuilder;
 

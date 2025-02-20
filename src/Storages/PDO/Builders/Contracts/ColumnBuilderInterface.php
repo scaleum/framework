@@ -27,9 +27,9 @@ interface ColumnBuilderInterface
     public function notNull(bool $val = true): self;
     public function unique(bool $val = true): self;
     public function unsigned(bool $val = true): self;
-    public function getColumnName(): string;
-    public function setColumnName(string $name): self;
-    public function getColumnPrev(): mixed;
-    public function setColumnPrev(string $name): self;
+    // public function getColumnName(): string;
+    // public function setColumnName(string $name): self;
+    // public function getColumnPrev(): mixed;
+    // public function setColumnPrev(string $name): self;
 }
 /** End of ColumnBuilderInterface **/

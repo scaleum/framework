@@ -125,13 +125,8 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         return $this->createColumnBuilder(ColumnBuilder::TYPE_TINYINT, min(3, $length));
     }
 
-    public function createColumn(array | string | ColumnBuilderInterface $column, ?string $tableName = null): mixed {
-        if (is_string($column)) {
-            if (strpos($column, ' ') === false) {
-                throw new EDatabaseError('Column information is required for that operation.');
-            }
-            $this->columns[] = $column;
-        } elseif ($column instanceof ColumnBuilderInterface) {
+    public function createColumn(array | ColumnBuilderInterface $column, ?string $tableName = null): mixed {
+        if ($column instanceof ColumnBuilderInterface) {
             $this->columns[] = $column;
         } elseif (is_array($column)) {
             $this->columns = array_merge($this->columns, $column);
@@ -141,19 +136,19 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
             return $this;
         }
 
-        $sql = $this->makeAlterTableColumns('ADD', $tableName, $this->columns);
+        $sql = $this->makeAlterTableAddColumns($tableName, $this->columns);
 
         return $this->execute($sql);
     }
 
-    public function createDatabase(string $database, bool $ifNotExists = true, ?string $charSet = null, ?string $collate = null): mixed {
+    public function createDatabase(string $database, bool $ifNotExists = false, ?string $charSet = null, ?string $collate = null): mixed {
         $sql = $this->makeCreateDatabase($database, $ifNotExists, $charSet, $collate);
 
         return $this->execute($sql);
     }
 
-    public function createIndex(array | string | IndexBuilderInterface $key, ?string $tableName = null): mixed {
-        if (is_string($key) || $key instanceof IndexBuilderInterface) {
+    public function createIndex(array | IndexBuilderInterface $key, ?string $tableName = null): mixed {
+        if ($key instanceof IndexBuilderInterface) {
             $this->keys[] = $key;
         } elseif (is_array($key)) {
             $this->keys = array_merge($this->keys, $key);
@@ -163,12 +158,11 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
             return $this;
         }
 
-        $sql = $this->makeAlterTableKeys('ADD', $tableName, $this->keys);
-
+        $sql = $this->makeCreateTableIndexes($tableName, $this->keys);
         return $this->execute($sql);
     }
 
-    public function createTable(string $tableName, bool $ifNotExists = true): mixed {
+    public function createTable(string $tableName, bool $ifNotExists = false): mixed {
         if (empty($tableName)) {
             throw new EDatabaseError('A table name is required for that operation.');
         }
@@ -182,8 +176,8 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         return $this->execute($sql);
     }
 
-    public function describeTable(string $tableName): mixed {
-        $sql = $this->makeDescribeTable($tableName);
+    public function showTable(string $tableName): mixed {
+        $sql = $this->makeShowTable($tableName);
 
         return $this->realize($sql, [], 'fetchAll');
     }
@@ -195,12 +189,12 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
             $this->columns = array_merge($this->columns, $column);
         }
 
-        $sql = $this->makeAlterTableColumns('DROP', $tableName, $this->columns);
+        $sql = $this->makeAlterTableDropColumns($tableName, $this->columns);
 
         return $this->execute($sql);
     }
 
-    public function dropDatabase(string $database, bool $ifExists = true): mixed {
+    public function dropDatabase(string $database, bool $ifExists = false): mixed {
         $sql = $this->makeDropDatabase($database, $ifExists);
 
         return $this->execute($sql);
@@ -218,7 +212,7 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         return $this->execute($sql);
     }
 
-    public function dropTable(string $tableName, bool $ifExists = true): mixed {
+    public function dropTable(string $tableName, bool $ifExists = false): mixed {
         $sql = $this->makeDropTable($tableName, $ifExists);
 
         return $this->execute($sql);
@@ -231,7 +225,7 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
     }
 
     public function index(array | string $column, ?string $indexName = null): IndexBuilderInterface {
-        return $this->createIndexBuilder(IndexBuilder::TYPE_KEY, $column, $indexName);
+        return $this->createIndexBuilder(IndexBuilder::TYPE_INDEX, $column, $indexName);
     }
 
     public function indexFulltext(array | string $column, ?string $indexName = null): IndexBuilderInterface {
@@ -258,7 +252,7 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
             $this->columns = array_merge($this->columns, $column);
         }
 
-        $sql = $this->makeAlterTableColumns('MODIFY', $tableName, $this->columns);
+        $sql = $this->makeAlterTableModifyColumns($tableName, $this->columns);
 
         return $this->execute($sql);
     }
@@ -299,16 +293,21 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         return $this->realize($sql, [], 'fetchAll');
     }
 
+    protected function makeAlterTableAddColumns(string $tableName, array $columns = []): string {
+        return $this->makeAlterTableColumns('ADD', $tableName, $columns);
+    }
+
+    protected function makeAlterTableModifyColumns(string $tableName, array $columns = []): string {
+        return $this->makeAlterTableColumns('MODIFY', $tableName, $columns);
+    }
+
+    protected function makeAlterTableDropColumns(string $tableName, array $columns = []): string {
+        return $this->makeAlterTableColumns('DROP', $tableName, $columns);
+    }
+
     protected function makeAlterTableColumns(string $alterSpec, string $tableName, array $columns = []): string {
         $alterSpec = strtoupper($alterSpec);
         $sql       = sprintf('ALTER TABLE %s %s;', $this->protectIdentifiers($tableName), $this->makeColumns($columns, $alterSpec));
-
-        return $sql;
-    }
-
-    protected function makeAlterTableKeys(string $alterSpec, string $tableName, array $keys = []): string {
-        $alterSpec = strtoupper($alterSpec);
-        $sql       = sprintf('ALTER TABLE %s %s;', $this->protectIdentifiers($tableName), $this->makeKeys($keys, $alterSpec));
 
         return $sql;
     }
@@ -319,90 +318,27 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         return $sql;
     }
 
-    protected function makeColumn(array | string $column, array $attributes = [], ?string $alterSpec = null) {
-        $sql = "\n\t";
-
-        if ($alterSpec != null) {
-            $sql .= "$alterSpec ";
-        }
-
-        $sql .= $this->protectIdentifiers($column);
-
-        if ($alterSpec != null && strstr($alterSpec, 'DROP') !== false) {
-            return $sql;
-        }
-
-        if (is_array($attributes) && ! empty($attributes)) {
-
-            $attributes = array_change_key_case($attributes, CASE_UPPER);
-
-            if (array_key_exists('NAME', $attributes)) {
-                $sql .= ' ' . $this->protectIdentifiers($attributes['NAME']) . ' ';
+    protected function makeCreateTableIndexes(string $tableName, array $indexes = []): string {
+        foreach ($indexes as $index) {
+            if ($index instanceof IndexBuilderInterface) {
+                $index->table($tableName);
             }
-
-            if (array_key_exists('TYPE', $attributes)) {
-                $sql .= ' ' . $attributes['TYPE'];
-
-                if (array_key_exists('CONSTRAINT', $attributes)) {
-                    switch ($attributes['TYPE']) {
-                    case 'decimal':
-                    case 'float':
-                    case 'numeric':
-                        $sql .= '(' . implode(',', $attributes['CONSTRAINT']) . ')';
-                        break;
-
-                    case 'enum':
-                    case 'set':
-                        $sql .= '("' . implode('","', $attributes['CONSTRAINT']) . '")';
-                        break;
-
-                    default:
-                        $sql .= '(' . $attributes['CONSTRAINT'] . ')';
-                    }
-                }
-
-                if (array_key_exists('UNSIGNED', $attributes) && $attributes['UNSIGNED'] === true) {
-                    $sql .= ' UNSIGNED';
-                }
-
-                if (array_key_exists('DEFAULT', $attributes)) {
-                    $sql .= ' DEFAULT \'' . $attributes['DEFAULT'] . '\'';
-                }
-
-                if (array_key_exists('NULL', $attributes) && $attributes['NULL'] === true) {
-                    $sql .= ' NULL';
-                } else {
-                    $sql .= ' NOT NULL';
-                }
-
-                if (array_key_exists('AUTO_INCREMENT', $attributes) && $attributes['AUTO_INCREMENT'] === true) {
-                    $sql .= ' AUTO_INCREMENT PRIMARY KEY';
-                }
-            }
-        } elseif ($attributes instanceof ColumnBuilderInterface) {
-            $sql .= ' ' . $this->protectIdentifiers($attributes);
         }
 
-        return $sql;
+        return $this->makeIndexes($indexes, ";") . ";";
     }
 
     protected function makeColumns(array $columns, ?string $alterSpec = null) {
         $columns_count = 0;
         $sql           = '';
 
-        foreach ($columns as $column => $definition) {
-            // Numeric field names aren't allowed in databases, so if the key is
-            // numeric, we know it was assigned by PHP and the developer manually
-            // entered the field information, so we'll simply add it to the list
-            if (is_numeric($column)) {
-                if($definition instanceof ColumnBuilderInterface){
-                    $definition = (string)$definition;
-                }
-
-                $sql .= $this->makeColumn($definition, [], $alterSpec);
-            } else {
-                $sql .= $this->makeColumn($column, $definition, $alterSpec);
+        foreach ($columns as $column) {
+            if ($column instanceof ColumnBuilderInterface) {
+                $column = (string) $column;
             }
+
+            $sql .= "\n\t$alterSpec ";
+            $sql .= $this->protectIdentifiers($column);
 
             // don't add a comma on the end of the last field
             if (++$columns_count < count($columns)) {
@@ -438,21 +374,17 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
     }
 
     protected function makeCreateTable(string $tableName, array $columns, array $keys, bool $ifNotExists = true): string {
-        $sql = 'CREATE TABLE ';
+        $result = 'CREATE TABLE ';
 
         if ($ifNotExists === true) {
-            $sql .= 'IF NOT EXISTS ';
+            $result .= 'IF NOT EXISTS ';
         }
 
-        $sql .= $this->quoteIdentifier($tableName) . " (";
-        $sql .= $this->makeColumns($columns);
-        $sql .= $this->makeKeys($keys);
-        $sql .= ");";
-
-        return $sql;
+        $result .= $this->quoteIdentifier($tableName) . " (" . $this->makeColumns($columns) . (! empty($indexes = $this->makeIndexes($keys)) ? ", $indexes" : "") . ");";
+        return $result;
     }
 
-    protected function makeDescribeTable(string $tableName): string {
+    protected function makeShowTable(string $tableName): string {
         return "DESCRIBE $tableName";
     }
 
@@ -498,80 +430,32 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         return "$sql;\n";
     }
 
-    protected function makeKey(array|IndexBuilderInterface $key, ?string $alterSpec = null) {
-        $sql = "\n\t";
-
-        if ($alterSpec != null) {
-            $sql .= "$alterSpec ";
-        }
-
-        // if key is array
-        if (is_array($key)) {
-            $attributes = array_change_key_case($key, CASE_UPPER);
-
-            $column = [];
-            if (array_key_exists('COLUMN', $attributes)) {
-                if (is_array($attributes['COLUMN'])) {
-                    $column = $attributes['COLUMN'];
-                } elseif (is_string($attributes['COLUMN'])) {
-                    $column[] = $attributes['COLUMN'];
-                }
-            }
-
-            $indexName = implode('_', $column);
-            if (array_key_exists('INDEXNAME', $attributes)) {
-                $indexName = $attributes['INDEXNAME'];
-            }
-
-            $type      = 'INDEX';
-            $isPrimary = false;
-            if (array_key_exists('TYPE', $attributes)) {
-                if (strpos('PRIMARY', strtoupper($attributes['TYPE'])) === true || strtoupper($attributes['TYPE']) == 'PRIMARY') {
-                    $type      = 'PRIMARY KEY';
-                    $isPrimary = true;
-                } else {
-                    $type = strtoupper($attributes['TYPE']);
-                }
-            }
-
-            $indexName = $this->protectIdentifiers($indexName);
-            $column    = $this->protectIdentifiers($column);
-
-            $sql .= ' ' . $type . ($isPrimary != true ? ' ' . $indexName : '') . ' (' . implode(',', $column) . ')';
-        }
-        elseif ($key instanceof IndexBuilderInterface) {
-            $sql .= " ".(string)$key;
-        }
-
-        return $sql;
-    }
-
-    protected function makeKeys(array $keys, ?string $alterSpec = null) {
+    protected function makeIndexes(array $indexes, string $delimiter = ',') {
         $keys_count = 0;
         $sql        = '';
 
-        foreach ($keys as $key => $attributes) {
-            if (is_numeric($key)) {
-                $sql .= $this->makeKey($attributes, $alterSpec);
-            } else {
-                $sql .= $this->makeKey($key, $alterSpec);
+        foreach ($indexes as $index) {
+            if (! $index instanceof IndexBuilderInterface) {
+                throw new EDatabaseError(sprintf('Index must be an instance of `%s`, given `$s`', IndexBuilderInterface::class, gettype($index)));
             }
 
+            $sql .= " " . (string) $index;
+
             // don't add a comma on the end of the last field
-            if (++$keys_count < count($keys)) {
-                $sql .= ',';
+            if (++$keys_count < count($indexes)) {
+                $sql .= $delimiter;
             }
         }
 
-        return ($alterSpec == null && $keys_count > 0 ? ",\n\t" : "") . $sql;
+        return $sql;
     }
 
     protected function makeShowDatabases(): string {
         return 'SHOW DATABASES';
     }
 
-    protected function makeShowIndexes(string $table_name, ?string $database = null): string {
-        $sql = "SHOW INDEX FROM $table_name";
+    protected function makeShowIndexes(string $tableName, ?string $database = null): string {
+        $sql = "SHOW INDEX FROM $tableName";
         if (is_string($database)) {
             $sql .= " FROM $database";
         }
@@ -593,11 +477,60 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
     }
 
     protected function createIndexBuilder(string $type, mixed $column, ?string $index_name = null): IndexBuilderInterface {
-        return IndexBuilder::create($this->getDatabase()->getPDODriverName(), [$type, $column, $index_name, $this->getDatabase()]);
+        return IndexBuilder::create($this->getDatabase()->getPDODriverName(), [$type, $column, $index_name, null, $this->getDatabase()]);
+    }
+
+    protected function splitSQLStatements(string $sql): array {
+        $statements      = [];
+        $buffer          = '';
+        $inString        = false;
+        $stringDelimiter = null;
+
+        for ($i = 0, $len = strlen($sql); $i < $len; $i++) {
+            $char = $sql[$i];
+
+            // Проверяем, не открыта ли строка
+            if ($inString) {
+                if ($char === $stringDelimiter) {
+                    // Проверяем, не экранирована ли кавычка
+                    if ($i + 1 < $len && $sql[$i + 1] === $stringDelimiter) {
+                        $buffer .= $char; // Двойная кавычка внутри строки
+                        $i++;
+                    } else {
+                        $inString = false; // Закрываем строку
+                    }
+                }
+            } elseif ($char === "'" || $char === '"') {
+                $inString        = true;
+                $stringDelimiter = $char;
+            } elseif ($char === ';') {
+                // Разделяем по `;`, если не внутри строки
+                $statements[] = trim($buffer);
+                $buffer       = '';
+                continue;
+            }
+
+            $buffer .= $char;
+        }
+
+        if (! empty(trim($buffer))) {
+            $statements[] = trim($buffer);
+        }
+
+        return $statements;
     }
 
     protected function execute($sql): mixed {
-        return $this->realize($sql, [], 'execute');
+        $queries = $this->splitSQLStatements($sql);
+        $result  = [];
+        foreach ($queries as $query) {
+            if (empty($query)) {
+                continue;
+            }
+
+            $result[] = $this->realize($query, [], 'execute');
+        }
+        return $result;
     }
 
     protected function flush(): self {

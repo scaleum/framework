@@ -21,7 +21,7 @@ use Scaleum\Storages\PDO\Builders\ColumnBuilder;
 class Column extends ColumnBuilder {
     protected string $identifierQuoteLeft  = "[";
     protected string $identifierQuoteRight = "]";
-    protected $tableTypes                  = [
+    protected array $tableTypes                  = [
         self::TYPE_PK          => 'int NOT NULL IDENTITY(1,1) PRIMARY KEY',
         self::TYPE_BIGPK       => 'bigint NOT NULL IDENTITY(1,1) PRIMARY KEY',
         self::TYPE_STRING      => 'nvarchar(%s)',
@@ -44,7 +44,7 @@ class Column extends ColumnBuilder {
         self::TYPE_MONEY       => 'money',
         self::TYPE_JSON        => 'nvarchar(MAX)', // SQL Server имеет JSON, но тип отдельный не нужен
     ];
-    protected $tableDefaults = [
+    protected array $tableDefaults = [
         self::TYPE_PK          => null, // IDENTITY не требует размера
         self::TYPE_BIGPK       => null,
         self::TYPE_STRING      => 255,

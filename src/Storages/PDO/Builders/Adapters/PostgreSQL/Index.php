@@ -22,8 +22,17 @@ use Scaleum\Storages\PDO\Builders\IndexBuilder;
  */
 class Index extends IndexBuilder
 {
+    protected string $identifierQuoteLeft  = '"';
+    protected string $identifierQuoteRight = '"';
     protected function makeFulltext(): string {
         throw new EDatabaseError('PostgreSQL does not support fulltext indexes');
+    }
+
+    protected function makeIndex(): string{
+        if ($this->table === null){
+            throw new EDatabaseError('Table name is not defined');
+        }
+        return parent::makeIndex();
     }
 }
 /** End of Index **/
