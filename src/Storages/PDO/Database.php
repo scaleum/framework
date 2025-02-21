@@ -29,14 +29,15 @@ class Database extends Hydrator {
     protected string $dsn;
     protected string $user;
     protected string $password;
-    private bool $connected        = false;
-    protected array $options       = [];
-    private ?PDO $pdo              = null;
-    protected ?Cache $cache        = null;
-    private int $queryCounter      = 0;
-    private array $queryParams     = [];
-    private int $queryRowsAffected = 0;
-    private string $queryStr       = '';
+    protected bool $multipleCommands = false;
+    private bool $connected          = false;
+    protected array $options         = [];
+    private ?PDO $pdo                = null;
+    protected ?Cache $cache          = null;
+    private int $queryCounter        = 0;
+    private array $queryParams       = [];
+    private int $queryRowsAffected   = 0;
+    private string $queryStr         = '';
 
     public function begin(): bool {
         return $this->getPDO()->beginTransaction();
@@ -59,7 +60,7 @@ class Database extends Hydrator {
      */
     public function getPDO(): PDO {
         if (! $this->connected || $this->pdo === null) {
-            $this->__connect();
+            $this->connect();
         }
         return $this->pdo;
     }
@@ -239,18 +240,60 @@ class Database extends Hydrator {
         return $this;
     }
 
+    public function splitSQL(string $sql): array {
+        $statements      = [];
+        $buffer          = '';
+        $inString        = false;
+        $stringDelimiter = null;
+
+        for ($i = 0, $len = strlen($sql); $i < $len; $i++) {
+            $char = $sql[$i];
+
+            // Проверяем, не открыта ли строка
+            if ($inString) {
+                if ($char === $stringDelimiter) {
+                    // Проверяем, не экранирована ли кавычка
+                    if ($i + 1 < $len && $sql[$i + 1] === $stringDelimiter) {
+                        $buffer .= $char; // Двойная кавычка внутри строки
+                        $i++;
+                    } else {
+                        $inString = false; // Закрываем строку
+                    }
+                }
+            } elseif ($char === "'" || $char === '"') {
+                $inString        = true;
+                $stringDelimiter = $char;
+            } elseif ($char === ';') {
+                // Разделяем по `;`, если не внутри строки
+                $statements[] = trim($buffer);
+                $buffer       = '';
+                continue;
+            }
+
+            $buffer .= $char;
+        }
+
+        if (! empty(trim($buffer))) {
+            $statements[] = trim($buffer);
+        }
+
+        return $statements;
+    }
+
     public function execute() {
-        return $this->__executeInternal(null);
+        return $this->executeInternal();
     }
+
     public function fetch(array $args = []) {
-        return $this->__executeInternal('fetch', $args);
+        return $this->executeInternal(null, [], 'fetch', $args);
     }
+
     public function fetchAll(array $args = []) {
-        return $this->__executeInternal('fetchAll', $args);
+        return $this->executeInternal(null, [], 'fetchAll', $args);
     }
 
     public function fetchColumn(array $args = []) {
-        return $this->__executeInternal('fetchColumn', $args);
+        return $this->executeInternal(null, [], 'fetchColumn', $args);
     }
 
     public function getQueryBuilder(): QueryBuilderInterface {
@@ -261,8 +304,17 @@ class Database extends Hydrator {
         return SchemaBuilder::create($this->getPDODriverName(), [$this]);
     }
 
-    protected function __executeInternal(?string $method = null, array $fetchArgs = []) {
-        $sql = $this->getSql();
+    public function getMultipleCommands() {
+        return $this->multipleCommands;
+    }
+
+    public function setMultipleCommands(bool $bool) {
+        $this->multipleCommands = $bool;
+        return $this;
+    }
+
+    protected function executeInternal(?string $query = null, array $params = [], ?string $method = null, array $fetchArgs = []) {
+        $sql = $this->getSQL($query, $params);
         if ($this->getCache()->isEnabled() && $this->isCacheable($sql)) {
             $cacheKey = $this->getCacheKey($sql, $method, $this->getSignature());
             if ($cached = $this->getCache()->get($cacheKey)) {
@@ -270,37 +322,60 @@ class Database extends Hydrator {
             }
         }
 
-        $statement = $this->getPDO()->prepare($sql);
-        try {
-            $this->__beforeExecute();
-            $statement->execute();
-            $result                  = empty($method) ? $statement->rowCount() : call_user_func_array([$statement, $method], $fetchArgs);
-            $this->queryRowsAffected = is_array($result) ? count($result) : $statement->rowCount();
-            $statement->closeCursor();
-            $this->__afterExecute();
-        } catch (\PDOException $err) {
-            $errorInfo = $statement->errorInfo();
-            $error     = new ESQLError($errorInfo[2], $errorInfo[1] ?? 0);
-            if ($errorInfo[0] != $errorInfo[1]) {
-                $error->setSQLState($errorInfo[0]);
-            }
+        if ($this->getMultipleCommands()) {
+            $statements = $this->splitSQL($sql);
+            if (count($statements) > 1) {
+                $result = [];
+                foreach ($statements as $statement) {
+                    if (empty($statement)) {
+                        continue;
+                    }
 
-            throw $error;
+                    $result[] = $this->executeInternal($statement, [], $method, $fetchArgs);
+                }
+                unset($statements);
+                return $result;
+            }
+            unset($statements);
         }
 
-        if ($this->getCache()->isEnabled() && isset($cacheKey)) {
-            $this->getCache()->save($cacheKey, $result);
+        $result = false;
+        if (!empty($sql) && $statement = $this->getPDO()->prepare($sql)) {
+            try {
+                $this->beforeExecute();
+                $statement->execute();
+                $result                  = empty($method) ? $statement->rowCount() : call_user_func_array([$statement, $method], $fetchArgs);
+                $this->queryRowsAffected = is_array($result) ? count($result) : $statement->rowCount();
+                $statement->closeCursor();
+                $this->afterExecute();
+            } catch (\PDOException $err) {
+                $errorInfo = $statement->errorInfo();
+                $error     = new ESQLError($errorInfo[2], $errorInfo[1] ?? 0);
+                if ($errorInfo[0] != $errorInfo[1]) {
+                    $error->setSQLState($errorInfo[0]);
+                }
+
+                throw $error;
+            }
+
+            if ($this->getCache()->isEnabled() && isset($cacheKey)) {
+                $this->getCache()->save($cacheKey, $result);
+            }
         }
 
         return $result;
     }
 
-    protected function __connect(): bool {
+    protected function connect(): bool {
         if ($this->connected) {
             return true;
         }
         try {
             $this->pdo = new PDO($this->dsn, $this->user, $this->password, $this->options);
+
+            /**
+             * Set the PDO default attributes, if they not already set.
+             */
             $this->pdo->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, true);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
@@ -324,7 +399,7 @@ class Database extends Hydrator {
         return $this->connected;
     }
 
-    protected function __disconnect() {
+    protected function disconnect() {
         $this->pdo       = null;
         $this->connected = false;
     }
@@ -385,7 +460,7 @@ class Database extends Hydrator {
     //     }
     // }
 
-    private function __beforeExecute() {
+    private function beforeExecute() {
         $this->queryCounter++;
 
         // if ($this->logging == true) {
@@ -394,7 +469,7 @@ class Database extends Hydrator {
         // }
     }
 
-    private function __afterExecute() {
+    private function afterExecute() {
         // if ($this->logging == true) {
         //     $index = $this->queryCounter;
         //     $this->benchmark->stop( $key = 'query'.$index.'_execute' );

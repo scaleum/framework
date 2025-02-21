@@ -480,59 +480,7 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         return IndexBuilder::create($this->getDatabase()->getPDODriverName(), [$type, $column, $index_name, null, $this->getDatabase()]);
     }
 
-    protected function splitSQLStatements(string $sql): array {
-        $statements      = [];
-        $buffer          = '';
-        $inString        = false;
-        $stringDelimiter = null;
-
-        for ($i = 0, $len = strlen($sql); $i < $len; $i++) {
-            $char = $sql[$i];
-
-            // Проверяем, не открыта ли строка
-            if ($inString) {
-                if ($char === $stringDelimiter) {
-                    // Проверяем, не экранирована ли кавычка
-                    if ($i + 1 < $len && $sql[$i + 1] === $stringDelimiter) {
-                        $buffer .= $char; // Двойная кавычка внутри строки
-                        $i++;
-                    } else {
-                        $inString = false; // Закрываем строку
-                    }
-                }
-            } elseif ($char === "'" || $char === '"') {
-                $inString        = true;
-                $stringDelimiter = $char;
-            } elseif ($char === ';') {
-                // Разделяем по `;`, если не внутри строки
-                $statements[] = trim($buffer);
-                $buffer       = '';
-                continue;
-            }
-
-            $buffer .= $char;
-        }
-
-        if (! empty(trim($buffer))) {
-            $statements[] = trim($buffer);
-        }
-
-        return $statements;
-    }
-
     protected function execute($sql): mixed {
-        // $queries = $this->splitSQLStatements($sql);
-        // $result  = [];
-        // foreach ($queries as $query) {
-        //     // Ignore empty queries, such as a blank line or a comment
-        //     if (empty($query)) {
-        //         continue;
-        //     }
-
-        //     $result[] = $this->realize($query, [], 'execute');
-        // }
-        // return $result;
-
         return $this->realize($sql, [], 'execute');
     }
 

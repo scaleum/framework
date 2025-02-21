@@ -685,7 +685,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             $field = [$field => $match];
         }
 
-        foreach ($field as $k => $v) {
+        foreach ($field as $key => $value) {
             switch ($this->hasBrackets()) {
             case true:
                 $prefix = $type;
@@ -705,14 +705,11 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                 break;
             }
 
-            $k = $this->protectIdentifiers($k);
-            $v = $this->quoteValue($v, $side != 'none');
-
-            $statement = match ($side) {
-                'none' => $prefix . " $k $not LIKE '{$v}'",
-                'before' => $prefix . " $k $not LIKE '%{$v}'",
-                'after' => $prefix . " $k $not LIKE '{$v}%'",
-                default => $prefix . " $k $not LIKE '%{$v}%'",
+            $statement = match (strtolower($side)) {
+                'none'      => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote($value)}",
+                'before'    => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote("%$value")}",
+                'after'     => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote("$value%")}",
+                default     => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote("%$value%")}",
             };
 
             if ($this->hasBrackets()) {
@@ -920,7 +917,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             $field = [$field => $value];
         }
 
-        foreach ($field as $k => $v) {
+        foreach ($field as $key => $value) {
             switch ($this->hasBrackets()) {
             case true:
                 $prefix = $type;
@@ -940,25 +937,26 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                 break;
             }
 
-            if ($v === NULL && ! $this->hasOperator($k)) {
+            if ($value === NULL && ! $this->hasOperator($key)) {
                 // value appears not to have been set, assign the test to IS NULL
-                $k .= " IS NULL";
+                $key .= " IS NULL";
             }
 
-            if ($v !== NULL) {
+            if ($value !== NULL) {
+                $key = $this->protectIdentifiers($key);
                 if ($quoting === true) {
-                    $k = $this->protectIdentifiers($k, $quoting);
-                    $v = ' ' . $this->quote($v);
+                    // $key = $this->protectIdentifiers($key, $quoting);
+                    $value = ' ' . $this->quote($value);
                 }
 
-                if (! $this->hasOperator($k)) {
-                    $k .= " = ";
+                if (! $this->hasOperator($key)) {
+                    $key .= " = ";
                 }
             } else {
-                $k = $this->protectIdentifiers($k, $quoting);
+                $key = $this->protectIdentifiers($key, $quoting);
             }
 
-            $statement = "$prefix$k$v";
+            $statement = "$prefix$key$value";
 
             if ($this->hasBrackets()) {
                 $this->bracketsAccept($statement);

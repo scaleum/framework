@@ -22,6 +22,9 @@ use Scaleum\Storages\PDO\Builders\IndexBuilder;
  */
 class Index extends IndexBuilder
 {
+    protected string $identifierQuoteLeft  = '"';
+    protected string $identifierQuoteRight = '"';
+    
     protected function makeFulltext(): string {
         throw new EDatabaseError('Oracle does not support fulltext indexes');
     }

@@ -21,6 +21,9 @@ use Scaleum\Storages\PDO\Builders\QueryBuilder;
  */
 class Query extends QueryBuilder
 {
+    protected string $identifierQuoteLeft  = '"';
+    protected string $identifierQuoteRight = '"';
+    
     protected function makeLimit(string $sql, int $limit, int $offset): string {
         $normalizedSql = strtoupper(preg_replace('/\s+/', ' ', trim($sql)));
         if (preg_match('/^(UPDATE|DELETE|INSERT)\s/i', $normalizedSql, $matches)){

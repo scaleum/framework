@@ -21,6 +21,7 @@ use Scaleum\Storages\PDO\Builders\IndexBuilder;
  */
 class Index extends IndexBuilder
 {
-
+    protected string $identifierQuoteLeft  = "[";
+    protected string $identifierQuoteRight = "]";
 }
 /** End of Index **/

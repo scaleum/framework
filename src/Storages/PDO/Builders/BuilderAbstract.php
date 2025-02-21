@@ -14,6 +14,7 @@ namespace Scaleum\Storages\PDO\Builders;
 use Scaleum\Stdlib\Exceptions\EDatabaseError;
 use Scaleum\Storages\PDO\Database;
 use Scaleum\Storages\PDO\DatabaseProvider;
+use Scaleum\Storages\PDO\Helpers\DatabaseHelper;
 
 /**
  * BuilderAbstract
@@ -107,7 +108,7 @@ abstract class BuilderAbstract extends DatabaseProvider {
         );
 
         return trim($prettySql);
-    }    
+    }
 
     protected function realize(string $sql, array $params = [], string $method = 'execute', array $args = []): mixed {
         if (! method_exists($db = $this->getDatabase(), $method)) {
@@ -116,6 +117,7 @@ abstract class BuilderAbstract extends DatabaseProvider {
 
         $sql    = ($this->optimize == FALSE) ? $this->getPrettyQuery($sql) : $this->getOptimizedQuery($sql);
         $result = ($this->prepare == TRUE) ? $sql : $db->setSQL($sql, $params)->$method($args);
+
         $this->flush();
 
         return $result;
@@ -130,18 +132,7 @@ abstract class BuilderAbstract extends DatabaseProvider {
     }
 
     protected function quote(mixed $value): mixed {
-        if (is_string($value)) {
-            $value = trim($value, "'");
-            $value = "'" . $this->quoteValue($value) . "'";
-        } elseif (is_numeric($value)) {
-            $value = "'$value'";
-        } elseif (is_bool($value)) {
-            $value = ($value === false) ? 0 : 1;
-        } elseif ($value === NULL) {
-            $value = 'NULL';
-        }
-
-        return $value;
+        return DatabaseHelper::quote($this->getDatabase()->getPDO(), $value);
     }
 
     protected function quoteIdentifier(string $identifier): string {
@@ -169,26 +160,12 @@ abstract class BuilderAbstract extends DatabaseProvider {
         return implode(".", $identifier);
     }
 
-    protected function quoteValue(string $value, bool $like = false): string {
-        // escape LIKE condition wildcards
-        if ($like === true) {
-            $value = str_replace(['%', '_'], ['\\%', '\\_'], $value);
-        }
-
-        // escape default
-        if (! empty($value) && is_string($value)) {
-            $value = str_replace(['\\', "\0", "\n", "\r", "'", '"', "\x1a"], ['\\\\', '\\0', '\\n', '\\r', "\\'", '\\"', '\\Z'], $value);
-        }
-
-        return $value;
-    }
-
     protected function protectIdentifiers(array | string $item, bool $protect = true) {
         if (is_array($item)) {
             $result = [];
             foreach ($item as $key => $value) {
                 // [x] We don't need to protect keys, they are not used in SQL queries
-                // $escaped_array[$this->protectIdentifiers((string)$key)] = $this->protectIdentifiers($value);
+                // $result[$this->protectIdentifiers((string)$key)] = $this->protectIdentifiers($value);
 
                 $result[$key] = $this->protectIdentifiers($value);
             }
