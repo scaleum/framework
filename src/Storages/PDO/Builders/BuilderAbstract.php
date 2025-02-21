@@ -185,13 +185,15 @@ abstract class BuilderAbstract extends DatabaseProvider {
 
     protected function protectIdentifiers(array | string $item, bool $protect = true) {
         if (is_array($item)) {
-            $escaped_array = [];
+            $result = [];
             foreach ($item as $key => $value) {
-                // FIXME: do we need to protect the key?
-                $escaped_array[$this->protectIdentifiers((string)$key)] = $this->protectIdentifiers($value);
+                // [x] We don't need to protect keys, they are not used in SQL queries
+                // $escaped_array[$this->protectIdentifiers((string)$key)] = $this->protectIdentifiers($value);
+
+                $result[$key] = $this->protectIdentifiers($value);
             }
 
-            return $escaped_array;
+            return $result;
         }
 
         // Convert tabs or multiple spaces into single spaces

@@ -19,6 +19,7 @@ use Scaleum\Storages\PDO\Builders\Contracts\SchemaBuilderInterface;
 use Scaleum\Storages\PDO\Builders\QueryBuilder;
 use Scaleum\Storages\PDO\Builders\SchemaBuilder;
 use Scaleum\Storages\PDO\Exceptions\ESQLError;
+use Scaleum\Storages\PDO\Helpers\DatabaseHelper;
 
 /**
  * Database
@@ -204,8 +205,8 @@ class Database extends Hydrator {
 
         if (count($params) > 0) {
             foreach ($params as $key => $value) {
-                $pattern = is_integer($key) ? ':' . ($key + 1) : $key;
-                $sql     = str_replace($pattern, (string) $value, $sql);
+                $pattern = '/:' . preg_quote(trim(is_integer($key) ? $key + 1 : $key, " \n\r\t\v\x00\:"), '/') . '\b/';
+                $sql     = preg_replace($pattern, DatabaseHelper::quote($this->getPDO(), $value), $sql);
             }
         }
 
@@ -219,24 +220,17 @@ class Database extends Hydrator {
      * @param array $params Optional. An associative array of parameters to bind to the SQL query.
      */
     public function setSQL(string $sql, array $params = []) {
-
-        foreach ($params as $key => &$value) {
+        foreach ($params as &$value) {
             if (is_array($value)) {
                 $array  = array_values($value);
                 $pieces = [];
                 array_walk($array, function ($element) use (&$pieces) {
-                    if (is_scalar($element)) {
-                        $pieces[] = $this->getPDO()->quote($element);
-                    }
+                    $pieces[] = DatabaseHelper::quote($this->getPDO(), $element);
                 });
-
                 $value = join(',', $pieces);
-            } elseif (is_string($value)) {
-                $value = $this->getPDO()->quote($value);
             } else {
-                continue;
+                $value = DatabaseHelper::quote($this->getPDO(), $value);
             }
-
         }
 
         $this->queryStr    = $sql;
@@ -269,7 +263,6 @@ class Database extends Hydrator {
 
     protected function __executeInternal(?string $method = null, array $fetchArgs = []) {
         $sql = $this->getSql();
-
         if ($this->getCache()->isEnabled() && $this->isCacheable($sql)) {
             $cacheKey = $this->getCacheKey($sql, $method, $this->getSignature());
             if ($cached = $this->getCache()->get($cacheKey)) {
@@ -277,7 +270,7 @@ class Database extends Hydrator {
             }
         }
 
-        $statement = $this->__prepare($sql, []);
+        $statement = $this->getPDO()->prepare($sql);
         try {
             $this->__beforeExecute();
             $statement->execute();
@@ -285,7 +278,7 @@ class Database extends Hydrator {
             $this->queryRowsAffected = is_array($result) ? count($result) : $statement->rowCount();
             $statement->closeCursor();
             $this->__afterExecute();
-        } catch (\PDOException $e) {
+        } catch (\PDOException $err) {
             $errorInfo = $statement->errorInfo();
             $error     = new ESQLError($errorInfo[2], $errorInfo[1] ?? 0);
             if ($errorInfo[0] != $errorInfo[1]) {
@@ -336,60 +329,61 @@ class Database extends Hydrator {
         $this->connected = false;
     }
 
-    protected function __prepare(string $sql, array $params = [], array $options = []) {
-        $result = $this->getPDO()->prepare($sql, $options);
-        if ($result instanceof \PDOStatement  && count($params)) {
-            $this->__bindParams($result, $params);
-        }
+    // protected function __prepare(string $sql, array $params = [], array $options = []) {
+    //     $result = $this->getPDO()->prepare($sql, $options);
+    //     if ($result instanceof \PDOStatement  && count($params)) {
+    //         $this->__bindParams($result, $params);
+    //     }
 
-        return $result;
-    }
-    protected function __bindParams(\PDOStatement $statement, array $params = []) {
-        foreach ($params as $key => &$value) {
-            if (is_integer($key)) {
-                if ($value === NULL) {
-                    $statement->bindValue($key + 1, null, \PDO::PARAM_NULL);
-                } else {
-                    $statement->bindParam($key + 1, $value, $this->__getParamType($value));
-                }
-            } else {
-                if (is_null($value)) {
-                    $statement->bindValue($key, null, \PDO::PARAM_NULL);
-                } else {
-                    $statement->bindParam($key, $value, $this->__getParamType($value));
-                }
-            }
-        }
-    }
+    //     return $result;
+    // }
 
-    protected function __getParamType(mixed $value): int {
-        if ($value === NULL) {
-            return \PDO::PARAM_NULL;
-        } elseif (is_bool($value)) {
-            return \PDO::PARAM_BOOL;
-        } elseif (is_int($value)) {
-            return \PDO::PARAM_INT;
-        } else {
-            return \PDO::PARAM_STR;
-        }
-    }
+    // protected function __bindParams(\PDOStatement $statement, array $params = []) {
+    //     foreach ($params as $key => &$value) {
+    //         if (is_integer($key)) {
+    //             if ($value === NULL) {
+    //                 $statement->bindValue($key + 1, null, PDO::PARAM_NULL);
+    //             } else {
+    //                 $statement->bindParam($key + 1, $value, $this->__getParamType($value));
+    //             }
+    //         } else {
+    //             if ($value === NULL) {
+    //                 $statement->bindValue($key, null, PDO::PARAM_NULL);
+    //             } else {
+    //                 $statement->bindParam($key, $value, $this->__getParamType($value));
+    //             }
+    //         }
+    //     }
+    // }
 
-    protected function __execute(string $sql, array $params = [], array $options = []) {
-        try {
-            $statement = $this->__prepare($sql, $options);
-            if (count($params)) {
-                $this->__bindParams($statement, $params);
-            }
-            $statement->execute();
+    // protected function __getParamType(mixed $value): int {
+    //     if ($value === NULL) {
+    //         return PDO::PARAM_NULL;
+    //     } elseif (is_bool($value)) {
+    //         return PDO::PARAM_BOOL;
+    //     } elseif (is_int($value)) {
+    //         return PDO::PARAM_INT;
+    //     } else {
+    //         return PDO::PARAM_STR;
+    //     }
+    // }
 
-            return $statement;
-        } catch (\PDOException $e) {
-            $exception = new ESQLError($e->getMessage(), 0);
-            $exception->setSQLState((string) $e->getCode());
+    // protected function __execute(string $sql, array $params = [], array $options = []) {
+    //     try {
+    //         $statement = $this->__prepare($sql, $options);
+    //         if (count($params)) {
+    //             $this->__bindParams($statement, $params);
+    //         }
+    //         $statement->execute();
 
-            throw $exception;
-        }
-    }
+    //         return $statement;
+    //     } catch (\PDOException $e) {
+    //         $exception = new ESQLError($e->getMessage(), 0);
+    //         $exception->setSQLState((string) $e->getCode());
+
+    //         throw $exception;
+    //     }
+    // }
 
     private function __beforeExecute() {
         $this->queryCounter++;

@@ -521,16 +521,19 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
     }
 
     protected function execute($sql): mixed {
-        $queries = $this->splitSQLStatements($sql);
-        $result  = [];
-        foreach ($queries as $query) {
-            if (empty($query)) {
-                continue;
-            }
+        // $queries = $this->splitSQLStatements($sql);
+        // $result  = [];
+        // foreach ($queries as $query) {
+        //     // Ignore empty queries, such as a blank line or a comment
+        //     if (empty($query)) {
+        //         continue;
+        //     }
 
-            $result[] = $this->realize($query, [], 'execute');
-        }
-        return $result;
+        //     $result[] = $this->realize($query, [], 'execute');
+        // }
+        // return $result;
+
+        return $this->realize($sql, [], 'execute');
     }
 
     protected function flush(): self {
