@@ -109,7 +109,7 @@ class Column extends ColumnBuilder {
     }
 
     protected function makeUnique(): string {
-        return $this->isUnique ? sprintf(' CONSTRAINT UQ_%s UNIQUE (%s)', $this->protectIdentifiers($this->columnName), $this->protectIdentifiers($this->columnName)) : '';
+        return $this->isUnique ? sprintf(' CONSTRAINT UQ_%s UNIQUE (%s)', $this->protectIdentifiers($this->column), $this->protectIdentifiers($this->column)) : '';
     }
 }
 /** End of Column **/

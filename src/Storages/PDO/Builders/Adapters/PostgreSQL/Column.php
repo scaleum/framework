@@ -11,6 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Storages\PDO\Builders\Adapters\PostgreSQL;
 
+use Scaleum\Stdlib\Exceptions\EDatabaseError;
 use Scaleum\Storages\PDO\Builders\ColumnBuilder;
 
 /**
@@ -21,7 +22,7 @@ use Scaleum\Storages\PDO\Builders\ColumnBuilder;
 class Column extends ColumnBuilder {
     protected string $identifierQuoteLeft  = '"';
     protected string $identifierQuoteRight = '"';
-    protected array $tableTypes                  = [
+    protected array $tableTypes            = [
         self::TYPE_PK          => 'serial PRIMARY KEY',
         self::TYPE_BIGPK       => 'bigserial PRIMARY KEY',
         self::TYPE_STRING      => 'varchar(%s)',
@@ -69,11 +70,47 @@ class Column extends ColumnBuilder {
         self::TYPE_JSON        => null,    // JSONB не требует размера
     ];
 
-    protected function makeLocation(): string {
-        return '';
+    protected function makeSQL(): string {
+        $column  = $this->makeColumn();
+        $type    = $this->makeType();
+        $notNull = $this->makeNotNull();
+        $unique  = $this->makeUnique();
+        $default = $this->makeDefault();
+        $comment = $this->makeComment();
+
+        if (($mode = $this->getTableMode()) !== self::MODE_CREATE) {
+            if ($this->table === null) {
+                throw new EDatabaseError(sprintf('Table name is required for `%s` operation', $this->getTableModeName()));
+            }
+        }
+
+        switch ($mode) {
+        case self::MODE_CREATE:
+            return "{$column} {$type} {$notNull} {$unique} {$default} {$comment}";
+        case self::MODE_ADD:
+            $result = "ALTER TABLE {$this->protectIdentifiers($this->table)} ADD COLUMN {$column} {$type} {$notNull} {$unique} {$default};";
+            if ($comment) {
+                $result .= "COMMENT ON COLUMN {$this->protectIdentifiers($this->table)}.{$this->protectIdentifiers($this->column)} IS '{$comment}';";
+            }
+            return $result;
+        case self::MODE_UPDATE:
+            $result = "ALTER TABLE {$this->protectIdentifiers($this->table)} ALTER COLUMN {$column} TYPE {$type}, ";
+            $result .= "ALTER COLUMN {$column} " . ($notNull ? ' SET NOT NULL' : ' DROP NOT NULL') . ", ";
+            $result .= "ALTER COLUMN {$column} " . ($default ? " SET DEFAULT $default" : ' DROP DEFAULT') . ";";
+
+            if ($comment) {
+                $result .= "COMMENT ON COLUMN {$this->protectIdentifiers($this->table)}.{$this->protectIdentifiers($this->column)} IS '{$comment}';";
+            }
+
+            return $result;
+        case self::MODE_DROP:
+            return "ALTER TABLE {$this->protectIdentifiers($this->table)} DROP COLUMN {$column}";
+        default:
+            throw new EDatabaseError('Unsupported mode');
+        }
     }
 
-    protected function makeComment(): string {
+    protected function makeLocation(): string {
         return '';
     }
 

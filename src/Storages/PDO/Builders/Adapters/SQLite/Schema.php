@@ -48,14 +48,14 @@ class Schema extends SchemaBuilder {
         return 'DROP INDEX IF EXISTS ' . $this->protectIdentifiers($indexName);
     }
 
-    protected function makeAlterTableColumns(string $alterSpec, string $tableName, array $columns = []): string {
-        // SQLite does support one definition per ALTER TABLE statement
-        // So we will loop through each column and add it to the query
-        $result = '';
-        foreach ($columns as $column) {
-            $result .= parent::makeAlterTableColumns($alterSpec, $tableName, [$column]);
-        }
-        return $result;
+    protected function makeTruncateTable(string $tableName): mixed {
+        return "DELETE FROM {$this->protectIdentifiers($tableName)};";
+    }
+
+    protected function makeAlterTableName(string $fromTable, string $toTable): string {
+        $sql = sprintf('ALTER TABLE %s RENAME TO %s;', $this->protectIdentifiers($fromTable), $this->protectIdentifiers($toTable));
+
+        return $sql;
     }
 }
 /** End of Schema **/

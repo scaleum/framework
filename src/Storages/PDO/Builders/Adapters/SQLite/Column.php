@@ -11,6 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Storages\PDO\Builders\Adapters\SQLite;
 
+use Scaleum\Stdlib\Exceptions\EDatabaseError;
 use Scaleum\Storages\PDO\Builders\ColumnBuilder;
 
 /**
@@ -21,7 +22,7 @@ use Scaleum\Storages\PDO\Builders\ColumnBuilder;
 class Column extends ColumnBuilder {
     protected string $identifierQuoteLeft  = '"';
     protected string $identifierQuoteRight = '"';
-    protected array $tableTypes                  = [
+    protected array $tableTypes            = [
         self::TYPE_PK          => 'integer PRIMARY KEY AUTOINCREMENT',
         self::TYPE_BIGPK       => 'integer PRIMARY KEY AUTOINCREMENT',
         self::TYPE_STRING      => 'text',
@@ -68,6 +69,30 @@ class Column extends ColumnBuilder {
         self::TYPE_MONEY       => [19, 4],
         self::TYPE_JSON        => null, // JSON хранится как TEXT
     ];
+
+    protected function makeSQL(): string {
+        $column  = $this->makeColumn();
+        $type    = $this->makeType();
+        $notNull = $this->makeNotNull();
+        $unique  = $this->makeUnique();
+        $default = $this->makeDefault();
+        $comment = $this->makeComment();
+
+        if (($mode = $this->getTableMode()) !== self::MODE_CREATE) {
+            if ($this->table === null) {
+                throw new EDatabaseError(sprintf('Table name is required for `%s` operation', $this->getTableModeName()));
+            }
+        }
+
+        switch ($mode) {
+        case self::MODE_CREATE:
+            return "{$column} {$type} {$notNull} {$unique} {$default} {$comment}";
+        case self::MODE_ADD:
+            return "ALTER TABLE {$this->protectIdentifiers($this->table)} ADD COLUMN {$column} {$type} {$notNull} {$unique} {$default} {$comment}";
+        default:
+            throw new EDatabaseError("SQLite does not support '{$this->getTableModeName()}' operation");
+        }
+    }
 
     protected function makeLocation(): string {
         return '';

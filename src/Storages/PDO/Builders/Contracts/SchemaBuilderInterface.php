@@ -57,13 +57,14 @@ interface SchemaBuilderInterface
     public function indexFulltext(array|string $column, ?string $indexName = null): IndexBuilderInterface;
     public function indexUnique(array|string $column, ?string $indexName = null): IndexBuilderInterface;
     public function indexForeign(array|string $column, ?string $indexName = null): IndexBuilderInterface;
-    public function modifyColumn(mixed $column, string $tableName): mixed;
+    public function updateColumn(mixed $column, string $tableName): mixed;
     public function primaryKey(mixed $column): IndexBuilderInterface;
     public function renameTable(string $fromTable, string $toTable): mixed;
     public function showDatabases(): mixed;
     public function showIndex(string $tableName, ?string $database = null): mixed;
     public function showTables(?string $database = null): mixed;
     public function prepare(bool $value = false): self;
-    public function optimize(bool $value = false): self;    
+    public function optimize(bool $value = false): self;
+    public function truncateTable(string $tableName): mixed;  
 }
 /** End of SchemaBuilderInterface **/

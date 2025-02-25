@@ -19,17 +19,23 @@ namespace Scaleum\Storages\PDO\Builders\Contracts;
  */
 interface ColumnBuilderInterface
 {
-    public function after(string $column): self;
-    public function comment(string $str): self;
-    public function defaultValue(mixed $default, bool $quoted = true): self;
-    public function first(): self;
-    public function name(string $str): self;
-    public function notNull(bool $val = true): self;
-    public function unique(bool $val = true): self;
-    public function unsigned(bool $val = true): self;
-    // public function getColumnName(): string;
-    // public function setColumnName(string $name): self;
-    // public function getColumnPrev(): mixed;
-    // public function setColumnPrev(string $name): self;
+    // public function after(string $column): self;
+    public function setComment(string $str): self;
+    public function getComment(): ?string;
+    public function setConstraint(mixed $constraint):self;
+    public function getConstraint(): mixed;
+    public function setDefaultValue(mixed $default, bool $quoted = true): self;
+    public function getDefaultValue(): mixed;
+    // public function first(): self;
+    public function setColumn(string $str): self;
+    public function getColumn(): ?string;
+    public function setNotNull(bool $val = true): self;
+    public function getNonNull(): bool;
+    public function setUnique(bool $val = true): self;
+    public function getUnique(): bool;
+    public function setUnsigned(bool $val = true): self;
+    public function getUnsigned(): bool;
+    public function setTable(string $table): self;
+    public function setTableMode(int $mode): self;
 }
 /** End of ColumnBuilderInterface **/

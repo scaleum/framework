@@ -30,11 +30,6 @@ class Schema extends SchemaBuilder {
         return 'DROP INDEX IF EXISTS ' . $this->protectIdentifiers($indexName);
     }
 
-    protected function makeAlterTableModifyColumns(string $tableName, array $columns = []): string {
-        // return $this->makeAlterTableColumns('ALTER COLUMN', $tableName, $columns);
-        return '';
-    }
-
     protected function makeShowTables(?string $database = null): string{
         return "SELECT * FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';";
     }    

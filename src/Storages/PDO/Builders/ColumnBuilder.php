@@ -42,20 +42,28 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
     public const TYPE_BOOLEAN     = 'boolean';
     public const TYPE_MONEY       = 'money';
     public const TYPE_JSON        = 'json';
-    public const LOCATE_FIRST     = 1;
-    public const LOCATE_AFTER     = 2;
 
+    public const MODE_CREATE = 2;
+    public const MODE_ADD    = 4;
+    public const MODE_UPDATE = 8;
+    public const MODE_DROP   = 16;
+
+    public const MODES = [
+        self::MODE_CREATE => 'CREATE COLUMN',
+        self::MODE_ADD    => 'ADD COLUMN',
+        self::MODE_UPDATE => 'UPDATE COLUMN',
+        self::MODE_DROP   => 'DROP COLUMN',
+    ];
+
+    private int $mode              = self::MODE_CREATE;
+    protected ?string $table       = null;
     protected array $tableTypes    = [];
     protected array $tableDefaults = [];
-
-    protected ?string $columnName = null;
-
-    protected ?string $columnPrev = null;
-
-    protected ?string $comment = null;
+    protected ?string $column      = null;
+    protected ?string $comment     = null;
 
     /**
-     * @var integer|string|array column size or precision definition. This is what goes into the parenthesis after
+     * @var mixed column size or precision definition. This is what goes into the parenthesis after
      * the column type. This can be either a string, an integer or an array. If it is an array, the array values will
      * be joined into a string separated by comma.
      */
@@ -77,10 +85,6 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
      */
     protected bool $isUnsigned = false;
     /**
-     * @var int
-     */
-    protected int $location = 0;
-    /**
      * @var string the column type definition such as INTEGER, VARCHAR, DATETIME, etc.
      */
     protected string $type = 'string';
@@ -93,41 +97,27 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
         'oci'    => Adapters\Oracle\Column::class,
     ];
 
-    public function __construct(string $type = self::TYPE_STRING, mixed $constrain = null, ?Database $database = null) {        
+    public function __construct(string $type = self::TYPE_STRING, mixed $constraint = null, ?Database $database = null) {
         // check if type is supported
         if (! $this->mapType($type)) {
             throw new EDatabaseError(sprintf('Column type `%s` is not supported', strtoupper($type)));
         }
         $this->type       = $type;
-        $this->constraint = $constrain;
+        $this->constraint = $constraint;
 
         parent::__construct($database);
     }
 
-    /**
-     * @param string $column
-     *
-     * @return $this
-     */
-    public function after(string $column): self {
-        $this->location   = self::LOCATE_AFTER;
-        $this->columnPrev = $column;
-
-        return $this;
-    }
-
-    /**
-     * @param string $str
-     *
-     * @return $this
-     */
-    public function comment(string $str): self {
+    public function setComment(string $str): self {
         $this->comment = $str;
-
         return $this;
     }
 
-    public function defaultValue(mixed $default, bool $quoted = true): self {
+    public function getComment(): ?string {
+        return $this->comment;
+    }
+
+    public function setDefaultValue(mixed $default, bool $quoted = true): self {
         if (is_string($default)) {
             $default = str_replace("'", "\\'", $default);
         }
@@ -136,35 +126,73 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
         return $this;
     }
 
-    public function first(): self {
-        $this->location   = self::LOCATE_FIRST;
-        $this->columnPrev = null;
+    public function getDefaultValue(): mixed {
+        return $this->default;
+    }
+
+    public function setColumn(string $str): self {
+        $this->column = $str;
 
         return $this;
     }
 
-    public function name(string $str): self {
-        $this->columnName = $str;
-
-        return $this;
+    public function getColumn(): ?string {
+        return $this->column;
     }
 
-    public function notNull(bool $val = true): self {
+    public function setNotNull(bool $val = true): self {
         $this->isNotNull = $val;
 
         return $this;
     }
 
-    public function unique(bool $val = true): self {
+    public function getNonNull(): bool {
+        return $this->isNotNull;
+    }
+
+    public function setUnique(bool $val = true): self {
         $this->isUnique = $val;
 
         return $this;
     }
 
-    public function unsigned(bool $val = true): self {
+    public function getUnique(): bool {
+        return $this->isUnique;
+    }
+
+    public function setUnsigned(bool $val = true): self {
         $this->isUnsigned = $val;
 
         return $this;
+    }
+
+    public function getUnsigned(): bool {
+        return $this->isUnsigned;
+    }
+
+    public function setTable(string $table): self {
+        $this->table = $table;
+        return $this;
+    }
+
+    public function getTable(): ?string {
+        return $this->table;
+    }
+
+    public function setTableMode(int $mode): self {
+        $this->mode = $mode;
+        return $this;
+    }
+
+    public function getTableMode(): int {
+        return $this->mode;
+    }
+
+    public function getTableModeName() {
+        if (! isset(self::MODES[$this->mode])) {
+            throw new EDatabaseError('Unsupported mode');
+        }
+        return self::MODES[$this->mode];
     }
 
     protected function mapDefault(string $type): mixed {
@@ -176,14 +204,31 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
     }
 
     protected function makeSQL(): string {
-        return
-        $this->makeName() .
-        $this->makeType() .
-        $this->makeNotNull() .
-        $this->makeUnique() .
-        $this->makeDefault() .
-        $this->makeComment() .
-        $this->makeLocation();
+        $column  = $this->makeColumn();
+        $type    = $this->makeType();
+        $notNull = $this->makeNotNull();
+        $unique  = $this->makeUnique();
+        $default = $this->makeDefault();
+        $comment = $this->makeComment();
+
+        if(($mode = $this->getTableMode()) !== self::MODE_CREATE) {
+            if ($this->table === null) {
+                throw new EDatabaseError(sprintf('Table name is required for `%s` operation', $this->getTableModeName()));
+            }
+        }
+
+        switch ($mode) {
+        case self::MODE_CREATE:
+            return "{$column} {$type} {$notNull} {$unique} {$default} {$comment}";
+        case self::MODE_ADD:
+            return "ALTER TABLE {$this->protectIdentifiers($this->table)} ADD COLUMN {$column} {$type} {$notNull} {$unique} {$default} {$comment}";
+        case self::MODE_UPDATE:
+            return "ALTER TABLE {$this->protectIdentifiers($this->table)} MODIFY COLUMN {$column} {$type} {$notNull} {$unique} {$default} {$comment}";
+        case self::MODE_DROP:
+            return "ALTER TABLE {$this->protectIdentifiers($this->table)} DROP COLUMN {$column}";
+        default:
+            throw new EDatabaseError('Unsupported mode');
+        }
     }
 
     protected function makeConstraint(string $type) {
@@ -205,7 +250,7 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
             return '';
         }
 
-        return " COMMENT '" . addslashes($this->comment) . "'";
+        return "COMMENT '" . addslashes($this->comment) . "'";
     }
 
     protected function makeDefault(): string {
@@ -232,27 +277,16 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
         return $result;
     }
 
-    protected function makeLocation(): string {
-        $result = '';
-        if ($this->location === static::LOCATE_FIRST) {
-            $result = ' FIRST';
-        } elseif ($this->location === static::LOCATE_AFTER && ! empty($this->columnPrev)) {
-            $result = ' AFTER ' . $this->protectIdentifiers($this->columnPrev);
-        }
-
-        return $result;
-    }
-
-    protected function makeName(): string {
-        if ($this->columnName === null) {
+    protected function makeColumn(): string {
+        if ($this->column === null) {
             return '';
         }
 
-        return "{$this->protectIdentifiers($this->columnName)} ";
+        return "{$this->protectIdentifiers($this->column)}";
     }
 
     protected function makeNotNull(): string {
-        return $this->type != static::TYPE_PK && $this->type != static::TYPE_BIGPK ? ($this->isNotNull == true ? ' NOT NULL':' NULL') : '';
+        return $this->type != static::TYPE_PK && $this->type != static::TYPE_BIGPK ? ($this->isNotNull == true ? 'NOT NULL' : 'NULL') : '';
     }
 
     protected function makeType(): string {
@@ -264,49 +298,28 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
     }
 
     protected function makeUnique(): string {
-        return $this->isUnique ? ' UNIQUE' : '';
+        return $this->isUnique ? 'UNIQUE' : '';
     }
 
-    // /**
-    //  * Get column size or precision definition. This is what goes into the parenthesis after
-    //  *
-    //  * @return  integer|string|array
-    //  */
-    // public function getConstraint(): mixed {
-    //     return $this->constraint;
-    // }
+    /**
+     * Get column size or precision definition. This is what goes into the parenthesis after
+     *
+     * @return  integer|string|array
+     */
+    public function getConstraint(): mixed {
+        return $this->constraint;
+    }
 
-    // /**
-    //  * Set column size or precision definition. This is what goes into the parenthesis after
-    //  *
-    //  * @param  integer|string|array  $constraint  column size or precision definition. This is what goes into the parenthesis after
-    //  *
-    //  * @return  self
-    //  */
-    // public function setConstraint(mixed $constraint = null): self {
-    //     $this->constraint = $constraint;
-
-    //     return $this;
-    // }
-
-    // public function getColumnName(): string {
-    //     return $this->columnName;
-    // }
-
-    // public function setColumnName(string $name): self {
-    //     $this->columnName = $name;
-
-    //     return $this;
-    // }
-
-    // public function getColumnPrev(): mixed {
-    //     return $this->columnPrev;
-    // }
-
-    // public function setColumnPrev(string $name): self {
-    //     $this->columnPrev = $name;
-
-    //     return $this;
-    // }
+    /**
+     * Set column size or precision definition. This is what goes into the parenthesis after
+     *
+     * @param  integer|string|array  $constraint  column size or precision definition. This is what goes into the parenthesis after
+     *
+     * @return  self
+     */
+    public function setConstraint(mixed $constraint): self {
+        $this->constraint = $constraint;
+        return $this;
+    }
 }
 /** End of ColumnBuilder **/

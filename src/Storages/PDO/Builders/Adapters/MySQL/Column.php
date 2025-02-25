@@ -20,7 +20,8 @@ use Scaleum\Storages\PDO\Builders\ColumnBuilder;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Column extends ColumnBuilder {
-
+    public const LOCATE_FIRST     = 1;
+    public const LOCATE_AFTER     = 2;
     protected array $tableTypes = [
         self::TYPE_PK          => 'int(%s)%s NOT NULL AUTO_INCREMENT PRIMARY KEY',
         self::TYPE_BIGPK       => 'bigint(%s)%s NOT NULL AUTO_INCREMENT PRIMARY KEY',
@@ -68,6 +69,34 @@ class Column extends ColumnBuilder {
         self::TYPE_MONEY       => [19, 4],
         self::TYPE_JSON        => null,
     ];
+
+    protected int $location = 0;
+    protected ?string $columnPrev  = null;
+
+    public function after(string $column): self {
+        $this->location   = self::LOCATE_AFTER;
+        $this->columnPrev = $column;
+
+        return $this;
+    }
+    
+    public function first(): self {
+        $this->location   = self::LOCATE_FIRST;
+        $this->columnPrev = null;
+
+        return $this;
+    }
+        
+    protected function makeLocation(): string {
+        $result = '';
+        if ($this->location === static::LOCATE_FIRST) {
+            $result = ' FIRST';
+        } elseif ($this->location === static::LOCATE_AFTER && ! empty($this->columnPrev)) {
+            $result = ' AFTER ' . $this->protectIdentifiers($this->columnPrev);
+        }
+
+        return $result;
+    }
 
     protected function makeType(): string {
         if (($str = $this->mapType($this->type)) !== null) {
