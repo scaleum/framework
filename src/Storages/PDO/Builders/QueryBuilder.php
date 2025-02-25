@@ -26,7 +26,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         'pgsql'  => Adapters\PostgreSQL\Query::class,
         'sqlite' => Adapters\SQLite\Query::class,
         'sqlsrv' => Adapters\SQLServer\Query::class,
-        'oci'    => Adapters\Oracle\Query::class,
+        'mssql'  => Adapters\SQLServer\Query::class,
     ];
 
     protected const BRACKET_START = '(';
@@ -706,10 +706,10 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             }
 
             $statement = match (strtolower($side)) {
-                'none'      => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote($value)}",
-                'before'    => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote("%$value")}",
-                'after'     => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote("$value%")}",
-                default     => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote("%$value%")}",
+                'none' => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote($value)}",
+                'before' => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote("%$value")}",
+                'after' => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote("$value%")}",
+                default => "$prefix {$this->protectIdentifiers($key)} $not LIKE {$this->quote("%$value%")}",
             };
 
             if ($this->hasBrackets()) {

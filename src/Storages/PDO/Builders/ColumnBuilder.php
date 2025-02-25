@@ -94,7 +94,7 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
         'pgsql'  => Adapters\PostgreSQL\Column::class,
         'sqlite' => Adapters\SQLite\Column::class,
         'sqlsrv' => Adapters\SQLServer\Column::class,
-        'oci'    => Adapters\Oracle\Column::class,
+        'mssql'  => Adapters\SQLServer\Column::class,
     ];
 
     public function __construct(string $type = self::TYPE_STRING, mixed $constraint = null, ?Database $database = null) {
@@ -211,7 +211,7 @@ class ColumnBuilder extends BuilderAbstract implements ColumnBuilderInterface {
         $default = $this->makeDefault();
         $comment = $this->makeComment();
 
-        if(($mode = $this->getTableMode()) !== self::MODE_CREATE) {
+        if (($mode = $this->getTableMode()) !== self::MODE_CREATE) {
             if ($this->table === null) {
                 throw new EDatabaseError(sprintf('Table name is required for `%s` operation', $this->getTableModeName()));
             }

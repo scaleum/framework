@@ -54,7 +54,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
         'pgsql'  => Adapters\PostgreSQL\Index::class,
         'sqlite' => Adapters\SQLite\Index::class,
         'sqlsrv' => Adapters\SQLServer\Index::class,
-        'oci'    => Adapters\Oracle\Index::class,
+        'mssql'  => Adapters\SQLServer\Index::class,
     ];
     protected array $columns        = [];
     protected array $columnsForeign = [];

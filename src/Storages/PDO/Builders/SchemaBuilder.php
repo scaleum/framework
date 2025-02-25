@@ -11,7 +11,6 @@ declare (strict_types = 1);
 
 namespace Scaleum\Storages\PDO\Builders;
 
-use DB\SQL\Column;
 use Scaleum\Stdlib\Exceptions\EDatabaseError;
 use Scaleum\Storages\PDO\Builders\Contracts\ColumnBuilderInterface;
 use Scaleum\Storages\PDO\Builders\Contracts\IndexBuilderInterface;
@@ -28,7 +27,7 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         'pgsql'  => Adapters\PostgreSQL\Schema::class,
         'sqlite' => Adapters\SQLite\Schema::class,
         'sqlsrv' => Adapters\SQLServer\Schema::class,
-        'oci'    => Adapters\Oracle\Schema::class,
+        'mssql'  => Adapters\SQLServer\Schema::class,
     ];
 
     protected array $columns = [];
@@ -330,8 +329,8 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
     }
 
     protected function makeDropColumns(string $tableName, array $columns = []): string {
-        foreach ($columns as &$column){
-            if(is_string($column)) {
+        foreach ($columns as &$column) {
+            if (is_string($column)) {
                 $column = $this->createColumnBuilder(ColumnBuilder::TYPE_STRING, 0)->setColumn($column);
             }
         }
@@ -353,7 +352,7 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         $result        = '';
 
         foreach ($columns as $column) {
-            if(is_string($column)) {
+            if (is_string($column)) {
                 $column = $this->protectIdentifiers($column);
             }
 
@@ -361,7 +360,7 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
                 $column = (string) $column;
             }
 
-            $result .= trim($column,$delimiter);
+            $result .= trim($column, $delimiter);
 
             // don't add a comma on the end of the last field
             if (++$columns_count < count($columns)) {
