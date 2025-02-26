@@ -195,7 +195,7 @@ class Database extends Hydrator {
      * @param array $params An associative array of parameters to bind to the SQL query.
      * @return string The prepared SQL query string.
      */
-    public function getSQL(?string $sql = null, array $params = []): string {
+    public function getQuery(?string $sql = null, array $params = []): string {
         if (empty($sql)) {
             $sql = $this->queryStr;
         }
@@ -220,7 +220,7 @@ class Database extends Hydrator {
      * @param string $sql The SQL query to be executed.
      * @param array $params Optional. An associative array of parameters to bind to the SQL query.
      */
-    public function setSQL(string $sql, array $params = []) {
+    public function setQuery(string $sql, array $params = []) {
         foreach ($params as &$value) {
             if (is_array($value)) {
                 $array  = array_values($value);
@@ -236,11 +236,11 @@ class Database extends Hydrator {
 
         $this->queryStr    = $sql;
         $this->queryParams = $params;
-
+// var_export($this->queryStr);
         return $this;
     }
 
-    public function splitSQL(string $sql): array {
+    public function splitQuery(string $sql): array {
         $statements      = [];
         $buffer          = '';
         $inString        = false;
@@ -314,7 +314,7 @@ class Database extends Hydrator {
     }
 
     protected function executeInternal(?string $query = null, array $params = [], ?string $method = null, array $fetchArgs = []) {
-        $sql = $this->getSQL($query, $params);
+        $sql = $this->getQuery($query, $params);
         if ($this->getCache()->isEnabled() && $this->isCacheable($sql)) {
             $cacheKey = $this->getCacheKey($sql, $method, $this->getSignature());
             if ($cached = $this->getCache()->get($cacheKey)) {
@@ -323,7 +323,7 @@ class Database extends Hydrator {
         }
 
         if ($this->getMultipleCommands()) {
-            $statements = $this->splitSQL($sql);
+            $statements = $this->splitQuery($sql);
             if (count($statements) > 1) {
                 $result = [];
                 foreach ($statements as $statement) {

@@ -20,17 +20,17 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class DatabaseProvider implements DatabaseProviderInterface {
-    protected ?Database $databse  = null;
+    protected ?Database $database  = null;
     protected string $serviceName = 'db';
 
-    public function __construct(?Database $database) {
+    public function __construct(?Database $database = null) {
         if ($database !== null) {
             $this->setDatabase($database);
         }
     }
 
     public function getDatabase(): Database {
-        if ($this->databse === null) {
+        if ($this->database === null) {
             // get database service
             if (! ($db = ServiceLocator::get($this->serviceName, null)) instanceof Database) {
                 throw new ERuntimeError(
@@ -42,13 +42,13 @@ class DatabaseProvider implements DatabaseProviderInterface {
                     )
                 );
             }
-            $this->databse = $db;
+            $this->database = $db;
         }
-        return $this->databse;
+        return $this->database;
     }
 
     public function setDatabase(Database $database): void {
-        $this->databse = $database;
+        $this->database = $database;
     }
 }
 /** End of DatabaseProvider **/

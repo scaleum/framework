@@ -116,7 +116,7 @@ abstract class BuilderAbstract extends DatabaseProvider {
         }
 
         $sql    = ($this->optimize == FALSE) ? $this->getPrettyQuery($sql) : $this->getOptimizedQuery($sql);
-        $result = ($this->prepare == TRUE) ? $sql : $db->setSQL($sql, $params)->$method($args);
+        $result = ($this->prepare == TRUE) ? $sql : $db->setQuery($sql, $params)->$method($args);
 
         $this->flush();
 
