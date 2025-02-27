@@ -117,19 +117,19 @@ abstract class ModelAbstract extends DatabaseProvider {
     public function load(array $input): self {
         $relations = $this->getRelations();
         if ($this->beforeLoad()) {
+            $this->data = new ModelData();
             foreach ($input as $key => $value) {
                 if (array_key_exists($key, $relations)) {
                     $relationDefinition = $relations[$key];
                     $relationType       = $relationDefinition['type'];
 
                     if ($relationType === 'hasMany' && is_array($value)) {
-                        $this->$key = array_map(fn($item) => (new $relationDefinition['model']($this->getDatabase()))->load($item), $value);
+                        $this->$key = array_map(
+                            fn($array) => (new $relationDefinition['model']($this->getDatabase()))->load($array),
+                            $value
+                        );
                     } elseif (($relationType === 'hasOne' || $relationType === 'belongsTo') && is_array($value)) {
-                        if ($this->$key !== null && $this->$key instanceof ModelAbstract) {
-                            $this->$key->load($value);
-                        } else {
-                            $this->$key = (new $relationDefinition['model']($this->getDatabase()))->load($value);
-                        }
+                        $this->$key = (new $relationDefinition['model']($this->getDatabase()))->load($value);
                     }
                 } else {
                     $this->$key = $value;
@@ -311,9 +311,9 @@ abstract class ModelAbstract extends DatabaseProvider {
             }
 
             $this->lastStatus = [
-                'status'    => (bool) $result,
+                'status'      => (bool) $result,
                 'status_text' => $result ? 'Record deleted' : 'Record not deleted',
-                'relations' => $relationResults,
+                'relations'   => $relationResults,
             ];
 
             $this->afterDelete();
@@ -402,11 +402,10 @@ abstract class ModelAbstract extends DatabaseProvider {
     }
 
     private function loadRelations(ModelData $modelData): void {
-        foreach ($this->getRelations() as $relation => $config) {
-            $relatedModel  = new $config['model']($this->getDatabase());
-            $relatedMethod = $config['method'];
-            $primaryKey    = $config['primary_key'];
-
+        foreach ($this->getRelations() as $relation => $definition) {
+            $relatedModel    = new $definition['model']($this->getDatabase());
+            $relatedMethod   = $definition['method'];
+            $primaryKey      = $definition['primary_key'];
             $this->$relation = $relatedModel->$relatedMethod($modelData->{$primaryKey});
         }
     }
@@ -473,7 +472,7 @@ abstract class ModelAbstract extends DatabaseProvider {
         }
         return $result;
     }
-    
+
     private function filterAttributes(array $data): array {
         foreach ($this->getRelations() as $relation => $config) {
             if (isset($data[$relation])) {
