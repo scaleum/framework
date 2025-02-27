@@ -25,7 +25,8 @@ abstract class ModelAbstract extends DatabaseProvider {
     protected ?string $table     = null;
     protected string $primaryKey = 'id';
     protected ModelData $data;
-    protected ?string $mode = null;
+    protected ?string $mode     = null;
+    protected array $lastStatus = [];
 
     public function __construct(?Database $database = null) {
         parent::__construct($database);
@@ -118,18 +119,16 @@ abstract class ModelAbstract extends DatabaseProvider {
         if ($this->beforeLoad()) {
             foreach ($input as $key => $value) {
                 if (array_key_exists($key, $relations)) {
-                    $relationConfig = $relations[$key];
-                    $relationModel  = new $relationConfig['model']($this->getDatabase());
-                    $relationType   = $relationConfig['type'];
+                    $relationDefinition = $relations[$key];
+                    $relationType       = $relationDefinition['type'];
 
                     if ($relationType === 'hasMany' && is_array($value)) {
-                        $this->$key = array_map(fn($item) => (new $relationConfig['model']($this->getDatabase()))->load($item), $value);
+                        $this->$key = array_map(fn($item) => (new $relationDefinition['model']($this->getDatabase()))->load($item), $value);
                     } elseif (($relationType === 'hasOne' || $relationType === 'belongsTo') && is_array($value)) {
-                        if($this->$key !== null && $this->$key instanceof ModelAbstract) {
+                        if ($this->$key !== null && $this->$key instanceof ModelAbstract) {
                             $this->$key->load($value);
                         } else {
-                            // $this->$key = (new $relationConfig['model']($this->getDatabase()))->load($value);
-                            $this->$key = $relationModel->load($value);
+                            $this->$key = (new $relationDefinition['model']($this->getDatabase()))->load($value);
                         }
                     }
                 } else {
@@ -142,11 +141,8 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $this;
     }
 
-    public function insert(): bool {
-        // if ($this->isExisting()) {
-        //     return $this->update();
-        // }
-
+    public function insert(): int {
+        $result = 0;
         if ($this->isTransactional(self::ON_INSERT)) {
             $db = $this->getDatabase();
             $db->begin();
@@ -164,36 +160,53 @@ abstract class ModelAbstract extends DatabaseProvider {
         } else {
             $result = $this->insertInternal();
         }
+
         return $result;
     }
 
-    public function insertInternal(): bool {
+    protected function insertInternal(): int {
+        $this->lastStatus = [];
+        $result           = 0;
+
         $db = $this->getDatabase();
         if (! $db || empty($this->data->toArray())) {
-            return false;
+            $this->lastStatus = [
+                'status'      => (bool) $result,
+                'status_text' => 'Database connection error or empty data',
+            ];
+            return $result;
         }
 
         if ($this->beforeInsert()) {
-            $data = $this->filterAttributes($this->data->toArray());
+            $data         = $this->filterAttributes($this->data->toArray());
             $columns      = implode(", ", array_keys($data));
             $placeholders = ":" . implode(", :", array_keys($data));
+
             $result       = $db->setQuery("INSERT INTO {$this->getTable()} ({$columns}) VALUES ({$placeholders})", $data)->execute();
-            if ($result) {
-                $this->data->{$this->primaryKey} = $db->getLastInsertID();
+            $lastInsertId = $db->getLastInsertID();
+
+            if ($lastInsertId) {
+                $this->data->{$this->primaryKey} = $lastInsertId;
             }
-            $this->saveRelations();
-            $this->afterInsert();            
-            return $result > 0;
+
+            $relationResults  = $this->syncRelations();
+            $this->lastStatus = [
+                'status'      => (bool) $result,
+                'status_text' => $lastInsertId ? 'Record inserted' : 'Record not inserted',
+                'relations'   => $relationResults,
+            ];
+            $this->afterInsert();
         }
 
-        return false;
+        return $result;
     }
 
-    public function update(): bool {
+    public function update(): int {
         if (! $this->isExisting()) {
             return $this->insert();
         }
 
+        $result = 0;
         if ($this->isTransactional(self::ON_UPDATE)) {
             $db = $this->getDatabase();
             $db->begin();
@@ -214,29 +227,44 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $result;
     }
 
-    public function updateInternal(): bool {
+    protected function updateInternal(): int {
+        $this->lastStatus = [];
+        $result           = 0;
+
         $db = $this->getDatabase();
-        if (! $db || ! $this->data->has($this->primaryKey)) {
-            return false;
+        if (! $db || empty($this->data->toArray())) {
+            $this->lastStatus = [
+                'status'      => (bool) $result,
+                'status_text' => 'Database connection error or empty data',
+            ];
+            return $result;
         }
 
         if ($this->beforeUpdate()) {
-            $data   = $this->filterAttributes($this->data->toArray());
-            $fields = implode(", ", array_map(fn($key) => "$key = :$key", array_keys($data)));
-            $result = $db->setQuery("UPDATE {$this->getTable()} SET {$fields} WHERE {$this->primaryKey} = :{$this->primaryKey}", $data)->execute();
-            
-            $this->saveRelations();
-            $this->afterUpdate();
+            $data             = $this->filterAttributes($this->data->toArray());
+            $fields           = implode(", ", array_map(fn($key) => "$key = :$key", array_keys($data)));
+            $status           = $db->setQuery("UPDATE {$this->getTable()} SET {$fields} WHERE {$this->primaryKey} = :{$this->primaryKey}", $data)->execute();
+            $relationResults  = $this->syncRelations();
+            $this->lastStatus = [
+                'status'      => (bool) $status,
+                'status_text' => $status ? 'Record updated' : 'Record not updated',
+                'relations'   => $relationResults,
+            ];
 
-            return $result > 0;
+            $this->afterUpdate();
         }
 
-        return false;
+        return $result;
     }
 
-    public function delete(bool $cascade = false): bool {
+    public function delete(bool $cascade = false): int {
+        $result = 0;
         if (! $this->isExisting()) {
-            return false;
+            $this->lastStatus = [
+                'status'      => (bool) $result,
+                'status_text' => 'Record is not loaded or does not exist',
+            ];
+            return $result;
         }
 
         if ($this->isTransactional(self::ON_DELETE)) {
@@ -256,32 +284,42 @@ abstract class ModelAbstract extends DatabaseProvider {
         } else {
             $result = $this->deleteInternal($cascade);
         }
+
         return $result;
     }
 
-    public function deleteInternal(bool $cascade = false): bool {
+    protected function deleteInternal(bool $cascade = false): int {
+        $this->lastStatus = [];
+        $result           = 0;
+
         $db = $this->getDatabase();
         if (! $db || ! $this->data->has($this->primaryKey)) {
-            return false;
+            $this->lastStatus = [
+                'status'      => (bool) $result,
+                'status_text' => 'Database connection error or empty data',
+            ];
+            return $result;
         }
 
         if ($this->beforeDelete()) {
-            $id = $this->data->{$this->primaryKey};
+            $id              = $this->data->{$this->primaryKey};
+            $relationResults = $cascade ? $this->removeRelations() : [];
+            $result          = $db->setQuery("DELETE FROM {$this->getTable()} WHERE {$this->primaryKey} = :id", ['id' => $id])->execute();
 
-            // Если включено каскадное удаление, удаляем связанные модели
-            if ($cascade) {
-                $this->deleteRelations();
-            }
-
-            $result = $db->setQuery("DELETE FROM {$this->getTable()} WHERE {$this->primaryKey} = :id", ['id' => $id])->execute();
-            $this->afterDelete();
             if ($result) {
                 $this->data = new ModelData(); // Очищаем данные после удаления
             }
-            return $result > 0;
+
+            $this->lastStatus = [
+                'status'    => (bool) $result,
+                'status_text' => $result ? 'Record deleted' : 'Record not deleted',
+                'relations' => $relationResults,
+            ];
+
+            $this->afterDelete();
         }
 
-        return false;
+        return $result;
     }
 
     public function isExisting(): bool {
@@ -317,7 +355,7 @@ abstract class ModelAbstract extends DatabaseProvider {
      *     'user' => self::ON_INSERT | self::ON_UPDATE | self::ON_DELETE | self::ON_TRUNCATE,
      * ];
      *
-     * The above declaration specifies that in the "admin" mode, the insert operation ([[insert()]])
+     * The above declsyncRelationsfies that in the "admin" mode, the insert operation ([[insert()]])
      * should be done in a transaction; and in the "user" mode, all the operations should be done
      * in a transaction.
      *
@@ -345,6 +383,20 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $this->primaryKey;
     }
 
+    /**
+     * Get the value of data
+     */
+    public function getData() {
+        return $this->data;
+    }
+
+    /**
+     * Get the value of lastStatus
+     */
+    public function getLastStatus(): array {
+        return $this->lastStatus;
+    }
+
     protected function getRelations(): array {
         return [];
     }
@@ -359,57 +411,69 @@ abstract class ModelAbstract extends DatabaseProvider {
         }
     }
 
-    private function saveRelations(): void {
+    private function syncRelations(): array {
+        $result = [];
         foreach ($this->getRelations() as $relation => $config) {
-            // Проверяем, загружена ли связь (может быть null)
+            /** @var ModelAbstract $relatedData */
             $relatedData = $this->$relation ?? null;
             if ($relatedData === null) {
-                continue; // Если связь не загружена, пропускаем
+                continue;
             }
 
             $foreignKey = $config['foreign_key'];
 
             if ($config['type'] === 'hasOne' || $config['type'] === 'belongsTo') {
-                $relatedData->$foreignKey = $this->{$this->primaryKey}; // Проставляем внешний ключ
-
+                $relatedData->$foreignKey = $this->{$this->primaryKey};
                 if ($relatedData->{$relatedData->primaryKey}) {
-                    $relatedData->update();
+                    $relatedData->updateInternal();
+                    $result[$relation] = 'updated';
                 } else {
-                    $relatedData->insert();
+                    $relatedData->insertInternal();
+                    $result[$relation] = 'inserted';
                 }
             } elseif ($config['type'] === 'hasMany') {
+                $updated  = 0;
+                $inserted = 0;
                 foreach ($relatedData as $item) {
                     $item->$foreignKey = $this->{$this->primaryKey};
-
                     if ($item->{$item->primaryKey}) {
-                        $item->update();
+                        $updated += $item->update() ? 1 : 0;
                     } else {
-                        $item->insert();
+                        $inserted += $item->insert() ? 1 : 0;
                     }
                 }
+                $result[$relation] = [
+                    'updated'  => $updated,
+                    'inserted' => $inserted,
+                ];
             }
         }
+        return $result;
     }
 
-    private function deleteRelations(): void {
+    private function removeRelations(): array {
+        $result = [];
         foreach ($this->getRelations() as $relation => $config) {
-            if (! $this->data->has($relation)) {
+            $relatedData = $this->$relation ?? null;
+            if ($relatedData === null) {
                 continue;
             }
 
-            $relatedModel = new $config['model']($this->getDatabase());
-            $relatedData  = $this->$relation;
-
             if ($config['type'] === 'hasOne' || $config['type'] === 'belongsTo') {
-                $relatedModel->find($relatedData->{$relatedModel->primaryKey})?->delete();
-            } elseif ($config['type'] === 'hasMany') {
+                $relatedData->delete();
+                $result[$relation] = 'deleted';
+            } elseif ($config['type'] === 'hasMany' && is_array($relatedData)) {
+                $deletedCount = 0;
                 foreach ($relatedData as $item) {
-                    $relatedModel->find($item->{$relatedModel->primaryKey})?->delete();
+                    $item->delete();
+                    $deletedCount++;
                 }
+                $result[$relation] = ['deleted' => $deletedCount];
             }
         }
+        return $result;
     }
-
+    
     private function filterAttributes(array $data): array {
         foreach ($this->getRelations() as $relation => $config) {
             if (isset($data[$relation])) {
@@ -482,13 +546,6 @@ abstract class ModelAbstract extends DatabaseProvider {
      */
     protected function beforeUpdate() {
         return true;
-    }
-
-    /**
-     * Get the value of data
-     */
-    public function getData() {
-        return $this->data;
     }
 }
 /** End of ModelAbstract **/

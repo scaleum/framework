@@ -117,14 +117,18 @@ class Database extends Hydrator {
         ];
     }
 
+    public function getLastQueryRowsAffected(): int {
+        return $this->queryRowsAffected;
+    }
+
     /**
      * Retrieves the ID of the last inserted row.
      *
      * @param string|null $sequence The name of the sequence object from which the ID should be returned.
      *                              If not specified, the ID of the last inserted row will be returned.
-     * @return string The ID of the last inserted row.
+     * @return mixed The ID of the last inserted row.
      */
-    public function getLastInsertID(?string $sequence = null) {
+    public function getLastInsertID(?string $sequence = null):mixed {
         return $this->getPDO()->lastInsertId($sequence);
     }
 
