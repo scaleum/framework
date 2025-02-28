@@ -386,7 +386,6 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         $result     = '';
 
         foreach ($indexes as $index) {
-            //FIXME индекс может быть строкой!!!
             if (! $index instanceof IndexBuilderInterface) {
                 throw new EDatabaseError(sprintf('Index must be an instance of `%s`, given `$s`', IndexBuilderInterface::class, gettype($index)));
             }

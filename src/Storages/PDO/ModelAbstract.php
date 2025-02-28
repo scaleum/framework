@@ -116,20 +116,27 @@ abstract class ModelAbstract extends DatabaseProvider {
 
     public function load(array $input): self {
         $relations = $this->getRelations();
+        //TODO: Добавить снятие слепка "до" и "после" загрузки, чтобы можно было фиксировать изменения
         if ($this->beforeLoad()) {
-            $this->data = new ModelData();
             foreach ($input as $key => $value) {
                 if (array_key_exists($key, $relations)) {
                     $relationDefinition = $relations[$key];
+                    $relationModel      = $relationDefinition['model'];
                     $relationType       = $relationDefinition['type'];
 
                     if ($relationType === 'hasMany' && is_array($value)) {
-                        $this->$key = array_map(
-                            fn($array) => (new $relationDefinition['model']($this->getDatabase()))->load($array),
-                            $value
-                        );
+                        $this->$key = array_map(fn($item) => (new $relationModel($this->getDatabase()))->load($item), $value);
                     } elseif (($relationType === 'hasOne' || $relationType === 'belongsTo') && is_array($value)) {
-                        $this->$key = (new $relationDefinition['model']($this->getDatabase()))->load($value);
+                        if ($this->$key instanceof ModelAbstract) {
+                            $primaryKey = $this->$key->primaryKey;
+                            if (isset($value[$primaryKey]) && $value[$primaryKey] === $this->$key->$primaryKey) {
+                                $this->$key->load($value);
+                            } else {
+                                $this->$key = (new $relationModel($this->getDatabase()))->load($value);
+                            }
+                        } else {
+                            $this->$key = (new $relationModel($this->getDatabase()))->load($value);
+                        }
                     }
                 } else {
                     $this->$key = $value;
@@ -178,7 +185,7 @@ abstract class ModelAbstract extends DatabaseProvider {
         }
 
         if ($this->beforeInsert()) {
-            $data         = $this->filterAttributes($this->data->toArray());
+            $data         = $this->clearRelations($this->data->toArray());
             $columns      = implode(", ", array_keys($data));
             $placeholders = ":" . implode(", :", array_keys($data));
 
@@ -241,7 +248,7 @@ abstract class ModelAbstract extends DatabaseProvider {
         }
 
         if ($this->beforeUpdate()) {
-            $data             = $this->filterAttributes($this->data->toArray());
+            $data             = $this->clearRelations($this->data->toArray());
             $fields           = implode(", ", array_map(fn($key) => "$key = :$key", array_keys($data)));
             $status           = $db->setQuery("UPDATE {$this->getTable()} SET {$fields} WHERE {$this->primaryKey} = :{$this->primaryKey}", $data)->execute();
             $relationResults  = $this->syncRelations();
@@ -401,11 +408,16 @@ abstract class ModelAbstract extends DatabaseProvider {
         return [];
     }
 
+    public function toArray():array{
+        return $this->clearRelations($this->data->toArray());
+    }
+
     private function loadRelations(ModelData $modelData): void {
-        foreach ($this->getRelations() as $relation => $definition) {
-            $relatedModel    = new $definition['model']($this->getDatabase());
-            $relatedMethod   = $definition['method'];
-            $primaryKey      = $definition['primary_key'];
+        foreach ($this->getRelations() as $relation => $config) {
+            $relatedModel  = new $config['model']($this->getDatabase());
+            $relatedMethod = $config['method'];
+            $primaryKey    = $config['primary_key'];
+
             $this->$relation = $relatedModel->$relatedMethod($modelData->{$primaryKey});
         }
     }
@@ -473,8 +485,8 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $result;
     }
 
-    private function filterAttributes(array $data): array {
-        foreach ($this->getRelations() as $relation => $config) {
+    private function clearRelations(array $data): array {
+        foreach ($this->getRelations() as $relation => $definition) {
             if (isset($data[$relation])) {
                 unset($data[$relation]);
             }
