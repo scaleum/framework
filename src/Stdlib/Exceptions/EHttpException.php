@@ -18,7 +18,7 @@ use Scaleum\Stdlib\Helpers\HttpHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class EHttpException extends EBaseException
+class EHttpException extends EBasicException
 {
     public function __construct(int $code = 500, string $message = '', \Throwable $previous = null)
     {

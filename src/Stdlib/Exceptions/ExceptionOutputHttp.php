@@ -46,7 +46,7 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
         HttpHelper::setHeader('Content-Type', sprintf('%s; charset=utf-8', $this->formats[$format = $this->getResponseFormat()]));
         HttpHelper::setStatusHeader(
             $this->statusCode = HttpHelper::isStatusCode(
-                $code = $exception instanceof ErrorException ? ($exception instanceof EBaseException ? $exception->getCode() : $exception->getSeverity()) : $exception->getCode()
+                $code = $exception instanceof ErrorException ? ($exception instanceof EBasicException ? $exception->getCode() : $exception->getSeverity()) : $exception->getCode()
             ) ? $code : 500
         );
         echo $this->formatException($exception, $format);

@@ -17,7 +17,7 @@ namespace Scaleum\Stdlib\Exceptions;
  *
  * @datetime 09.01.2025
  */
-class EDatabaseError extends EBaseException
+class EDatabaseError extends EBasicException
 {
 
 }

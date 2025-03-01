@@ -12,13 +12,12 @@ namespace Scaleum\Stdlib\Exceptions;
 
 
 /**
- * Class EInOutError
- * I/O error in the file
+ * Class ECacheError
  * @datetime 09.01.2025
  */
-class EInOutError extends EBaseException
+class ECacheException extends EBasicException
 {
 
 }
 
-/* End of file EInOutError.php */
+/* End of file ECacheError.php */

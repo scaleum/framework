@@ -15,7 +15,7 @@ use Scaleum\Http\Renderers\Plugins\IncludeAsset;
 use Scaleum\Http\Renderers\Plugins\IncludeTemplate;
 use Scaleum\Http\Renderers\Plugins\RendererPluginInterface;
 use Scaleum\Stdlib\Base\Hydrator;
-use Scaleum\Stdlib\Exceptions\EInOutError;
+use Scaleum\Stdlib\Exceptions\EInOutException;
 use Scaleum\Stdlib\Exceptions\ENotFoundError;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\FileHelper;
@@ -304,7 +304,7 @@ class TemplateRenderer extends Hydrator {
                 $buffer        = ob_get_clean();
 
                 if ($includeReturn === false && empty($buffer)) {
-                    throw new EInOutError(sprintf('%s: Unable to render layout "%s"; file include failed', __METHOD__, $filename));
+                    throw new EInOutException(sprintf('%s: Unable to render layout "%s"; file include failed', __METHOD__, $filename));
                 }
             } else {
                 $buffer = $template->getContent();

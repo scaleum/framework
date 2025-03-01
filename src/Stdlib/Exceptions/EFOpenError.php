@@ -16,7 +16,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Error opening file
  * @datetime 09.01.2025
  */
-class EFOpenError extends EInOutError
+class EFOpenError extends EInOutException
 {
 
 }

@@ -16,7 +16,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Error file creation
  * @datetime 09.01.2025
  */
-class EFCreateError extends EInOutError
+class EFCreateError extends EInOutException
 {
 
 }

@@ -11,13 +11,7 @@
 namespace Scaleum\Stdlib\Exceptions;
 
 
-/**
- * Class EAssertionFailed
- * @datetime 09.01.2025
- */
-class EAssertionFailed extends EBaseException
+class EBasicException extends \ErrorException
 {
 
 }
-
-/* End of file EAssertionFailed.php */

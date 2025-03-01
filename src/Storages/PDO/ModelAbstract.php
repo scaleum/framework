@@ -11,6 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Storages\PDO;
 
+use Scaleum\Stdlib\Exceptions\EDatabaseError;
+
 /**
  * ModelAbstract
  *
@@ -129,22 +131,17 @@ abstract class ModelAbstract extends DatabaseProvider {
                             $existingItems = $this->$key;
                             $primaryKey    = (new $relationModel())->primaryKey;
 
-                            // Получаем ID уже загруженных записей
                             $existingIds = array_map(fn($item) => $item->$primaryKey, $existingItems);
-                            // Получаем ID записей из входных данных
-                            $newIds = array_map(fn($item) => $item[$primaryKey] ?? null, $value);
+                            $newIds      = array_map(fn($item) => $item[$primaryKey] ?? null, $value);
 
-                            // Проверяем, нет ли расхождений в данных
                             foreach ($newIds as $newId) {
                                 if ($newId !== null && ! in_array($newId, $existingIds)) {
-                                    throw new \Exception("Data inconsistency detected for 'hasMany' relation: `$key` (missing '$primaryKey': $newId)");
+                                    throw new EDatabaseError("Data inconsistency detected for 'hasMany' relation: `$key` (missing '$primaryKey': $newId)");
                                 }
                             }
 
-                            // Обновляем существующие записи или создаем новые
                             $this->$key = array_map(function ($item) use ($existingItems, $relationModel, $primaryKey) {
                                 $itemId = $item[$primaryKey] ?? null;
-
                                 foreach ($existingItems as $existingItem) {
                                     if ($existingItem->$primaryKey === $itemId) {
                                         $existingItem->load($item);
@@ -154,7 +151,6 @@ abstract class ModelAbstract extends DatabaseProvider {
                                 return (new $relationModel($this->getDatabase()))->load($item);
                             }, $value);
                         } else {
-                            // Если данных ещё нет, просто загружаем массив моделей
                             $this->$key = array_map(fn($item) => (new $relationModel($this->getDatabase()))->load($item), $value);
                         }
                     } elseif (($relationType === 'hasOne' || $relationType === 'belongsTo') && is_array($value)) {
@@ -163,8 +159,7 @@ abstract class ModelAbstract extends DatabaseProvider {
                             if (isset($value[$primaryKey]) && $value[$primaryKey] === $this->$key->$primaryKey) {
                                 $this->$key->load($value);
                             } else {
-                                // $this->$key = (new $relationModel($this->getDatabase()))->load($value);
-                                throw new \Exception("Data is not consistent with the current model data");
+                                throw new EDatabaseError("Data is not consistent with the current model data");
                             }
                         } else {
                             $this->$key = (new $relationModel($this->getDatabase()))->load($value);

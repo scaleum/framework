@@ -12,7 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Events;
 
 use Scaleum\Stdlib\Exceptions\EObjectError;
-use Scaleum\Stdlib\Exceptions\ETypeError;
+use Scaleum\Stdlib\Exceptions\ETypeException;
 
 /**
  * EventManager
@@ -24,7 +24,7 @@ class EventManager implements EventManagerInterface {
 
     public function on(string | Event | array $event, mixed $callback = null, int $priority = 1): array | Listener {
         if ($callback === null) {
-            throw new ETypeError(sprintf('%s: expects a callback; null provided', __METHOD__));
+            throw new ETypeException(sprintf('%s: expects a callback; null provided', __METHOD__));
         }
 
         if (is_array($event)) {

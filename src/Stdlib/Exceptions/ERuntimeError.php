@@ -15,7 +15,7 @@ namespace Scaleum\Stdlib\Exceptions;
  * Class ERuntimeError
  * @datetime 09.01.2025
  */
-class ERuntimeError extends EBaseException
+class ERuntimeError extends EBasicException
 {
 
 }
