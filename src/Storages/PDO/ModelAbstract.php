@@ -125,14 +125,46 @@ abstract class ModelAbstract extends DatabaseProvider {
                     $relationType       = $relationDefinition['type'];
 
                     if ($relationType === 'hasMany' && is_array($value)) {
-                        $this->$key = array_map(fn($item) => (new $relationModel($this->getDatabase()))->load($item), $value);
+                        if ($this->$key && is_array($this->$key)) {
+                            $existingItems = $this->$key;
+                            $primaryKey    = (new $relationModel())->primaryKey;
+
+                            // Получаем ID уже загруженных записей
+                            $existingIds = array_map(fn($item) => $item->$primaryKey, $existingItems);
+                            // Получаем ID записей из входных данных
+                            $newIds = array_map(fn($item) => $item[$primaryKey] ?? null, $value);
+
+                            // Проверяем, нет ли расхождений в данных
+                            foreach ($newIds as $newId) {
+                                if ($newId !== null && ! in_array($newId, $existingIds)) {
+                                    throw new \Exception("Data inconsistency detected for 'hasMany' relation: `$key` (missing '$primaryKey': $newId)");
+                                }
+                            }
+
+                            // Обновляем существующие записи или создаем новые
+                            $this->$key = array_map(function ($item) use ($existingItems, $relationModel, $primaryKey) {
+                                $itemId = $item[$primaryKey] ?? null;
+
+                                foreach ($existingItems as $existingItem) {
+                                    if ($existingItem->$primaryKey === $itemId) {
+                                        $existingItem->load($item);
+                                        return $existingItem;
+                                    }
+                                }
+                                return (new $relationModel($this->getDatabase()))->load($item);
+                            }, $value);
+                        } else {
+                            // Если данных ещё нет, просто загружаем массив моделей
+                            $this->$key = array_map(fn($item) => (new $relationModel($this->getDatabase()))->load($item), $value);
+                        }
                     } elseif (($relationType === 'hasOne' || $relationType === 'belongsTo') && is_array($value)) {
                         if ($this->$key instanceof ModelAbstract) {
                             $primaryKey = $this->$key->primaryKey;
                             if (isset($value[$primaryKey]) && $value[$primaryKey] === $this->$key->$primaryKey) {
                                 $this->$key->load($value);
                             } else {
-                                $this->$key = (new $relationModel($this->getDatabase()))->load($value);
+                                // $this->$key = (new $relationModel($this->getDatabase()))->load($value);
+                                throw new \Exception("Data is not consistent with the current model data");
                             }
                         } else {
                             $this->$key = (new $relationModel($this->getDatabase()))->load($value);
@@ -408,7 +440,7 @@ abstract class ModelAbstract extends DatabaseProvider {
         return [];
     }
 
-    public function toArray():array{
+    public function toArray(): array {
         return $this->clearRelations($this->data->toArray());
     }
 
