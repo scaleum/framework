@@ -18,7 +18,7 @@ use Scaleum\Stdlib\Exceptions\EDatabaseError;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-abstract class ModelAbstract extends DatabaseProvider {
+abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
     public const ON_INSERT   = 0x01;
     public const ON_UPDATE   = 0x02;
     public const ON_DELETE   = 0x04;
@@ -43,6 +43,12 @@ abstract class ModelAbstract extends DatabaseProvider {
         $this->data->$name = $value;
     }
 
+    /**
+     * Finds a record by its ID.
+     *
+     * @param mixed $id The ID of the record to find.
+     * @return self|null The found record as an instance of the class, or null if not found.
+     */
     public function find(mixed $id): ?self {
         $db = $this->getDatabase();
         if (! $db) {
@@ -59,6 +65,12 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $this;
     }
 
+    /**
+     * Finds a single record based on the specified conditions.
+     *
+     * @param array $conditions An associative array of conditions to match against.
+     * @return self|null The found record as an instance of the class, or null if no record is found.
+     */
     public function findOneBy(array $conditions): ?self {
         $db = $this->getDatabase();
         if (! $db) {
@@ -77,13 +89,18 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $this;
     }
 
+    /**
+     * Retrieves all records from the database.
+     *
+     * @return array An array of all records.
+     */
     public function findAll(): array {
         $db = $this->getDatabase();
         if (! $db) {
             return [];
         }
 
-        $data    = $db->setQuery("SELECT * FROM {$this->getTable()}")->fetchAll();
+        $data    = $db->setQuery("SELECT * FROM {$this->getTable()}")->fetchAll([\PDO::FETCH_ASSOC]);
         $results = [];
         foreach ($data as $row) {
             $model       = new static($db);
@@ -95,6 +112,12 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $results;
     }
 
+    /**
+     * Finds all records that match the given conditions.
+     *
+     * @param array $conditions An associative array of conditions where the key is the column name and the value is the value to match.
+     * @return array An array of records that match the given conditions.
+     */
     public function findAllBy(array $conditions): array {
         $db = $this->getDatabase();
         if (! $db) {
@@ -103,7 +126,7 @@ abstract class ModelAbstract extends DatabaseProvider {
 
         $whereClauses = implode(" AND ", array_map(fn($key) => "$key = :$key", array_keys($conditions)));
         $sql          = "SELECT * FROM {$this->table} WHERE {$whereClauses}";
-        $data         = $db->setQuery($sql, $conditions)->fetchAll();
+        $data         = $db->setQuery($sql, $conditions)->fetchAll([\PDO::FETCH_ASSOC]);
         $results      = [];
         foreach ($data as $row) {
             $model       = new static($db);
@@ -116,6 +139,12 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $results;
     }
 
+    /**
+     * Loads the model with the provided input data.
+     *
+     * @param array $input An associative array of data to load into the model.
+     * @return self Returns the instance of the model.
+     */
     public function load(array $input): self {
         $relations = $this->getRelations();
         //TODO: Добавить снятие слепка "до" и "после" загрузки, чтобы можно было фиксировать изменения
@@ -175,6 +204,11 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $this;
     }
 
+    /**
+     * Inserts a new record into the database.
+     *
+     * @return int The ID of the newly inserted record.
+     */
     public function insert(): int {
         $result = 0;
         if ($this->isTransactional(self::ON_INSERT)) {
@@ -235,6 +269,11 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $result;
     }
 
+    /**
+     * Updates the current record in the database.
+     *
+     * @return int The number of affected rows.
+     */
     public function update(): int {
         if (! $this->isExisting()) {
             return $this->insert();
@@ -291,6 +330,12 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $result;
     }
 
+    /**
+     * Deletes the current record from the database.
+     *
+     * @param bool $cascade Whether to delete related records in a cascading manner.
+     * @return int The number of affected rows.
+     */
     public function delete(bool $cascade = false): int {
         $result = 0;
         if (! $this->isExisting()) {
@@ -356,21 +401,41 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $result;
     }
 
+    /**
+     * Checks if the current model instance exists in the database.
+     *
+     * @return bool True if the model instance exists, false otherwise.
+     */
     public function isExisting(): bool {
         return $this->data->has($this->primaryKey);
     }
 
+    /**
+     * Get the ID of the model.
+     *
+     * @return mixed The ID of the model.
+     */
     public function getId(): mixed {
         return $this->data->{$this->primaryKey};
     }
 
+    /**
+     * Retrieves the mode of the current model.
+     *
+     * @return string|null The mode of the model, or null if not set.
+     */
     public function getMode(): ?string {
         return $this->mode;
     }
 
+    /**
+     * Sets the mode for the model.
+     *
+     * @param string $mode The mode to set.
+     * @return self Returns the instance of the model.
+     */
     public function setMode(string $mode): self {
         $this->mode = $mode;
-
         return $this;
     }
 
@@ -398,6 +463,12 @@ abstract class ModelAbstract extends DatabaseProvider {
      */
     public function getTransactions() {return [];}
 
+    /**
+     * Checks if the given type is transactional.
+     *
+     * @param int $type The type to check.
+     * @return bool True if the type is transactional, false otherwise.
+     */
     public function isTransactional(int $type): bool {
         $mode         = $this->getMode();
         $transactions = $this->getTransactions();
@@ -405,6 +476,11 @@ abstract class ModelAbstract extends DatabaseProvider {
         return isset($transactions[$mode]) && ($transactions[$mode] & $type);
     }
 
+    /**
+     * Retrieves the name of the table associated with the model.
+     *
+     * @return string The name of the table.
+     */
     public function getTable(): string {
         if (! $this->table) {
             $this->table = strtolower((new \ReflectionClass($this))->getShortName());
@@ -413,6 +489,11 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $this->table;
     }
 
+    /**
+     * Retrieves the primary key of the model.
+     *
+     * @return string The primary key of the model.
+     */
     public function getPrimaryKey(): string {
         return $this->primaryKey;
     }
@@ -431,7 +512,28 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $this->lastStatus;
     }
 
+    /**
+     * Retrieves the relations associated with the model.
+     *
+     * @return array An array of relations.
+     */
     protected function getRelations(): array {
+        // return [
+        //     'profile' => [
+        //         'model'       => ModelClassA::class,
+        //         'method'      => 'findByUserId',
+        //         'primary_key' => 'id',
+        //         'foreign_key' => 'user_id',
+        //         'type'        => 'hasOne', // hasOne|hasMany|belongsTo
+        //     ],
+        //     'comments' => [
+        //         'model'       => ModelClassB::class,
+        //         'method'      => 'findByUserId',
+        //         'primary_key' => 'id',
+        //         'foreign_key' => 'user_id',
+        //         'type'        => 'hasMany',
+        //     ],
+        // ];        
         return [];
     }
 
@@ -439,6 +541,13 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $this->clearRelations($this->data->toArray());
     }
 
+    /**
+     * Loads the relations for the given model data.
+     *
+     * @param ModelData $modelData The model data for which to load relations.
+     *
+     * @return void
+     */
     private function loadRelations(ModelData $modelData): void {
         foreach ($this->getRelations() as $relation => $config) {
             $relatedModel  = new $config['model']($this->getDatabase());
@@ -449,6 +558,11 @@ abstract class ModelAbstract extends DatabaseProvider {
         }
     }
 
+    /**
+     * Synchronizes the relations of the current model.
+     *
+     * @return array An array containing the synchronized relations.
+     */
     private function syncRelations(): array {
         $result = [];
         foreach ($this->getRelations() as $relation => $config) {
@@ -489,6 +603,11 @@ abstract class ModelAbstract extends DatabaseProvider {
         return $result;
     }
 
+    /**
+     * Removes the relations associated with the current model.
+     *
+     * @return array An array containing the details of the removed relations.
+     */
     private function removeRelations(): array {
         $result = [];
         foreach ($this->getRelations() as $relation => $config) {
