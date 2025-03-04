@@ -21,13 +21,13 @@ use Scaleum\Stdlib\Exceptions\EDatabaseError;
  */
 class DatabaseHelper {
     public static function quote(PDO $pdo, mixed $value): string {
-        $driver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)); // Получаем тип БД
+        $driver = strtolower($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
         return match (true) {
             $value === NULL => 'NULL',
             is_int($value) => (string) $value,
             is_float($value) => (string) $value,
             is_bool($value) => self::formatBoolean($value, $driver),
-            is_string($value) => $pdo->quote(trim($value, "'\""), PDO::PARAM_STR),
+            is_string($value) => is_numeric($value) ? $value : $pdo->quote(trim($value, "'\""), PDO::PARAM_STR),
             is_object($value) => self::handleObject($value, $pdo),
             is_resource($value) => throw new EDatabaseError(sprintf('Resource of type `%s` could not be converted to string', get_resource_type($value))),
             is_array($value) => throw new EDatabaseError(sprintf('Array of type `%s` could not be converted to string', gettype($value))),

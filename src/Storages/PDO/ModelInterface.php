@@ -28,4 +28,5 @@ interface ModelInterface {
     public function getPrimaryKey(): string;
     public function getData();
     public function getLastStatus(): array;
+    public function toArray(): array;
 }
