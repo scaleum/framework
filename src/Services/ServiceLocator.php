@@ -15,7 +15,7 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
  * ServiceLocator - facade for service provider
- * 
+ *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class ServiceLocator {
@@ -24,7 +24,7 @@ class ServiceLocator {
     public static function setInstance(ServiceProviderInterface $instance): void {
         self::$instance = $instance;
     }
-    public static function getInstance(): ?ServiceProviderInterface {
+    public static function getInstance(): ServiceProviderInterface {
         if (self::$instance === null) {
             throw new ERuntimeError('Service provider is not set');
         }

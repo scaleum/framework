@@ -26,24 +26,23 @@ class LoggerGateway {
         self::$instance = $instance;
     }
 
-    public static function getInstance(): ?LoggerProviderInterface {
-        self::ensureProviderIsSet();
+    public static function getInstance(): LoggerProviderInterface {
+        if (self::$instance === null) {
+            throw new \RuntimeException('Logger provider is not set');
+        }
         return self::$instance;
     }
 
     public static function getLogger(string $channel): LoggerInterface {
-        self::ensureProviderIsSet();
-        return self::$instance->getLogger($channel);
+        return self::getInstance()->getLogger($channel);
     }
 
     public static function hasLogger(string $channel): bool {
-        self::ensureProviderIsSet();
-        return self::$instance->hasLogger($channel);
+        return self::getInstance()->hasLogger($channel);
     }
 
     public static function setLogger(string $channel, LoggerInterface $logger): void {
-        self::ensureProviderIsSet();
-        self::$instance->setLogger($channel, $logger);
+        self::getInstance()->setLogger($channel, $logger);
     }    
 
     public static function log($level, $message, array $context = []): void {
@@ -80,12 +79,6 @@ class LoggerGateway {
 
     public static function debug($message, array $context = []): void {
         self::log(LogLevel::DEBUG, $message, $context);
-    }
-
-    protected static function ensureProviderIsSet(): void {
-        if (self::$instance === null) {
-            throw new \RuntimeException('Logger provider is not set');
-        }
     }
 }
 /** End of LoggerGateway **/

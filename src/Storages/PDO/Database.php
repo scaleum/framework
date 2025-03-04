@@ -13,6 +13,9 @@ namespace Scaleum\Storages\PDO;
 
 use PDO;
 use Scaleum\Cache\Cache;
+use Scaleum\Logger\LoggerChannelTrait;
+use Scaleum\Services\ServiceLocator;
+use Scaleum\Stdlib\Base\Benchmark;
 use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
 use Scaleum\Storages\PDO\Builders\Contracts\SchemaBuilderInterface;
@@ -26,6 +29,8 @@ use Scaleum\Storages\PDO\Helpers\DatabaseHelper;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Database extends Hydrator {
+    use LoggerChannelTrait;
+
     protected string $dsn;
     protected string $user;
     protected string $password;
@@ -34,10 +39,15 @@ class Database extends Hydrator {
     protected array $options         = [];
     private ?PDO $pdo                = null;
     protected ?Cache $cache          = null;
+    protected bool $logging          = false;
     private int $queryCounter        = 0;
     private array $queryParams       = [];
     private int $queryRowsAffected   = 0;
     private string $queryStr         = '';
+
+    public function getLoggerChannel(): string {
+        return 'kernel';
+    }
 
     public function begin(): bool {
         return $this->getPDO()->beginTransaction();
@@ -128,7 +138,7 @@ class Database extends Hydrator {
      *                              If not specified, the ID of the last inserted row will be returned.
      * @return mixed The ID of the last inserted row.
      */
-    public function getLastInsertID(?string $sequence = null):mixed {
+    public function getLastInsertID(?string $sequence = null): mixed {
         return $this->getPDO()->lastInsertId($sequence);
     }
 
@@ -344,7 +354,7 @@ class Database extends Hydrator {
         }
 
         $result = false;
-        if (!empty($sql) && $statement = $this->getPDO()->prepare($sql)) {
+        if (! empty($sql) && $statement = $this->getPDO()->prepare($sql)) {
             try {
                 $this->beforeExecute();
                 $statement->execute();
@@ -408,87 +418,41 @@ class Database extends Hydrator {
         $this->connected = false;
     }
 
-    // protected function __prepare(string $sql, array $params = [], array $options = []) {
-    //     $result = $this->getPDO()->prepare($sql, $options);
-    //     if ($result instanceof \PDOStatement  && count($params)) {
-    //         $this->__bindParams($result, $params);
-    //     }
-
-    //     return $result;
-    // }
-
-    // protected function __bindParams(\PDOStatement $statement, array $params = []) {
-    //     foreach ($params as $key => &$value) {
-    //         if (is_integer($key)) {
-    //             if ($value === NULL) {
-    //                 $statement->bindValue($key + 1, null, PDO::PARAM_NULL);
-    //             } else {
-    //                 $statement->bindParam($key + 1, $value, $this->__getParamType($value));
-    //             }
-    //         } else {
-    //             if ($value === NULL) {
-    //                 $statement->bindValue($key, null, PDO::PARAM_NULL);
-    //             } else {
-    //                 $statement->bindParam($key, $value, $this->__getParamType($value));
-    //             }
-    //         }
-    //     }
-    // }
-
-    // protected function __getParamType(mixed $value): int {
-    //     if ($value === NULL) {
-    //         return PDO::PARAM_NULL;
-    //     } elseif (is_bool($value)) {
-    //         return PDO::PARAM_BOOL;
-    //     } elseif (is_int($value)) {
-    //         return PDO::PARAM_INT;
-    //     } else {
-    //         return PDO::PARAM_STR;
-    //     }
-    // }
-
-    // protected function __execute(string $sql, array $params = [], array $options = []) {
-    //     try {
-    //         $statement = $this->__prepare($sql, $options);
-    //         if (count($params)) {
-    //             $this->__bindParams($statement, $params);
-    //         }
-    //         $statement->execute();
-
-    //         return $statement;
-    //     } catch (\PDOException $e) {
-    //         $exception = new ESQLError($e->getMessage(), 0);
-    //         $exception->setSQLState((string) $e->getCode());
-
-    //         throw $exception;
-    //     }
-    // }
-
     private function beforeExecute() {
         $this->queryCounter++;
-
-        // if ($this->logging == true) {
-        //     $index = $this->queryCounter;
-        //     $this->benchmark->start( 'query'.$index.'_execute' );
-        // }
+        if ($this->logging) {
+            $this->getBenchmark()?->start("query{$this->queryCounter}_execute");
+        }
     }
 
     private function afterExecute() {
-        // if ($this->logging == true) {
-        //     $index = $this->queryCounter;
-        //     $this->benchmark->stop( $key = 'query'.$index.'_execute' );
-
-        //     $logMsg = [
-        //       'id'            => $index,
-        //       'sql'           => $this->getSql(),
-        //       'elapsed'       => $this->benchmark->elapsed( $key ),
-        //       'rows_affected' => $this->queryRowsAffected,
-        //     ];
-
-        //     /** Basic log */
-        //     $this->logDebug( 'Database execute: '.join( ',', $logMsg ) );
-        // }
+        if ($this->logging) {
+            $index = $this->queryCounter;
+            $this->debug(sprintf('Database query #%d: "%s" executed in %s sec.', $index, $this->getQuery(),$this->getBenchmark()?->elapsed("query{$index}_execute") ?? '0.0000'));
+        }
     }
 
+    /**
+     * Get the value of logging
+     */
+    public function getLogging(): bool {
+        return $this->logging;
+    }
+
+    /**
+     * Set the value of logging
+     *
+     * @return  self
+     */
+    public function setLogging(bool $logging): static
+    {
+        $this->logging = $logging;
+        return $this;
+    }
+
+    protected function getBenchmark(): ?Benchmark {
+        //TODO May be need to create a instance of Benchmark if it is not set?
+        return ServiceLocator::get('benchmark');
+    }
 }
 /** End of Database **/
