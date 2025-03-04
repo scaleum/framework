@@ -240,7 +240,7 @@ class Database extends Hydrator {
 
         $this->queryStr    = $sql;
         $this->queryParams = $params;
-// var_export($this->queryStr);
+
         return $this;
     }
 

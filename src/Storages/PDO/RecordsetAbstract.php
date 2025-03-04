@@ -11,6 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Storages\PDO;
 
+use Scaleum\Stdlib\Helpers\ArrayHelper;
+
 /**
  * RecordsetAbstract
  *
@@ -21,38 +23,22 @@ abstract class RecordsetAbstract extends DatabaseProvider implements \IteratorAg
     protected array $removed        = [];
     protected int $recordCount      = 0;
     protected int $recordTotalCount = 0;
-    protected int $position         = 0;
     protected array $params         = [];
     protected int $pageSize         = 0;
     protected int $page             = 0;
+    protected ?string $modelClass   = null;
 
-    /**
-     * Get the SQL query string.
-     *
-     * This abstract method should be implemented by subclasses to return
-     * the SQL query string that will be used for database operations.
-     *
-     * @return string The SQL query string.
-     */
-    abstract protected function getQuery(): string;
-    /**
-     * Get the fully qualified class name of the model associated with the recordset.
-     *
-     * This abstract method should be implemented by subclasses to return the
-     * fully qualified class name of the model that the recordset represents.
-     *
-     * @return string The fully qualified class name of the model.
-     */
-    abstract protected function getModelClass(): string;
-
-    public function __construct(?Database $database = null, array $records = []) {
+    public function __construct(?Database $database = null, ?string $modelClass = null, array $records = []) {
         parent::__construct($database);
-        $this->setRecords($records);
-    }
 
-    public function flush() {
-        $this->position = 0;
-        $this->records  = [];
+        $this->modelClass = $modelClass;
+        if ($modelClass !== null) {
+            if (! class_exists($modelClass)) {
+                throw new \RuntimeException("Model class `$modelClass` does not exist");
+            }
+        }
+
+        $this->setRecords($records);
     }
 
     /**
@@ -60,77 +46,21 @@ abstract class RecordsetAbstract extends DatabaseProvider implements \IteratorAg
      *
      * @return static Returns the current instance of the class.
      */
-    public function loadRecords(): static {
-        $sql = $this->getQuery();
-        // $countQuery = preg_replace('/SELECT\s+.*?\s+FROM\s+/i', 'SELECT COUNT(*) FROM ', $query);
-        $countSql               = "SELECT COUNT(*) AS total FROM (" . preg_replace('/\s+LIMIT\s+\d+(\s*,\s*\d+)?$/i', '', $sql) . ") AS SUB_QUERY";
-        $this->recordTotalCount = (int) $this->getDatabase()->setQuery($countSql, $this->getParams())->fetchColumn();
-
-        $rows              = $this->getDatabase()->setQuery($sql, $this->getParams())->fetchAll([\PDO::FETCH_ASSOC]);
-        $this->recordCount = count($rows);
-
-        $modelClass = $this->getModelClass();
-        if (! class_exists($modelClass)) {
-            throw new \Exception("Model class `$modelClass` not found");
-        }
-
-        return $this->setRecords(array_map(fn($row) => (new $modelClass($this->getDatabase()))->load($row), $rows));
+    public function load(): static {
+        $records                = $this->getDatabase()->setQuery($this->getQuery(), $this->getParams())->fetchAll([\PDO::FETCH_ASSOC]);
+        $this->recordCount      = count($records);
+        $this->recordTotalCount = $this->getQueryTotalCount();
+        
+        return $this->setRecords($records);
     }
 
-    public function fetchRecord(): ModelInterface | null {
-        if (($index = key($this->records)) !== null) {
-            $this->position = $index;
-            $result         = $this->getRecord();
-            $this->nextRecord();
-
-            return $result;
-        }
-
-        return null;
-    }
-
-    public function firstRecord(): ModelInterface | false {
-        return reset($this->records);
-    }
-
-    public function hasRecord($index): bool {
-        return isset($this->records[$index]);
-    }
-
-    public function lastRecord(): ModelInterface | false {
-        return end($this->records);
-    }
-
-    public function nextRecord(): ModelInterface | false {
-        return next($this->records);
-    }
-
-    public function prevRecord(): ModelInterface | false {
-        return prev($this->records);
-    }
-
-    public function getRecord($index = null): ModelInterface {
-        if ($index !== null) {
-            if ($this->hasRecord($index)) {
-                return $this->records[$index];
-            }
-        }
-
-        return current($this->records);
-    }
-
-    public function getRecords() {
+    public function getRecords(): array {
         return $this->records;
     }
 
-    public function getPosition():int {
-        return $this->position;
-    }
-
     public function setRecords(array $records): static {
-        $this->flush();
-        $this->records = $records;
-
+        $this->reset();
+        $this->records = $this->hydrateModels($records);
         return $this;
     }
 
@@ -247,17 +177,22 @@ abstract class RecordsetAbstract extends DatabaseProvider implements \IteratorAg
      */
     public function filter(callable $callback): static {
         $filtered = array_filter($this->records, $callback);
-        return new static($this->getDatabase(), array_values($filtered));
+        return new static($this->getDatabase(), $this->modelClass, array_values($filtered));
     }
 
     /**
      * Adds a model to the recordset.
      *
-     * @param ModelInterface $model The model to add.
+     * @param array|ModelInterface $record The record to add.
      * @return static Returns the instance of the recordset.
      */
-    public function add(ModelInterface $model): static {
-        $this->records[] = $model;
+    public function add(mixed $record): static {
+        if (is_array($record) || $record instanceof ModelInterface) {
+            $this->records[] = $record;
+        } else {
+            throw new \InvalidArgumentException("Invalid record type, only arrays or ModelInterface instances are allowed");
+        }
+
         return $this;
     }
 
@@ -280,9 +215,9 @@ abstract class RecordsetAbstract extends DatabaseProvider implements \IteratorAg
     }
 
     /**
-     * Removes an item from the recordset by its index.
+     * Removes an record from the recordset by its index.
      *
-     * @param int $index The index of the item to be removed.
+     * @param int $index The index of the record to be removed.
      * @return static Returns the current instance for method chaining.
      */
     public function removeBy(int $index): static {
@@ -302,15 +237,19 @@ abstract class RecordsetAbstract extends DatabaseProvider implements \IteratorAg
      * @return void
      */
     public function save(): void {
-        foreach ($this->removed as $model) {
-            $model->delete();
+        foreach ($this->removed as $record) {
+            if ($record instanceof ModelInterface) {
+                $record->delete();
+            }
         }
 
-        foreach ($this->records as $model) {
-            if (! empty($model->{$model->getPrimaryKey()})) {
-                $model->update();
-            } else {
-                $model->insert();
+        foreach ($this->records as $record) {
+            if ($record instanceof ModelInterface) {
+                if (! empty($record->{$record->getPrimaryKey()})) {
+                    $record->update();
+                } else {
+                    $record->insert();
+                }
             }
         }
 
@@ -325,5 +264,51 @@ abstract class RecordsetAbstract extends DatabaseProvider implements \IteratorAg
     public function toArray(): array {
         return array_map(fn($model) => $model->toArray(), $this->records);
     }
+
+    public function reset() {
+        $this->removed = [];
+        $this->records = [];
+    }
+
+    /**
+     * Get the SQL query string.
+     *
+     * This abstract method should be implemented by subclasses to return
+     * the SQL query string that will be used for database operations.
+     *
+     * @return string The SQL query string.
+     */
+    abstract protected function getQuery(): string;
+
+    /**
+     * Retrieves the total count of records for the current query.
+     * Can be overridden by subclasses to provide a custom implementation.
+     * The default implementation simply counts the records in the query result.
+     * 
+     * @return int The total count of records.
+     */
+    protected function getQueryTotalCount(): int {
+        $query = "SELECT COUNT(*) AS total FROM (" . preg_replace('/\s+LIMIT\s+\d+(\s*,\s*\d+)?$/i', '', $this->getQuery()) . ") AS SUB_QUERY";
+        return (int) $this->getDatabase()->setQuery($query, $this->getParams())->fetchColumn();
+    }
+
+    /**
+     * Hydrates an array of records into models.
+     *
+     * @param array $records An array of records to be hydrated.
+     * @return array An array of hydrated models.
+     */
+    protected function hydrateModels(array $records): array {
+        $modelClass = $this->modelClass;
+        if ($modelClass !== null) {
+            $records = array_map(function ($item) use ($modelClass) {
+                if (ArrayHelper::isAssociative($item)) {
+                    return (new $modelClass($this->getDatabase()))->load($item);
+                }
+                return $item;
+            }, $records);
+        }
+        return $records;
+    }    
 }
 /** End of RecordsetAbstract **/
