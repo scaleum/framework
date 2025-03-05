@@ -41,7 +41,7 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
         if (! ($loggerManager = $this->getKernel()->getContainer()->get(Framework::SVC_LOGGERS)) instanceof LoggerProviderInterface) {
             throw new ERuntimeError('Logger manager must implement LoggerProviderInterface');
         }
-        LoggerGateway::setInstance($loggerManager);
+        LoggerGateway::setProvider($loggerManager);
 
         # Accosiate service manager with service locator
         if (! ($services = $this->getKernel()->getContainer()->get(Framework::SVC_POOL)) instanceof ServiceProviderInterface) {
@@ -50,7 +50,7 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
         $services->setService(Framework::SVC_LOGGERS, $loggerManager);
         $services->setService(Framework::SVC_EVENTS, $this->getKernel()->getContainer()->get(Framework::SVC_EVENTS));
 
-        ServiceLocator::setInstance($services);
+        ServiceLocator::setProvider($services);
     }
 
     public function onEvent(Event $event): void {

@@ -20,31 +20,43 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
  */
 class ServiceLocator {
     protected static ?ServiceProviderInterface $instance = null;
+    protected static bool $strictMode                    = true;
 
-    public static function setInstance(ServiceProviderInterface $instance): void {
+    public static function setProvider(ServiceProviderInterface $instance): void {
         self::$instance = $instance;
     }
-    public static function getInstance(): ServiceProviderInterface {
-        if (self::$instance === null) {
-            throw new ERuntimeError('Service provider is not set');
+    public static function getProvider(): ?ServiceProviderInterface {
+        if (self::$instance === null && self::$strictMode) {
+            throw new ERuntimeError(sprintf("Service provider is not set in '%s'", __CLASS__));
         }
         return self::$instance;
     }
+    public static function resetProvider(): void {
+        self::$instance = null;
+    }
+
+    public static function strictModeOn(): void {
+        self::$strictMode = true;
+    }
+
+    public static function strictModeOff(): void {
+        self::$strictMode = false;
+    }
 
     public static function get(string $str, mixed $default = null): mixed {
-        return self::getInstance()->getService($str, $default);
+        return self::getProvider()?->getService($str, $default) ?? $default;
     }
 
     public static function getAll(): array {
-        return self::getInstance()->getAll();
+        return self::getProvider()?->getAll() ?? [];
     }
 
     public static function has(string $str): bool {
-        return self::getInstance()->hasService($str);
+        return self::getProvider()?->hasService($str) ?? false;
     }
 
     public static function set(string $str, mixed $definition, bool $override = false): mixed {
-        return self::getInstance()->setService($str, $definition, $override);
+        return self::getProvider()?->setService($str, $definition, $override);
     }
 }
 /** End of ServiceLocator **/
