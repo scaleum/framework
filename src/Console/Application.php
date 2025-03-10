@@ -9,7 +9,7 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Http;
+namespace Scaleum\Console;
 
 use Scaleum\Core\Contracts\HandlerInterface;
 use Scaleum\Core\KernelAbstract;
@@ -24,11 +24,7 @@ class Application extends KernelAbstract {
 
     public function bootstrap(array $config = []): self {
         $this->getRegistry()->set('kernel.configurators', [
-            new DependencyInjection\Routing(),
-        ]);
-
-        $this->getRegistry()->set('behaviors', [
-            Behaviors\RoutingSetting::class,
+            new DependencyInjection\Commands(),
         ]);
 
         parent::bootstrap($config);
@@ -37,7 +33,7 @@ class Application extends KernelAbstract {
 
     public function getHandler(): HandlerInterface {
         if ($this->handler === null) {
-            $this->handler = new RequestHandler($this->getContainer());
+            $this->handler = new CommandHandler($this->getContainer());
         }
         return $this->handler;
     }

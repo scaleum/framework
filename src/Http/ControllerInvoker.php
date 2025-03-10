@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Http;
 
-use Psr\Http\Message\ResponseInterface;
+use Scaleum\Core\Contracts\ResponderInterface;
 use Scaleum\Stdlib\Exceptions\EMethodNotFoundError;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
@@ -21,7 +21,7 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class ControllerInvoker {
-    public function invoke(object $controller, array $routeInfo): ResponseInterface {
+    public function invoke(object $controller, array $routeInfo): ResponderInterface {
         if ($callback = $routeInfo['callback']) {
             $method = $callback['method'] ?? null;
             $args   = $callback['args'] ?? [];

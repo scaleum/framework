@@ -12,12 +12,13 @@ declare (strict_types = 1);
 namespace Scaleum\Http;
 
 use Psr\Container\ContainerInterface;
-use Psr\Http\Message\ResponseInterface;
 use Scaleum\Core\Contracts\HandlerInterface;
+use Scaleum\Core\Contracts\ResponderInterface;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Routing\Router;
 use Scaleum\Stdlib\Exceptions\EHttpException;
 use Scaleum\Stdlib\Exceptions\ENotFoundError;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
  * HttpHandler
@@ -31,12 +32,12 @@ class RequestHandler implements HandlerInterface {
 
     public function __construct(protected ContainerInterface $container) {
         if (! ($events = $this->container->get('event.manager')) instanceof EventManagerInterface) {
-            throw new \RuntimeException("Event manager is not an instance of EventManagerInterface");
+            throw new ERuntimeError("Event manager is not an instance of EventManagerInterface");
         }
         $this->events = $events;
     }
 
-    public function handle(): ResponseInterface {
+    public function handle(): ResponderInterface {
         try {
             /** @var Router $router */
             $router  = $this->container->get('router');

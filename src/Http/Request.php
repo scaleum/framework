@@ -10,9 +10,9 @@ declare (strict_types = 1);
  */
 
 namespace Scaleum\Http;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
+use Scaleum\Http\Contracts\HttpRequestInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 use Scaleum\Stdlib\Helpers\StringHelper;
@@ -23,7 +23,7 @@ use Scaleum\Stdlib\Helpers\Utf8Helper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class Request implements ServerRequestInterface {
+class Request implements HttpRequestInterface {
     private ?array $bodyParsed = null;
     private ?string $userAgent = null;
     private StreamInterface $body;

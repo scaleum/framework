@@ -9,15 +9,16 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core\Contracts;
+namespace Scaleum\Http\Contracts;
 
+use Psr\Http\Message\ServerRequestInterface;
 /**
- * HandlerInterface
+ * HttpRequestInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface HandlerInterface
+interface HttpRequestInterface extends ServerRequestInterface
 {
-    public function handle(): ResponderInterface;
+
 }
-/** End of HandlerInterface **/
+/** End of HttpRequestInterface **/

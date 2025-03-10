@@ -16,7 +16,7 @@ use Scaleum\DependencyInjection\Container;
 use Scaleum\DependencyInjection\Contracts\ConfiguratorInterface;
 use Scaleum\DependencyInjection\Helpers\Autowire;
 use Scaleum\DependencyInjection\Helpers\Factory;
-use Scaleum\Http\Behaviors\RoutingService;
+use Scaleum\Http\Behaviors\RoutingSetting;
 use Scaleum\Routing\Router;
 
 /**
@@ -29,8 +29,8 @@ class Routing implements ConfiguratorInterface {
         $container
             ->addDefinitions([
                 Router::class         => Autowire::create(),
-                RoutingService::class => function (ContainerInterface $c) {
-                    $result = new RoutingService($c->get('kernel'));
+                RoutingSetting::class => function (ContainerInterface $c) {
+                    $result = new RoutingSetting($c->get('kernel'));
                     $result->register($c->get('event.manager'));
                     return $result;
                 },

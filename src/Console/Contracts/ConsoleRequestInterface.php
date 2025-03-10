@@ -9,15 +9,16 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core\Contracts;
+namespace Scaleum\Console\Contracts;
+
 
 /**
- * HandlerInterface
+ * RequestInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface HandlerInterface
+interface ConsoleRequestInterface
 {
-    public function handle(): ResponderInterface;
+    public function getRawArguments(): array;
 }
-/** End of HandlerInterface **/
+/** End of RequestInterface **/

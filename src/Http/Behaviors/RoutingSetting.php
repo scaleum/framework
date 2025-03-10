@@ -26,7 +26,7 @@ use Scaleum\Stdlib\Helpers\ArrayHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class RoutingService extends KernelProviderAbstract implements EventHandlerInterface {
+class RoutingSetting extends KernelProviderAbstract implements EventHandlerInterface {
     public function register(EventManagerInterface $events): void {
         $events->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9980);
     }

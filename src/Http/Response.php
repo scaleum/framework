@@ -11,9 +11,9 @@ declare (strict_types = 1);
 
 namespace Scaleum\Http;
 
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Scaleum\Core\Contracts\ResponderInterface;
+use Scaleum\Http\Contracts\HttpResponseInterface;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 
 /**
@@ -21,7 +21,7 @@ use Scaleum\Stdlib\Helpers\HttpHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class Response implements ResponderInterface, ResponseInterface {
+class Response implements HttpResponseInterface, ResponderInterface {
     protected int $statusCode;
     protected array $headers;
     protected StreamInterface $body;

@@ -9,15 +9,15 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Core\Contracts;
+namespace Scaleum\Console\Contracts;
 
 /**
- * HandlerInterface
+ * CommandInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface HandlerInterface
+interface CommandInterface
 {
-    public function handle(): ResponderInterface;
+    public function execute(ConsoleRequestInterface $request): ConsoleResponseInterface;
 }
-/** End of HandlerInterface **/
+/** End of CommandInterface **/
