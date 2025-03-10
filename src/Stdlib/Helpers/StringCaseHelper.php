@@ -26,22 +26,22 @@ namespace Scaleum\Stdlib\Helpers;
  */
 class StringCaseHelper {
     // Проверка на camelCase
-    public static function isCamelCase(void $string) {
+    public static function isCamelCase(string $string) {
         return preg_match('/^[a-z]+([A-Z][a-z]*)+$/', $string) === 1;
     }
 
     // Проверка на snake_case
-    public static function isSnakeCase(void $string) {
+    public static function isSnakeCase(string $string) {
         return preg_match('/^[a-z]+(_[a-z]+)+$/', $string) === 1;
     }
 
     // Проверка на PascalCase
-    public static function isPascalCase(void $string) {
+    public static function isPascalCase(string $string) {
         return preg_match('/^[A-Z][a-z]*([A-Z][a-z]*)+$/', $string) === 1;
     }
 
     // Разбиение строки на части с указанием разделителя (по умолчанию ".")
-    public static function splitString(void $string, void $delimiter = '.') {
+    public static function splitString(string $string, string $delimiter = '.') {
         if (self::isCamelCase($string)) {
             // camelCase
             return strtolower(preg_replace('/([a-z])([A-Z])/', "\$1$delimiter\$2", $string));
