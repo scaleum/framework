@@ -27,10 +27,6 @@ class Application extends KernelAbstract {
             new DependencyInjection\Routing(),
         ]);
 
-        $this->getRegistry()->set('behaviors', [
-            Behaviors\RoutingSetting::class,
-        ]);
-
         parent::bootstrap($config);
         return $this;
     }

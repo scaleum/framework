@@ -52,9 +52,11 @@ class CommandHandler implements HandlerInterface {
             $dispatcher->registerCommand($name, $this->container->get($command));
         }
 
-        $request  = new Request();
+        $request = new Request();
+        $this->events->dispatch(HandlerInterface::EVENT_GET_REQUEST, $this, ['request' => $request]);
         $response = $dispatcher->dispatch($request);
-        
+        $this->events->dispatch(HandlerInterface::EVENT_GET_RESPONSE, $this, ['response' => $response]);
+
         return $response;
     }
 }

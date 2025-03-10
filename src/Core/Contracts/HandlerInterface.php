@@ -18,6 +18,9 @@ namespace Scaleum\Core\Contracts;
  */
 interface HandlerInterface
 {
+    public const EVENT_GET_REQUEST  = 'handle::request';
+    public const EVENT_GET_RESPONSE = 'handle::response';
+    
     public function handle(): ResponderInterface;
 }
 /** End of HandlerInterface **/
