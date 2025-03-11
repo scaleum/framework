@@ -25,14 +25,17 @@ class PhpArray extends TranslationLoaderAbstract {
                 )
             );
         }
+        $load = \Closure::bind(function ($filename) {
+            return require $filename;
+        }, $this);
 
-        $messages = include $filename;
+        $messages = $load($filename);
 
         if (! is_array($messages)) {
             throw new ETypeException(
                 sprintf(
-                    'Expected an array, but received %s',
-                    gettype($messages)
+                    'File "%s" must return an array, given %s.',
+                    $filename, gettype($messages)
                 )
             );
         }

@@ -35,7 +35,7 @@ class Ini extends TranslationLoaderAbstract {
         if (! is_array($messages)) {
             throw new ETypeException(
                 sprintf(
-                    'Expected an array, but received %s',
+                    'Expected an array, given %s',
                     gettype($messages)
                 )
             );
