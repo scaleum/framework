@@ -331,7 +331,7 @@ class FileHelper {
      * @return string The prepared location string.
      */
     public static function prepLocation(string $location): string {
-        return str_replace(['\\', '//'], DIRECTORY_SEPARATOR, $location);
+        return str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $location);
     }
 
     /**

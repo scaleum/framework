@@ -38,27 +38,29 @@ class ProcessHelper
         return $result;
     }
 
-    public static function getStarted()
+    public static function getStarted(): array
     {
         $result = [];
+
         if (self::isWinOS()) {
-            if (preg_match_all('/"[^\,]+"\,"([\d]+)"\,.*/i', `tasklist /FO "CSV" /NH`, $matches)) {
-                $result = $matches[1];
+            $output = `tasklist /FO "CSV" /NH`;
+            if (preg_match_all('/"[^"]+","(\d+)"/', $output, $matches)) {
+                $result = array_map('intval', $matches[1]); // Приводим PID к числу
             }
         } else {
-            $result = explode(PHP_EOL, `ps -e | gawk '{print $1}'`);
+            $result = array_map('intval', explode(PHP_EOL, trim(`ps -e -o pid=`)));
         }
 
         return $result;
     }
 
-    public static function isStarted(int $pid = null)
+    public static function isStarted(int $pid = null): bool
     {
         if ($pid === null) {
             $pid = getmypid();
         }
 
-        return in_array($pid, self::getStarted());
+        return in_array((int) $pid, self::getStarted(), true);
     }
 
     /**
