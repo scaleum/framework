@@ -58,7 +58,7 @@ class RequestHandler implements HandlerInterface {
                 $router->addRoute($alias, new Route($attributes));
             }
 
-            $request = Request::fromGlobals();
+            $request = ServerRequest::fromGlobals();
             $this->events->dispatch(HandlerInterface::EVENT_GET_REQUEST, $this, ['request' => $request]);
             $routeInfo = $router->match($request->getUri()->getPath(), $request->getMethod());
 

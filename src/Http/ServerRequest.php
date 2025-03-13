@@ -12,7 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Http;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
-use Scaleum\Http\Contracts\HttpRequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 use Scaleum\Stdlib\Helpers\StringHelper;
@@ -23,18 +23,15 @@ use Scaleum\Stdlib\Helpers\Utf8Helper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class Request implements HttpRequestInterface {
+class ServerRequest extends ClientRequest implements ServerRequestInterface {
     private ?array $bodyParsed = null;
     private ?string $userAgent = null;
-    private StreamInterface $body;
-    private UriInterface $uri;
     private array $attributes;
     private array $cookieParams;
     private array $files;
-    private array $headers;
+
     private array $queryParams;
     private array $serverParams;
-    private string $method;
 
     public function __construct(
         string $method,
@@ -45,18 +42,17 @@ class Request implements HttpRequestInterface {
         array $queryParams = [],
         ?array $bodyParsed = null,
         array $cookieParams = [],
-        array $files = []
+        array $files = [],
+        string $protocol = '1.1'
     ) {
+        parent::__construct($method, $uri, $headers, $body, $protocol);
+
         $this->attributes   = [];
-        $this->body         = $body ?? new Stream(fopen('php://input', 'r+'));
         $this->bodyParsed   = $bodyParsed;
         $this->cookieParams = $cookieParams;
         $this->files        = $files;
-        $this->headers      = $headers;
-        $this->method       = $method;
         $this->queryParams  = $queryParams;
         $this->serverParams = $serverParams;
-        $this->uri          = $uri;
 
         if ($bodyParsed === null) {
             $contentType = $this->getContentType();
@@ -77,7 +73,6 @@ class Request implements HttpRequestInterface {
                 $this->bodyParsed = null;
             }
         }
-
     }
 
     public static function fromGlobals(): self {
@@ -90,7 +85,7 @@ class Request implements HttpRequestInterface {
             self::getHeadersFromGlobals(),
             new Stream(fopen('php://input', 'r')),
             $_GET,
-            null,
+            $_POST ?: null,
             $_COOKIE,
             $_FILES
         );
@@ -234,98 +229,6 @@ class Request implements HttpRequestInterface {
         return $type;
     }
 
-    public function getProtocolVersion(): string {
-        return $this->serverParams['SERVER_PROTOCOL'] ?? '1.1';
-    }
-
-    public function withProtocolVersion($version): static
-    {
-        $clone                                  = clone $this;
-        $clone->serverParams['SERVER_PROTOCOL'] = $version;
-        return $clone;
-    }
-
-    public function getHeaders(): array {
-        return $this->headers;
-    }
-
-    public function hasHeader($name): bool {
-        return isset($this->headers[$name]);
-    }
-
-    public function getHeader($name): array {
-        return $this->headers[$name] ?? [];
-    }
-
-    public function getHeaderLine($name): string {
-        return implode(', ', $this->getHeader($name));
-    }
-
-    public function withHeader($name, $value): static
-    {
-        $clone                 = clone $this;
-        $clone->headers[$name] = is_array($value) ? $value : [$value];
-        return $clone;
-    }
-
-    public function withAddedHeader($name, $value): static
-    {
-        $clone                 = clone $this;
-        $clone->headers[$name] = array_merge($this->headers[$name] ?? [], (array) $value);
-        return $clone;
-    }
-
-    public function withoutHeader($name): static
-    {
-        $clone = clone $this;
-        unset($clone->headers[$name]);
-        return $clone;
-    }
-
-    public function getBody(): StreamInterface {
-        return $this->body;
-    }
-
-    public function withBody(StreamInterface $body): static
-    {
-        $clone       = clone $this;
-        $clone->body = $body;
-        return $clone;
-    }
-
-    public function getRequestTarget(): string {
-        return $this->uri->getPath() . ($this->uri->getQuery() ? '?' . $this->uri->getQuery() : '');
-    }
-
-    public function withRequestTarget($requestTarget): static
-    {
-        $clone      = clone $this;
-        $clone->uri = $clone->uri->withPath($requestTarget);
-        return $clone;
-    }
-
-    public function getMethod(): string {
-        return $this->method;
-    }
-
-    public function withMethod($method): static
-    {
-        $clone         = clone $this;
-        $clone->method = $method;
-        return $clone;
-    }
-
-    public function getUri(): UriInterface {
-        return $this->uri;
-    }
-
-    public function withUri(UriInterface $uri, $preserveHost = false): static
-    {
-        $clone      = clone $this;
-        $clone->uri = $uri;
-        return $clone;
-    }
-
     public function getServerParams(): array {
         return $this->serverParams;
     }
@@ -396,4 +299,4 @@ class Request implements HttpRequestInterface {
         return $clone;
     }
 }
-/** End of Request **/
+/** End of ServerRequest **/
