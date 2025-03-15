@@ -59,12 +59,11 @@ class RequestHandler implements HandlerInterface {
             }
 
             $request = ServerRequest::fromGlobals();
-            $this->events->dispatch(HandlerInterface::EVENT_GET_REQUEST, $this, ['request' => $request]);
             $routeInfo = $router->match($request->getUri()->getPath(), $request->getMethod());
-
+            
             $controller = (new ControllerResolver($this->container))->resolve($routeInfo);
+            $this->events->dispatch(HandlerInterface::EVENT_GET_REQUEST, $this, ['request' => $request]);
             $response   = (new ControllerInvoker())->invoke($controller, $routeInfo);
-
             $this->events->dispatch(HandlerInterface::EVENT_GET_RESPONSE, $this, ['response' => $response]);
             return $response;
         } catch (ENotFoundError $exception) {

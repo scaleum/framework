@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -12,40 +12,38 @@ declare(strict_types=1);
 namespace Scaleum\Http;
 
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 use Scaleum\Stdlib\Helpers\HttpHelper;
+
 /**
  * ClientResponse
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ClientResponse extends Message implements ResponseInterface
-{
+class ClientResponse extends Message implements ResponseInterface {
     protected int $statusCode;
     public function __construct(
         int $statusCode = 200,
         array $headers = [],
-        mixed $body = null,
+        ?StreamInterface $body = null,
         string $protocol = '1.1'
     ) {
-        parent::__construct($headers, $body, $protocol);
+        parent::__construct($headers, $body, $protocol);      
         $this->statusCode = $statusCode;
     }
 
-
-    public function getStatusCode(): int
-    {
+    public function getStatusCode(): int {
         return $this->statusCode;
     }
 
     public function withStatus($code, $reasonPhrase = ''): static
     {
-        $clone = clone $this;
+        $clone             = clone $this;
         $clone->statusCode = $code;
         return $clone;
     }
 
-    public function getReasonPhrase(): string
-    {
+    public function getReasonPhrase(): string {
         return HttpHelper::getStatusMessage($this->statusCode);
     }
 }

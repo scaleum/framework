@@ -112,7 +112,7 @@ class Stream implements StreamInterface {
         return $this->writable;
     }
 
-    public function write($string): int {
+    public function write(string $string): int {
         if (! $this->isWritable() || ! is_resource($this->stream)) {
             throw new RuntimeException('Stream is not writable.');
         }

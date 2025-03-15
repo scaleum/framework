@@ -10,9 +10,9 @@ declare (strict_types = 1);
  */
 
 namespace Scaleum\Http;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 use Scaleum\Stdlib\Helpers\StringHelper;
@@ -24,12 +24,11 @@ use Scaleum\Stdlib\Helpers\Utf8Helper;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class ServerRequest extends ClientRequest implements ServerRequestInterface {
-    private ?array $bodyParsed = null;
+    private ?array $parsedBody = null;
     private ?string $userAgent = null;
     private array $attributes;
     private array $cookieParams;
     private array $files;
-
     private array $queryParams;
     private array $serverParams;
 
@@ -40,7 +39,7 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
         array $headers = [],
         ?StreamInterface $body = null,
         array $queryParams = [],
-        ?array $bodyParsed = null,
+        ?array $parsedBody = null,
         array $cookieParams = [],
         array $files = [],
         string $protocol = '1.1'
@@ -48,31 +47,49 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
         parent::__construct($method, $uri, $headers, $body, $protocol);
 
         $this->attributes   = [];
-        $this->bodyParsed   = $bodyParsed;
+        $this->parsedBody   = $parsedBody;
         $this->cookieParams = $cookieParams;
         $this->files        = $files;
         $this->queryParams  = $queryParams;
         $this->serverParams = $serverParams;
 
-        if ($bodyParsed === null) {
-            $contentType = $this->getContentType();
-            $raw         = (string) $this->body;
-
-            if ($method === HttpHelper::METHOD_POST && $_POST) {
-                $this->bodyParsed = $_POST; // just POST
-            } elseif (in_array($method, [HttpHelper::METHOD_PUT, HttpHelper::METHOD_PATCH, HttpHelper::METHOD_DELETE])) {
-                if (str_contains($contentType, 'application/json')) {
-                    $this->bodyParsed = json_decode($raw, true) ?? null;
-                } elseif (str_contains($contentType, 'application/x-www-form-urlencoded')) {
-                    parse_str($raw, $parsed);
-                    $this->bodyParsed = $parsed;
-                } else {
-                    $this->bodyParsed = null; // if unknown content type
-                }
-            } else {
-                $this->bodyParsed = null;
-            }
+        if ($this->parsedBody === null) {
+            $this->parsedBody = $this->parseBody($method, $body);
         }
+    }
+
+    protected function parseBody(string $method, ?StreamInterface $body): mixed {
+        $contentType = $this->getContentType();
+
+        // Если `application/x-www-form-urlencoded` или `multipart/form-data`
+        if ($method === 'POST' && str_contains($contentType, 'application/x-www-form-urlencoded')) {
+            return $_POST; // Данные уже распарсены PHP
+        }
+
+        if ($method === 'POST' && str_contains($contentType, 'multipart/form-data')) {
+            return array_merge($_POST, $_FILES); // Форма с файлами
+        }
+
+        // Если тело запроса не передано, читаем `php://input`
+        $rawBody = (string) ($body ?? new Stream(fopen('php://input', 'r+')));
+
+        // Если `application/json`
+        if (str_contains($contentType, 'application/json')) {
+            return json_decode($rawBody, true) ?? null;
+        }
+
+        // Если `application/x-www-form-urlencoded` (PUT, PATCH, DELETE)
+        if (str_contains($contentType, 'application/x-www-form-urlencoded')) {
+            parse_str($rawBody, $parsed);
+            return $parsed;
+        }
+
+        // Если `application/xml`, `text/plain`, `application/custom`
+        if (str_contains($contentType, 'application/xml') || str_contains($contentType, 'text/plain')) {
+            return $rawBody; // Просто строка
+        }
+
+        return null; // Неизвестный формат
     }
 
     public static function fromGlobals(): self {
@@ -83,7 +100,7 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
             new Uri(),
             $_SERVER,
             self::getHeadersFromGlobals(),
-            new Stream(fopen('php://input', 'r')),
+            new Stream(fopen('php://input', 'r+')),
             $_GET,
             $_POST ?: null,
             $_COOKIE,
@@ -267,13 +284,13 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
     }
 
     public function getParsedBody(): mixed {
-        return $this->bodyParsed;
+        return $this->parsedBody;
     }
 
     public function withParsedBody($data): static
     {
         $clone             = clone $this;
-        $clone->bodyParsed = $data;
+        $clone->parsedBody = $data;
         return $clone;
     }
 

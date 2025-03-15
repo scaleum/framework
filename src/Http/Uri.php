@@ -32,7 +32,12 @@ class Uri implements UriInterface {
             $uri = $this->fetchUriString();
         }
 
-        $uri    = StringHelper::cleanInvisibleChars('/' . ltrim($uri ?? '/', '/'), false);
+        if (strpos($uri, '://') === false) {
+            $uri = StringHelper::cleanInvisibleChars('/' . ltrim($uri ?? '/', '/'), false);
+        } else {
+            $uri = StringHelper::cleanInvisibleChars($uri, false);
+        }
+
         $parsed = parse_url($uri);
 
         $this->scheme   = $parsed['scheme'] ?? '';

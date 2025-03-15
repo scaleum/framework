@@ -12,7 +12,6 @@ declare (strict_types = 1);
 namespace Scaleum\Http;
 
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
 /**
@@ -21,20 +20,28 @@ use Psr\Http\Message\UriInterface;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class ClientRequest extends Message implements RequestInterface {
+    use StreamTrait;
+
     protected string $method;
     protected UriInterface $uri;
     protected ?string $requestTarget = null;
+    protected bool $async            = false;
 
     public function __construct(
         string $method,
         UriInterface $uri,
         array $headers = [],
-        StreamInterface $body = null,
-        string $protocol = '1.1'
+        mixed $body = null,
+        string $protocol = '1.1',
+        bool $async = false
     ) {
-        parent::__construct($headers, $body, $protocol);
-        $this->method = strtoupper($method);
-        $this->uri    = $uri;
+        $this->headers = $headers;
+        $this->body    = $this->createStream($body);
+        $this->method  = strtoupper($method);
+        $this->uri     = $uri;
+        $this->async   = $async;
+
+        parent::__construct($this->headers, $this->body, $protocol);
     }
 
     public function getRequestTarget(): string {
@@ -73,6 +80,14 @@ class ClientRequest extends Message implements RequestInterface {
         }
 
         return $clone;
+    }
+
+    public function isAsync(): bool {
+        return $this->async;
+    }
+
+    public function setAsync(bool $async): void {
+        $this->async = $async;
     }
 }
 /** End of ClientRequest **/

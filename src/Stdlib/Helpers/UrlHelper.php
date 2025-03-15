@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum\Stdlib.
  *
@@ -18,8 +18,12 @@ class UrlHelper {
      * @param string $url The relative URL to append to the base URL.
      * @return string The complete URL.
      */
-    public static function baseUrl(string $url = ''): string  {
-        return self::getServerProtocol() . '://' . self::getServerName() . (!empty($url) ? ltrim($url, '/') : '');
+    public static function baseUrl(string $url = ''): string {
+        return self::getServerProtocol() . '://' . self::getServerName() . ":" . self::getServerPort() . "/" . (! empty($url) ? ltrim($url, '/') : '');
+    }
+
+    public static function getServerPort(): int {
+        return (int) ArrayHelper::element('SERVER_PORT', $_SERVER, 80);
     }
 
     /**
@@ -27,8 +31,8 @@ class UrlHelper {
      *
      * @return string The server name.
      */
-    public static function getServerName():string {
-        return rtrim(ArrayHelper::element('HTTP_HOST', $_SERVER, 'localhost'), '/') . '/';
+    public static function getServerName(): string {
+        return rtrim(ArrayHelper::element('HTTP_HOST', $_SERVER, 'localhost'), '/');
     }
 
     /**
@@ -36,7 +40,7 @@ class UrlHelper {
      *
      * @return string The server protocol.
      */
-    public static function getServerProtocol():string {
+    public static function getServerProtocol(): string {
         list($https, $port) = ArrayHelper::elements(['HTTPS', 'SERVER_PORT'], $_SERVER, ['off', 80]);
 
         return ($https !== 'off' || $port == 443) ? "https" : "http";
@@ -44,7 +48,7 @@ class UrlHelper {
 
     /**
      * Once URL is matched capturing groups will contain the following information:
-     * 
+     *
      * Protocol: $1 (e.g. http, ftp, etc.)
      * Hostname: $2 (e.g. www.myhost.com)
      * Port: $3 (e.g. 8080)
@@ -55,7 +59,7 @@ class UrlHelper {
      * @param string $url
      * @return array|bool
      */
-    public static function parse(string $url = ''):array|bool {
+    public static function parse(string $url = ''): array | bool {
         $pattern = '/^(?:(?P<protocol>\w+):\/{2})?(?P<hostname>[^\/:]+(?:\.[\w]{2,16})?)(?:\:(?P<port>\d+))?(?P<path>\/(?:[^\/?]+\/?)?)?(?P<file>[^\?#]+)?(?:\?(?P<query>[^#]*))?(?P<hash>\#.*)?$/i';
         if (preg_match($pattern, $url, $matches)) {
             return $matches;
@@ -66,7 +70,7 @@ class UrlHelper {
 
     /**
      * Parses the alternative URL.
-     * 
+     *
      * Protocol: $1
      * User: $3
      * Password: $4
@@ -81,9 +85,9 @@ class UrlHelper {
      * @param string $url The URL to parse.
      * @return array|bool Returns an array if the URL is successfully parsed, otherwise returns false.
      */
-    public static function parseAlt(string $url = ''):array|bool {
+    public static function parseAlt(string $url = ''): array | bool {
         $pattern = '/([a-z0-9_\-]{1,7}:\/\/)?(([a-z0-9_\-]{1,}):([a-z0-9_\-]{1,})\@)?((www\.)|([a-z0-9_\-]{1,}\.)+)?([a-z0-9_\-]{3,})(?\.[a-z]{2,8})(\/([a-z0-9_\-]{1,}\/)+)?([a-z0-9_\-]{1,})?(\.[a-z]{2,})?(\?)?(((\&)?[a-z0-9_\-]{1,}(\=[a-z0-9_\-]{1,})?)+)?/i';
-        if (preg_match($pattern, $url, $matches)) {           
+        if (preg_match($pattern, $url, $matches)) {
             return $matches;
         }
 
@@ -99,8 +103,8 @@ class UrlHelper {
      * @return void
      */
     public static function redirect(string $uri = '', string $method = 'location', int $httpResponseCode = 302) {
-        if (!headers_sent()) {
-            if (!preg_match('#^https?://#i', $uri)) {
+        if (! headers_sent()) {
+            if (! preg_match('#^https?://#i', $uri)) {
                 $uri = self::baseUrl($uri);
             }
 
