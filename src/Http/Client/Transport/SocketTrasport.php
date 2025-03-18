@@ -31,6 +31,7 @@ class SocketTrasport extends TransportAbstract {
     protected ?string $authType = null;
     protected ?string $password = null;
     protected ?string $username = null;
+    protected ?string $token    = null;
 
     /**
      * Get the value of authType
@@ -89,6 +90,25 @@ class SocketTrasport extends TransportAbstract {
         return $this;
     }
 
+    /**
+     * Get the value of token for Bearer authentication
+     */
+    public function getToken(): ?string {
+        return $this->token;
+    }
+
+    /**
+     * Set the value of token for Bearer authentication
+     *
+     * @return  self
+     */
+    public function setToken(string $token): static
+    {
+        $this->token = $token;
+
+        return $this;
+    }
+
     public function isSupported(): bool {
         return function_exists('fsockopen');
     }
@@ -111,31 +131,29 @@ class SocketTrasport extends TransportAbstract {
             throw new EHttpException(501, sprintf('Malformed URL: %s', $url));
         }
 
-        $fsockopen_host = $urlParts[2];
-
         if (! isset($urlParts[3]) || empty($urlParts[3])) {
             if (($urlParts[1] == 'ssl' || $urlParts[1] == 'https') && extension_loaded('openssl')) {
-                $fsockopen_host = "ssl://$fsockopen_host";
-                $urlParts[3]    = 443;
+                $urlParts[2] = "ssl://{$urlParts[2]}";
+                $urlParts[3] = 443;
             } else {
                 $urlParts[3] = 80;
             }
         }
 
-        if (strtolower($fsockopen_host) === 'localhost') {
-            $fsockopen_host = '127.0.0.1';
+        if (strtolower($urlParts[2]) === 'localhost') {
+            $urlParts[2] = '127.0.0.1';
         }
 
-        $err      = 0;
-        $err_text = '';
-        if (($handle = fsockopen($fsockopen_host, (int) $urlParts[3], $err, $err_text, $this->getTimeout())) === false) {
-            throw new EHttpException(501, $err_text);
+        $errCode    = 0;
+        $errMessage = '';
+        if (($socket = fsockopen($urlParts[2], (int) $urlParts[3], $errCode, $errMessage, $this->getTimeout())) === false) {
+            throw new EHttpException(501, $errMessage);
         }
 
-        $request_path = $urlParts[1] . '://' . $urlParts[2] . $urlParts[4] . (isset($urlParts[5]) && ! empty($urlParts[5]) ? $urlParts[5] : '') . (isset($urlParts[6]) ? '?' . $urlParts[6] : '');
+        $requestPath = $urlParts[1] . '://' . $urlParts[2] . $urlParts[4] . (isset($urlParts[5]) && ! empty($urlParts[5]) ? $urlParts[5] : '') . (isset($urlParts[6]) ? "?{$urlParts[6]}" : '');
 
-        if (empty($request_path)) {
-            $request_path = '/';
+        if (empty($requestPath)) {
+            $requestPath = '/';
         }
 
         $contentType      = $headers->getHeader('Content-Type', '');
@@ -154,32 +172,44 @@ class SocketTrasport extends TransportAbstract {
         $headers->setHeader('Connection', 'Close');
 
         if (! empty($authType = strtoupper($this->getAuthType() ?? ''))) {
-            $user     = $this->getUsername() ?? 'username';
-            $password = $this->getPassword() ?? 'password';
-            $headers->setHeader('Authorization', sprintf('%s %s', $authType, base64_encode("$user:$password")));
+            switch ($authType) {
+            case 'BASIC':
+                $user     = $this->getUsername() ?? 'username';
+                $password = $this->getPassword() ?? 'password';
+
+                $headers->setHeader('Authorization', sprintf('%s %s', $authType, base64_encode("$user:$password")));
+                break;
+            case 'BEARER':
+            case 'OAUTH2':
+            case 'JWT':
+                $token = $this->getToken() ?? '';
+
+                $headers->setHeader('Authorization', sprintf('%s %s', $authType, $token));
+                break;
+            }
         }
 
-        $output = sprintf("%s %s HTTP/%.1f\r\n", $request->getMethod(), $request_path, $request->getProtocolVersion());
+        $output = sprintf("%s %s HTTP/%.1f\r\n", $method, $requestPath, $request->getProtocolVersion());
         if ($headers->getCount() > 0) {
             $output .= implode("\r\n", $headers->getAsStrings()) . "\r\n";
         }
         $output .= "\r\n$body";
 
-        fwrite($handle, $output);
+        fwrite($socket, $output);
 
         if ($request->isAsync() === true) {
-            fclose($handle);
+            fclose($socket);
             return new ClientResponse();
         }
 
         // Read the first line of the headers (status line)
-        $statusLine = fgets($handle);
+        $statusLine = fgets($socket);
         preg_match('#HTTP/\d+\.\d+ (\d+)#', $statusLine, $matches);
         $statusCode = isset($matches[1]) ? (int) $matches[1] : 500;
 
         // Read the headers
         $headers->clear();
-        while (($line = fgets($handle)) !== false) {
+        while (($line = fgets($socket)) !== false) {
             $line = rtrim($line, "\r\n");
             if ($line === "") {
                 break; // Empty line means end of headers
@@ -193,8 +223,8 @@ class SocketTrasport extends TransportAbstract {
         $responseHeaders = $headers->getAll();
 
         // Read the body of the response
-        $responseBody = stream_get_contents($handle);
-        fclose($handle);
+        $responseBody = stream_get_contents($socket);
+        fclose($socket);
 
         $stream = new Stream(fopen('php://temp', 'r+'));
         $stream->write($responseBody);
