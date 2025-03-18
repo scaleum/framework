@@ -32,7 +32,11 @@ class UrlHelper {
      * @return string The server name.
      */
     public static function getServerName(): string {
-        return rtrim(ArrayHelper::element('HTTP_HOST', $_SERVER, 'localhost'), '/');
+        $result = rtrim(ArrayHelper::element('HTTP_HOST', $_SERVER, 'localhost'), '/');
+        if (strpos($result, ':') !== false) {
+            $result = substr($result, 0, strpos($result, ':'));
+        }
+        return $result;
     }
 
     /**

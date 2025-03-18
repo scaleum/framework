@@ -18,6 +18,7 @@ use Scaleum\Http\Stream;
 use Scaleum\Http\Uri;
 use Scaleum\Stdlib\Exceptions\EHttpException;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Stdlib\Helpers\HttpHelper;
 use Scaleum\Stdlib\Helpers\JsonHelper;
 use Scaleum\Stdlib\Helpers\UrlHelper;
 
@@ -127,7 +128,7 @@ class CurlTransport extends TransportAbstract {
         $isJson           = str_contains($contentType, 'application/json') || JsonHelper::isJson($body);
 
         switch ($method) {
-        case 'GET':
+        case HttpHelper::METHOD_GET:
             if ($body != null) {
                 if (JsonHelper::isJson($body)) {
                     curl_setopt_array($handle, [
@@ -143,7 +144,7 @@ class CurlTransport extends TransportAbstract {
                 }
             }
             break;
-        case 'POST':
+        case HttpHelper::METHOD_POST:
             curl_setopt($handle, CURLOPT_POST, true);
             curl_setopt($handle, CURLOPT_POSTFIELDS, $body);
 
@@ -156,17 +157,10 @@ class CurlTransport extends TransportAbstract {
             }
             $headers->setHeader('Content-Length', (string) mb_strlen($body));
             break;
-        case 'HEAD':
+        case HttpHelper::METHOD_HEAD:
             curl_setopt($handle, CURLOPT_CUSTOMREQUEST, $method);
             curl_setopt($handle, CURLOPT_NOBODY, true);
             break;
-        case 'TRACE':
-            curl_setopt($handle, CURLOPT_CUSTOMREQUEST, $method);
-            break;
-        case 'PUT':
-        case 'PATCH':
-        case 'DELETE':
-        case 'OPTIONS':
         default:
             curl_setopt($handle, CURLOPT_CUSTOMREQUEST, $method);
 
@@ -190,7 +184,7 @@ class CurlTransport extends TransportAbstract {
         $headers->setHeader('Host', $urlParts[2]);
         $headers->setHeader('Connection', 'Close');
 
-        if ($authType = strtoupper($this->getAuthType() ?? '')) {
+        if (!empty($authType = strtoupper($this->getAuthType() ?? ''))) {
             curl_setopt($handle, CURLOPT_HTTPAUTH, defined($type = 'CURLAUTH_' . $authType) ? constant($type) : CURLAUTH_ANY);
 
             $user     = $this->getUsername() ?? 'username';
@@ -223,17 +217,9 @@ class CurlTransport extends TransportAbstract {
             $follow_location = curl_setopt($handle, CURLOPT_FOLLOWLOCATION, true);
         }
 
+        // Injections of headers
         if ($headers->getCount() > 0) {
-            // var_export($headers->getHeadersAsStrings());exit;
             curl_setopt($handle, CURLOPT_HTTPHEADER, $headers->getAsStrings());
-            // $formattedHeaders = [];
-            // foreach ($headers->getAll() as $name => $values) {
-            //     foreach ($values as $value) {
-            //         $formattedHeaders[] = "$name: $value";
-            //     }
-            // }
-
-            // curl_setopt($handle, CURLOPT_HTTPHEADER, $formattedHeaders);
         }
 
         switch ($request->getProtocolVersion()) {
@@ -279,6 +265,7 @@ class CurlTransport extends TransportAbstract {
                 // create the headers array
                 $headerLines = explode("\n", $headerLines);
 
+                // Refill headers
                 if (count($headerLines) > 0) {
                     $headers->clear();
 
@@ -298,6 +285,7 @@ class CurlTransport extends TransportAbstract {
             }
         }
 
+        // Finish the request
         curl_close($handle);
 
         $stream = new Stream(fopen('php://temp', 'r+'));
@@ -306,12 +294,15 @@ class CurlTransport extends TransportAbstract {
 
         $result = new ClientResponse($statusCode, $responseHeaders, $stream, $request->getProtocolVersion());
 
+        // If the response is a redirect, we will create a new request instance and send it
         if ($follow_location !== true && ($location = $result->getHeaderLine('Location')) !== false) {
             $redirect = $this->getRedirectsCount();
             if (--$redirect > 0) {
                 $this->setRedirectsCount($redirect);
                 $request = $request->withUri(new Uri($location));
                 return $this->send($request);
+            } else {
+                throw new EHttpException(500, 'Too many redirects.');
             }
         }
 
