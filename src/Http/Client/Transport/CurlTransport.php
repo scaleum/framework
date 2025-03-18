@@ -285,14 +285,10 @@ class CurlTransport extends TransportAbstract {
                     foreach ($headerLines as $line) {
                         if (strpos($line, ':') !== false) {
                             [$name, $value] = explode(':', $line, 2);
-                            $name           = trim($name);
-                            $values         = array_map('trim', explode(',', $value));
-
-                            foreach ($values as $val) {
-                                $headers->addHeader($name, $val);
-                            }
+                            $headers->addHeader($name, $value);
                         }
                     }
+                    
                     $responseHeaders = $headers->getAll();
                 }
             }

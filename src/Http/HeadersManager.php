@@ -51,7 +51,8 @@ class HeadersManager {
      * Устанавливает заголовок (перезаписывает существующий)
      */
     public function setHeader(string $name, string $value): void {
-        $this->headers[$name] = [$value];
+        $value                = array_map('trim', explode(',', $value));
+        $this->headers[$name] = $value;
     }
 
     public function setHeaders(array $array, bool $reset = false): void {
@@ -60,13 +61,11 @@ class HeadersManager {
         }
 
         foreach ($array as $name => $values) {
-            if(is_array($values)) {
-                // For valid headers
+            if (is_array($values)) {
                 foreach ($values as $value) {
                     $this->addHeader($name, $value);
                 }
             } else {
-                // For wildcard headers
                 $this->setHeader($name, $values);
             }
         }
@@ -76,10 +75,11 @@ class HeadersManager {
      * Добавляет новое значение к заголовку (не перезаписывает)
      */
     public function addHeader(string $name, string $value): void {
+        $values = array_map('trim', explode(',', $value));
         if (! $this->hasHeader($name)) {
-            $this->headers[$name] = [$value];
-        } elseif (! in_array($value, $this->headers[$name], true)) {
-            $this->headers[$name][] = $value;
+            $this->headers[$name] = $values;
+        } else {
+            $this->headers[$name] = array_merge($this->headers[$name], $values);
         }
     }
 

@@ -24,7 +24,7 @@ use Scaleum\Stdlib\Helpers\Utf8Helper;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class ServerRequest extends ClientRequest implements ServerRequestInterface {
-    private ?array $parsedBody = null;
+    private mixed $parsedBody = null;
     private ?string $userAgent = null;
     private array $attributes;
     private array $cookieParams;
@@ -54,19 +54,18 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
         $this->serverParams = $serverParams;
 
         if ($this->parsedBody === null) {
-            $this->parsedBody = $this->parseBody($method, $body);
+            $this->parsedBody = $this->parseBody($body,$this->getContentType(),strtoupper($method));
         }
     }
 
-    protected function parseBody(string $method, ?StreamInterface $body): mixed {
-        $contentType = $this->getContentType();
+    protected function parseBody(?StreamInterface $body, string $contentType, string $method): mixed {
 
         // Если `application/x-www-form-urlencoded` или `multipart/form-data`
-        if ($method === 'POST' && str_contains($contentType, 'application/x-www-form-urlencoded')) {
+        if ($method === HttpHelper::METHOD_POST && str_contains($contentType, 'application/x-www-form-urlencoded')) {
             return $_POST; // Данные уже распарсены PHP
         }
 
-        if ($method === 'POST' && str_contains($contentType, 'multipart/form-data')) {
+        if ($method === HttpHelper::METHOD_POST && str_contains($contentType, 'multipart/form-data')) {
             return array_merge($_POST, $_FILES); // Форма с файлами
         }
 
@@ -187,22 +186,24 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
     }
 
     protected static function getHeadersFromGlobals(): array {
+        $headers = new HeadersManager();
+
         if (function_exists('getallheaders')) {
-            return getallheaders();
+            $headers->setHeaders(getallheaders());
+            return $headers->getAll();
         }
 
-        $headers = [];
         foreach ($_SERVER as $name => $value) {
             if (str_starts_with($name, 'HTTP_')) {
                 $header = substr($name, 5);
                 $header = str_replace(['_', '-'], ' ', strtolower($header));
                 $header = str_replace(' ', '-', ucwords($header));
-
-                $headers[$header] = $value;
+                
+                $headers->addHeader($header, $value);
             }
         }
 
-        return $headers;
+        return $headers->getAll();
     }
 
     public function getUserAgent(): ?string {
@@ -239,7 +240,7 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
     }
 
     public function getContentType(): string {
-        $type = strtolower($this->serverParams['CONTENT_TYPE'] ?? ($this->headers['Content-type'] ?? 'text/html'));
+        $type = strtolower($this->serverParams['CONTENT_TYPE'] ?? $this->getHeaderLine('Content-type'));
         if (strpos($type, ',')) {
             $type = current(explode(',', $type));
         }
