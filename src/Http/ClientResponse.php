@@ -31,11 +31,11 @@ class ClientResponse extends Message implements ResponseInterface {
     ) {
         parent::__construct($headers, $body, $protocol);
 
-        $this->statusCode = $statusCode;
         $this->parsedBody = self::parseBody($this->body, $this->getHeaderLine('Content-Type'));
+        $this->statusCode = $statusCode;
     }
 
-    public static function parseBody(StreamInterface $body, string $contentType): mixed{
+    public static function parseBody(StreamInterface $body, string $contentType): mixed {
         // Сохраняем текущую позицию в потоке
         $originalPosition = null;
         if ($body->isSeekable()) {
@@ -52,32 +52,31 @@ class ClientResponse extends Message implements ResponseInterface {
 
         // Разбираем данные в зависимости от Content-Type
         switch (true) {
-            case str_contains($contentType, 'application/json'):
-                return json_decode($data, true) ?? [];
+        case str_contains($contentType, 'application/json'):
+            return json_decode($data, true) ?? [];
 
-            case str_contains($contentType, 'application/x-www-form-urlencoded'):
-                parse_str($data, $parsedData);
-                return $parsedData;
+        case str_contains($contentType, 'application/x-www-form-urlencoded'):
+            parse_str($data, $parsedData);
+            return $parsedData;
 
-            case str_contains($contentType, 'text/plain'):
-                return $data; // Просто строка
+        case str_contains($contentType, 'text/plain'):
+            return $data; // Просто строка
 
-            case str_contains($contentType, 'multipart/form-data'):
-                return self::parseMultipartFormData($data, $contentType);
+        case str_contains($contentType, 'multipart/form-data'):
+            return self::parseMultipartFormData($data, $contentType);
 
-            default:
-                return $data; // Если тип неизвестен, возвращаем как есть
+        default:
+            return $data; // Если тип неизвестен, возвращаем как есть
         }
     }
 
-    private static function parseMultipartFormData(string $data, string $contentType): array
-    {
+    private static function parseMultipartFormData(string $data, string $contentType): array {
         $boundary = self::extractBoundary($contentType);
-        if (!$boundary) {
+        if (! $boundary) {
             return ['error' => 'Boundary not found'];
         }
 
-        $parts = explode("--$boundary", $data);
+        $parts      = explode("--$boundary", $data);
         $parsedData = [];
 
         foreach ($parts as $part) {
@@ -86,21 +85,20 @@ class ClientResponse extends Message implements ResponseInterface {
             }
 
             preg_match('/Content-Disposition: form-data; name="(.+?)"(; filename="(.+?)")?/i', $part, $matches);
-            if (!isset($matches[1])) {
+            if (! isset($matches[1])) {
                 continue;
             }
 
-            $name = $matches[1];
+            $name     = $matches[1];
             $filename = $matches[3] ?? null;
-            $content = preg_replace('/^.*\r\n\r\n/s', '', $part); // Убираем заголовки
+            $content  = preg_replace('/^.*\r\n\r\n/s', '', $part); // Убираем заголовки
 
             $parsedData[$name] = $filename ? ['filename' => $filename, 'content' => trim($content)] : trim($content);
         }
 
         return $parsedData;
     }
-    private static function extractBoundary(string $contentType): ?string
-    {
+    private static function extractBoundary(string $contentType): ?string {
         if (preg_match('/boundary=(.+)$/', $contentType, $matches)) {
             return $matches[1];
         }
@@ -121,6 +119,7 @@ class ClientResponse extends Message implements ResponseInterface {
     public function getReasonPhrase(): string {
         return HttpHelper::getStatusMessage($this->statusCode);
     }
+
     public function getParsedBody(): mixed {
         return $this->parsedBody;
     }

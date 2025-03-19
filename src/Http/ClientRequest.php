@@ -35,11 +35,11 @@ class ClientRequest extends Message implements RequestInterface {
         string $protocol = '1.1',
         bool $async = false
     ) {
-        $this->headers = $headers;
+        $this->async   = $async;
         $this->body    = $this->createStream($body);
+        $this->headers = $headers;
         $this->method  = strtoupper($method);
         $this->uri     = $uri;
-        $this->async   = $async;
 
         parent::__construct($this->headers, $this->body, $protocol);
     }

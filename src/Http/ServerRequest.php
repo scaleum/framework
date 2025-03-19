@@ -23,7 +23,7 @@ use Scaleum\Stdlib\Helpers\Utf8Helper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ServerRequest extends ClientRequest implements ServerRequestInterface {
+class ServerRequest extends Message implements ServerRequestInterface {
     private mixed $parsedBody = null;
     private ?string $userAgent = null;
     private array $attributes;
@@ -31,6 +31,8 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
     private array $files;
     private array $queryParams;
     private array $serverParams;
+    protected string $method;
+    protected UriInterface $uri;
 
     public function __construct(
         string $method,
@@ -44,14 +46,16 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
         array $files = [],
         string $protocol = '1.1'
     ) {
-        parent::__construct($method, $uri, $headers, $body, $protocol);
+        parent::__construct($headers, $body, $protocol);
 
         $this->attributes   = [];
-        $this->parsedBody   = $parsedBody;
         $this->cookieParams = $cookieParams;
         $this->files        = $files;
+        $this->method       = strtoupper($method);
+        $this->parsedBody   = $parsedBody;
         $this->queryParams  = $queryParams;
         $this->serverParams = $serverParams;
+        $this->uri          = $uri;
 
         if ($this->parsedBody === null) {
             $this->parsedBody = $this->parseBody($body,$this->getContentType(),strtoupper($method));
@@ -66,7 +70,7 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
         }
 
         if ($method === HttpHelper::METHOD_POST && str_contains($contentType, 'multipart/form-data')) {
-            return array_merge($_POST, $_FILES); // Форма с файлами
+            return array_merge($_POST, $this->normalizeFiles($_FILES)); // Форма с файлами
         }
 
         // Если тело запроса не передано, читаем `php://input`
@@ -91,20 +95,30 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
         return null; // Неизвестный формат
     }
 
-    public static function fromGlobals(): self {
-        self::sanitize();
+    protected function normalizeFiles(array $files): array {
+        $normalized = [];
+    
+        foreach ($files as $key => $file) {
+            // Loaded one file (without multiple)
+            if (!is_array($file['name'])) {
+                $normalized[$key] = $file;
+                continue;
+            }
 
-        return new self(
-            $_SERVER['REQUEST_METHOD'] ?? HttpHelper::METHOD_GET,
-            new Uri(),
-            $_SERVER,
-            self::getHeadersFromGlobals(),
-            new Stream(fopen('php://input', 'r+')),
-            $_GET,
-            $_POST ?: null,
-            $_COOKIE,
-            $_FILES
-        );
+            // Loaded multiple files
+            $fileCount = count($file['name']);
+            for ($i = 0; $i < $fileCount; $i++) {
+                $normalized[$key][$i] = [
+                    'name' => $file['name'][$i],
+                    'type' => $file['type'][$i],
+                    'tmp_name' => $file['tmp_name'][$i],
+                    'error' => $file['error'][$i],
+                    'size' => $file['size'][$i],
+                ];
+            }
+        }
+    
+        return $normalized;
     }
 
     protected static function sanitize() {
@@ -204,6 +218,39 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
         }
 
         return $headers->getAll();
+    }
+
+    public function getInputParams(): array {
+        $method = strtoupper($this->getMethod());
+
+        // Only for GET, HEAD, OPTIONS
+        if ($method === HttpHelper::METHOD_GET || $method === HttpHelper::METHOD_HEAD || $method === HttpHelper::METHOD_OPTIONS) {
+            return $this->queryParams;
+        }
+    
+        // Only for POST, PUT, PATCH, DELETE
+        return is_array($this->parsedBody) ? $this->parsedBody : [];
+    }
+    
+    public function getInputParam(string $param, mixed $default = null): mixed {
+        $params = $this->getInputParams();
+        return $params[$param] ?? $default;
+    }
+
+    public static function fromGlobals(): self {
+        self::sanitize();
+
+        return new self(
+            $_SERVER['REQUEST_METHOD'] ?? HttpHelper::METHOD_GET,
+            new Uri(),
+            $_SERVER,
+            self::getHeadersFromGlobals(),
+            new Stream(fopen('php://input', 'r+')),
+            $_GET,
+            $_POST ?: null,
+            $_COOKIE,
+            $_FILES
+        );
     }
 
     public function getUserAgent(): ?string {
@@ -316,5 +363,44 @@ class ServerRequest extends ClientRequest implements ServerRequestInterface {
         unset($clone->attributes[$name]);
         return $clone;
     }
+
+
+    public function getRequestTarget(): string {
+        return $this->requestTarget ?: (string) $this->uri;
+    }
+
+    public function withRequestTarget($requestTarget): static
+    {
+        $clone      = clone $this;
+        $clone->uri = $clone->uri->withPath($requestTarget);
+        return $clone;
+    }
+
+    public function getMethod(): string {
+        return $this->method;
+    }
+
+    public function withMethod($method): static
+    {
+        $clone         = clone $this;
+        $clone->method = strtoupper($method);
+        return $clone;
+    }
+
+    public function getUri(): UriInterface {
+        return $this->uri;
+    }
+
+    public function withUri(UriInterface $uri, $preserveHost = false): static
+    {
+        $clone      = clone $this;
+        $clone->uri = $uri;
+
+        if (! $preserveHost || ! $this->hasHeader('Host')) {
+            $clone = $clone->withHeader('Host', $uri->getHost());
+        }
+
+        return $clone;
+    }    
 }
 /** End of ServerRequest **/

@@ -30,7 +30,13 @@ class ControllerInvoker {
             }
 
             if (! method_exists($controller, $method)) {
-                throw new EMethodNotFoundError(sprintf('Method "%s" does not exist in controller "%s"', $method, get_class($controller)));
+                // If method is not exists, try to call `__dispatch` method
+                // It is a default method where all requests are dispatched by the controller itself.
+                if (method_exists($controller, '__dispatch')) {
+                    $method = '__dispatch';
+                } else {
+                    throw new EMethodNotFoundError(sprintf('Method "%s" does not exist in controller "%s"', $method, get_class($controller)));
+                }
             }
 
             return call_user_func_array([$controller, $method], [ ...$args]);

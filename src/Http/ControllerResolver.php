@@ -12,6 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Http;
 
 use Psr\Container\ContainerInterface;
+use Scaleum\Core\DependencyInjection\Framework;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
@@ -25,7 +26,7 @@ class ControllerResolver {
 
     protected EventManagerInterface $events;
     public function __construct(protected ContainerInterface $container) {
-        if (! ($events = $this->container->get('event.manager')) instanceof EventManagerInterface) {
+        if (! ($events = $this->container->get(Framework::SVC_EVENTS)) instanceof EventManagerInterface) {
             throw new \RuntimeException("Event manager is not an instance of EventManagerInterface");
         }
         $this->events = $events;

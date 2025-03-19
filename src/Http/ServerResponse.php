@@ -10,27 +10,44 @@ declare (strict_types = 1);
  */
 
 namespace Scaleum\Http;
-use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\ResponseInterface;
 use Scaleum\Core\Contracts\ResponderInterface;
+use Scaleum\Stdlib\Helpers\HttpHelper;
 
 /**
  * Response
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ServerResponse extends ClientResponse implements ResponderInterface {
+class ServerResponse extends Message implements ResponseInterface, ResponderInterface {
     use StreamTrait;
-
+    protected int $statusCode;
     public function __construct(
         int $statusCode = 200,
         array $headers = [],
         mixed $body = null,
         string $protocol = '1.1'
     ) {
-        $this->headers = $headers;
-        $this->body    = $this->createStream($body);
+        $this->body       = $this->createStream($body);
+        $this->headers    = $headers;
+        $this->statusCode = $statusCode;
 
-        parent::__construct($statusCode, $this->headers, $this->body, $protocol);
+        parent::__construct($this->headers, $this->body, $protocol);
+    }
+
+    public function getStatusCode(): int {
+        return $this->statusCode;
+    }
+
+    public function withStatus($code, $reasonPhrase = ''): static
+    {
+        $clone             = clone $this;
+        $clone->statusCode = $code;
+        return $clone;
+    }
+
+    public function getReasonPhrase(): string {
+        return HttpHelper::getStatusMessage($this->statusCode);
     }
 
     // Отправка HTTP-ответа клиенту
