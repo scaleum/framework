@@ -15,11 +15,11 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
 
 /**
- * ClientRequest
+ * OutboundRequest
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ClientRequest extends Message implements RequestInterface {
+class OutboundRequest extends Message implements RequestInterface {
     use StreamTrait;
 
     protected string $method;
@@ -27,19 +27,11 @@ class ClientRequest extends Message implements RequestInterface {
     protected ?string $requestTarget = null;
     protected bool $async            = false;
 
-    public function __construct(
-        string $method,
-        UriInterface $uri,
-        array $headers = [],
-        mixed $body = null,
-        string $protocol = '1.1',
-        bool $async = false
-    ) {
-        $this->async   = $async;
-        $this->body    = $this->createStream($body);
-        $this->headers = $headers;
-        $this->method  = strtoupper($method);
-        $this->uri     = $uri;
+    public function __construct(string $method, UriInterface $uri, array $headers = [], mixed $body = null, string $protocol = '1.1', bool $async = false) {
+        [$this->headers, $this->body] = $this->prepareHeadersAndStream($headers, $body);
+        $this->async                  = $async;
+        $this->method                 = strtoupper($method);
+        $this->uri                    = $uri;
 
         parent::__construct($this->headers, $this->body, $protocol);
     }
@@ -90,4 +82,4 @@ class ClientRequest extends Message implements RequestInterface {
         $this->async = $async;
     }
 }
-/** End of ClientRequest **/
+/** End of OutboundRequest  **/

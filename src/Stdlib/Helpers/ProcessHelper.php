@@ -63,6 +63,26 @@ class ProcessHelper
         return in_array((int) $pid, self::getStarted(), true);
     }
 
+    public static function isPhpProcess(int $pid): bool
+    {
+        if (!self::isStarted($pid)) {
+            return false; // Процесс уже не существует
+        }
+
+        $pidSafe = escapeshellarg((string)$pid); // Защищаем аргумент
+
+        if (self::isWinOS()) {
+            $output = trim(`wmic process where ProcessId=$pidSafe get ExecutablePath 2>NUL`);
+            $lines = explode(PHP_EOL, $output);
+            $processPath = trim($lines[1] ?? '');
+        } else {
+            $output = trim(`ps -p $pidSafe -o comm= 2>/dev/null`);
+            $processPath = trim($output);
+        }
+
+        return !empty($processPath) && stripos($processPath, 'php') !== false;
+    }
+
     /**
      * Return TRUE if OS is *nix
      * @return bool

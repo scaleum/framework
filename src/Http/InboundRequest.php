@@ -19,20 +19,21 @@ use Scaleum\Stdlib\Helpers\StringHelper;
 use Scaleum\Stdlib\Helpers\Utf8Helper;
 
 /**
- * Request
+ * InboundRequest
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ServerRequest extends Message implements ServerRequestInterface {
-    private mixed $parsedBody = null;
-    private ?string $userAgent = null;
-    private array $attributes;
-    private array $cookieParams;
-    private array $files;
-    private array $queryParams;
-    private array $serverParams;
+class InboundRequest extends Message implements ServerRequestInterface {
+    protected mixed $parsedBody   = null;
+    protected ?string $userAgent  = null;
+    protected array $attributes   = [];
+    protected array $cookieParams = [];
+    protected array $files        = [];
+    protected array $queryParams  = [];
+    protected array $serverParams = [];
     protected string $method;
     protected UriInterface $uri;
+    protected ?string $requestTarget = null;
 
     public function __construct(
         string $method,
@@ -48,7 +49,6 @@ class ServerRequest extends Message implements ServerRequestInterface {
     ) {
         parent::__construct($headers, $body, $protocol);
 
-        $this->attributes   = [];
         $this->cookieParams = $cookieParams;
         $this->files        = $files;
         $this->method       = strtoupper($method);
@@ -58,7 +58,7 @@ class ServerRequest extends Message implements ServerRequestInterface {
         $this->uri          = $uri;
 
         if ($this->parsedBody === null) {
-            $this->parsedBody = $this->parseBody($body,$this->getContentType(),strtoupper($method));
+            $this->parsedBody = $this->parseBody($body, $this->getContentType(), strtoupper($method));
         }
     }
 
@@ -97,10 +97,10 @@ class ServerRequest extends Message implements ServerRequestInterface {
 
     protected function normalizeFiles(array $files): array {
         $normalized = [];
-    
+
         foreach ($files as $key => $file) {
             // Loaded one file (without multiple)
-            if (!is_array($file['name'])) {
+            if (! is_array($file['name'])) {
                 $normalized[$key] = $file;
                 continue;
             }
@@ -109,15 +109,15 @@ class ServerRequest extends Message implements ServerRequestInterface {
             $fileCount = count($file['name']);
             for ($i = 0; $i < $fileCount; $i++) {
                 $normalized[$key][$i] = [
-                    'name' => $file['name'][$i],
-                    'type' => $file['type'][$i],
+                    'name'     => $file['name'][$i],
+                    'type'     => $file['type'][$i],
                     'tmp_name' => $file['tmp_name'][$i],
-                    'error' => $file['error'][$i],
-                    'size' => $file['size'][$i],
+                    'error'    => $file['error'][$i],
+                    'size'     => $file['size'][$i],
                 ];
             }
         }
-    
+
         return $normalized;
     }
 
@@ -212,7 +212,7 @@ class ServerRequest extends Message implements ServerRequestInterface {
                 $header = substr($name, 5);
                 $header = str_replace(['_', '-'], ' ', strtolower($header));
                 $header = str_replace(' ', '-', ucwords($header));
-                
+
                 $headers->addHeader($header, $value);
             }
         }
@@ -227,11 +227,11 @@ class ServerRequest extends Message implements ServerRequestInterface {
         if ($method === HttpHelper::METHOD_GET || $method === HttpHelper::METHOD_HEAD || $method === HttpHelper::METHOD_OPTIONS) {
             return $this->queryParams;
         }
-    
+
         // Only for POST, PUT, PATCH, DELETE
         return is_array($this->parsedBody) ? $this->parsedBody : [];
     }
-    
+
     public function getInputParam(string $param, mixed $default = null): mixed {
         $params = $this->getInputParams();
         return $params[$param] ?? $default;
@@ -364,7 +364,6 @@ class ServerRequest extends Message implements ServerRequestInterface {
         return $clone;
     }
 
-
     public function getRequestTarget(): string {
         return $this->requestTarget ?: (string) $this->uri;
     }
@@ -401,6 +400,6 @@ class ServerRequest extends Message implements ServerRequestInterface {
         }
 
         return $clone;
-    }    
+    }
 }
-/** End of ServerRequest **/
+/** End of InboundRequest **/

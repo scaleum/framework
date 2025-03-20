@@ -59,8 +59,15 @@ class LockManager extends Hydrator {
 
             // If the process is active, the lock remains
             if ($pid && ProcessHelper::isStarted((int) $pid)) {
-                fclose($fp);
-                return null;
+                if (! ProcessHelper::isPhpProcess((int) $pid)) {
+                    // It's not our process, remove the lock
+                    fclose($fp);
+                    unlink($lockFile);
+                } else {
+                    // It's our process, keep the lock
+                    fclose($fp);
+                    return null;
+                }
             }
 
             // Clear the file before writing
@@ -69,7 +76,10 @@ class LockManager extends Hydrator {
             fwrite($fp, (string) getmypid());
             fflush($fp);
 
+            // `flock($fp, LOCK_UN);` means that the lock is released **immediately after the write**.
+            // If another process starts **before** `LockHandle` returns, a "process race" may occur.
             flock($fp, LOCK_UN);
+
             return new LockHandle($fp, $processName, realpath($lockFile) ?: $lockFile);
         }
 
@@ -109,7 +119,7 @@ class LockManager extends Hydrator {
         }
 
         $pid = trim(file_get_contents($lockFile) ?: '');
-        return $pid !== '' && ProcessHelper::isStarted((int) $pid);
+        return $pid !== '' && ProcessHelper::isStarted((int) $pid) && ProcessHelper::isPhpProcess((int) $pid);
     }
 
     protected function getFilename(string $basename): string {

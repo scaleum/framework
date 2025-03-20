@@ -20,13 +20,23 @@ use Scaleum\Stdlib\SAPI\SapiIdentifier;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class HttpHelper {
-    public const METHOD_GET     = 'GET';
-    public const METHOD_POST    = 'POST';
-    public const METHOD_PUT     = 'PUT';
-    public const METHOD_PATCH   = 'PATCH';
-    public const METHOD_DELETE  = 'DELETE';
-    public const METHOD_OPTIONS = 'OPTIONS';
-    public const METHOD_HEAD    = 'HEAD';    
+    public const METHOD_GET        = 'GET';
+    public const METHOD_POST       = 'POST';
+    public const METHOD_PUT        = 'PUT';
+    public const METHOD_PATCH      = 'PATCH';
+    public const METHOD_DELETE     = 'DELETE';
+    public const METHOD_OPTIONS    = 'OPTIONS';
+    public const METHOD_HEAD       = 'HEAD';
+    public const ALLOWED_HTTP_METHODS = [
+        self::METHOD_GET,
+        self::METHOD_POST,
+        self::METHOD_PUT,
+        self::METHOD_PATCH,
+        self::METHOD_DELETE,
+        self::METHOD_OPTIONS,
+        self::METHOD_HEAD,
+    ];
+
     public static $statuses = [
         100 => 'Continue',
         101 => 'Switching Protocols',
@@ -140,7 +150,7 @@ class HttpHelper {
             } elseif ($serverProtocol == 'HTTP/1.1' || $serverProtocol == 'HTTP/1.0') {
                 self::setHeader($serverProtocol . " {$code} {$text}", replace: true, responseCode: $code);
             } else {
-                self::setHeader("HTTP/1.1 {$code} {$text}", replace: true,  responseCode: $code);
+                self::setHeader("HTTP/1.1 {$code} {$text}", replace: true, responseCode: $code);
             }
         }
     }

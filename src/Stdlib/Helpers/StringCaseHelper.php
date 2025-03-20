@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -13,7 +13,7 @@ namespace Scaleum\Stdlib\Helpers;
 
 /**
  * StringCaseHelper
- * 
+ *
  * Примеры использования
  * echo StringCaseHelper::splitString('pathToFolder'); // path.to.folder
  * echo StringCaseHelper::splitString('path_to_folder'); // path.to.folder
@@ -25,6 +25,17 @@ namespace Scaleum\Stdlib\Helpers;
  * echo StringCaseHelper::splitString('PathToFolder', '_'); // path_to_folder
  */
 class StringCaseHelper {
+    public static function camelize($str) {
+        $str = 'x' . strtolower(trim($str));
+        $str = ucwords(preg_replace('/[\s_]+/', ' ', $str));
+
+        return substr(str_replace(' ', '', $str), 1);
+    }
+
+    public static function humanize($str) {
+        return ucwords(preg_replace('/[_]+/', ' ', strtolower(trim($str))));
+    }
+
     // Проверка на camelCase
     public static function isCamelCase(string $string) {
         return preg_match('/^[a-z]+([A-Z][a-z]*)+$/', $string) === 1;
@@ -57,5 +68,3 @@ class StringCaseHelper {
         }
     }
 }
-
-

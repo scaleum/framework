@@ -11,8 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Http\Client\Transport;
 
-use Scaleum\Http\ClientRequest;
-use Scaleum\Http\ClientResponse;
+use Scaleum\Http\OutboundRequest;
+use Scaleum\Http\InboundResponse;
 use Scaleum\Http\HeadersManager;
 use Scaleum\Http\Stream;
 use Scaleum\Http\Uri;
@@ -91,7 +91,7 @@ class CurlTransport extends TransportAbstract {
         return $this;
     }
 
-    public function send(ClientRequest $request): ClientResponse {
+    public function send(OutboundRequest $request): InboundResponse {
         if (! $this->isSupported()) {
             throw new ERuntimeError('cURL is not available.');
         }
@@ -239,7 +239,7 @@ class CurlTransport extends TransportAbstract {
 
         if ($request->isAsync() === true) {
             curl_close($handle);
-            return new ClientResponse();
+            return new InboundResponse();
         }
 
         if ($curl_error = curl_error($handle)) {
@@ -292,7 +292,7 @@ class CurlTransport extends TransportAbstract {
         $stream->write($responseBody);
         $stream->rewind();
 
-        $result = new ClientResponse($statusCode, $responseHeaders, $stream, $request->getProtocolVersion());
+        $result = new InboundResponse($statusCode, $responseHeaders, $stream, $request->getProtocolVersion());
 
         // If the response is a redirect, we will create a new request instance and send it
         if ($follow_location !== true && ($location = $result->getHeaderLine('Location')) !== false) {

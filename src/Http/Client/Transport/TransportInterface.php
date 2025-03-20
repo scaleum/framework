@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Scaleum\Http\Client\Transport;
 
-use Scaleum\Http\ClientRequest;
-use Scaleum\Http\ClientResponse;
+use Scaleum\Http\OutboundRequest;
+use Scaleum\Http\InboundResponse;
 
 /**
  * TransportInterface
@@ -21,7 +21,7 @@ use Scaleum\Http\ClientResponse;
  */
 interface TransportInterface
 {
-    public function send(ClientRequest $request): ClientResponse;
+    public function send(OutboundRequest $request): InboundResponse;
     public function isSupported():bool;
 }
 /** End of TransportInterface **/

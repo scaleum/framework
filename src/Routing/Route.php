@@ -50,23 +50,13 @@ class Route extends Hydrator implements RouteInterface {
         ':text' => '[a-zA-Z]+',
     ];
 
-    public const ALLOWED_HTTP_METHODS = [
-        HttpHelper::METHOD_GET,
-        HttpHelper::METHOD_POST,
-        HttpHelper::METHOD_PUT,
-        HttpHelper::METHOD_PATCH,
-        HttpHelper::METHOD_DELETE,
-        HttpHelper::METHOD_OPTIONS,
-        HttpHelper::METHOD_HEAD
-    ];
-
     protected ?string $path    = null;
     protected mixed $methods   = null;
     protected ?array $callback = null;
 
     public function getMethods(): array {
         if ($this->methods === null) {
-            return self::ALLOWED_HTTP_METHODS;
+            return HttpHelper::ALLOWED_HTTP_METHODS;
         }
         return $this->methods;
     }

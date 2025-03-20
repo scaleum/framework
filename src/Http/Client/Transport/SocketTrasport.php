@@ -11,8 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Http\Client\Transport;
 
-use Scaleum\Http\ClientRequest;
-use Scaleum\Http\ClientResponse;
+use Scaleum\Http\OutboundRequest;
+use Scaleum\Http\InboundResponse;
 use Scaleum\Http\HeadersManager;
 use Scaleum\Http\Stream;
 use Scaleum\Http\Uri;
@@ -113,7 +113,7 @@ class SocketTrasport extends TransportAbstract {
         return function_exists('fsockopen');
     }
 
-    public function send(ClientRequest $request): ClientResponse {
+    public function send(OutboundRequest $request): InboundResponse {
         if (! $this->isSupported()) {
             throw new ERuntimeError('Socket transport is not supported');
         }
@@ -199,7 +199,7 @@ class SocketTrasport extends TransportAbstract {
 
         if ($request->isAsync() === true) {
             fclose($socket);
-            return new ClientResponse();
+            return new InboundResponse();
         }
 
         // Read the first line of the headers (status line)
@@ -230,7 +230,7 @@ class SocketTrasport extends TransportAbstract {
         $stream->write($responseBody);
         $stream->rewind();
 
-        $result = new ClientResponse($statusCode, $responseHeaders, $stream, $request->getProtocolVersion());
+        $result = new InboundResponse($statusCode, $responseHeaders, $stream, $request->getProtocolVersion());
 
         // If the response is a redirect, we will create a new request instance and send it
         if ($method !== HttpHelper::METHOD_HEAD && ($location = $result->getHeaderLine('Location')) !== false) {

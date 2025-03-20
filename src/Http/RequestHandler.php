@@ -59,7 +59,7 @@ class RequestHandler implements HandlerInterface {
                 $router->addRoute($alias, new Route($attributes));
             }
 
-            $request = ServerRequest::fromGlobals();
+            $request = InboundRequest::fromGlobals();
             $routeInfo = $router->match($request->getUri()->getPath(), $request->getMethod());
             
             $controller = (new ControllerResolver($this->container))->resolve($routeInfo);

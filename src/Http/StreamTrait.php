@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -11,62 +11,58 @@ declare(strict_types=1);
 
 namespace Scaleum\Http;
 
-
 use Psr\Http\Message\StreamInterface;
 /**
  * StreamTrait
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-trait StreamTrait
-{
-    protected function createStream(mixed $body): StreamInterface {
+trait StreamTrait {
+    protected function prepareHeadersAndStream(array $_headers, mixed $_body): array {
         // If the body is already a StreamInterface instance, return it as is
-        if($body instanceof StreamInterface) {
-            return $body;
+        if ($_body instanceof StreamInterface) {
+            return [$_headers, $_body];
         }
 
         $stream  = new Stream(fopen('php://temp', 'w+'));
-        $headers = new HeadersManager($this->headers);
+        $headers = new HeadersManager($_headers);
 
-        // Если передан объект или массив → конвертируем в JSON
-        if (is_array($body) || is_object($body)) {
-            $body = json_encode($body, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        // If an object or array is passed → convert to JSON
+        if (is_array($_body) || is_object($_body)) {
+            $_body = json_encode($_body, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             $headers->setHeader('Content-Type', 'application/json');
-            $headers->setHeader('Content-Length', (string) strlen($body));
+            $headers->setHeader('Content-Length', (string) strlen($_body));
         }
-        // Если передан файл → определяем MIME-тип
-        elseif ($body && is_file($body)) {
-            if ($mimeType = $this->getMimeType($body)) {
+        // If a file is passed → determine the MIME type
+        elseif ($_body && is_file($_body)) {
+            if ($mimeType = $this->getMimeType($_body)) {
                 $headers->setHeader('Content-Type', $mimeType);
-                $headers->setHeader('Content-Disposition', 'attachment; filename="' . basename($body) . '"');
-                $headers->setHeader('Content-Length', (string) filesize($body));
+                $headers->setHeader('Content-Disposition', 'attachment; filename="' . basename($_body) . '"');
+                $headers->setHeader('Content-Length', (string) filesize($_body));
                 $headers->setHeader('Content-Transfer-Encoding', 'binary');
-                $headers->setHeader('Last-Modified', gmdate('D, d M Y H:i:s', filemtime($body)) . ' GMT');
+                $headers->setHeader('Last-Modified', gmdate('D, d M Y H:i:s', filemtime($_body)) . ' GMT');
             }
-            return new Stream(fopen($body, 'r+'));
+            return [new Stream(fopen($_body, 'r+')), $headers->getAll()];
         }
-        // Если строка → определяем Content-Type
-        elseif (is_string($body)) {
-            $headers->setHeader('Content-Type', $this->detectMimeTypeFromContent($body));
-            $headers->setHeader('Content-Length', (string) mb_strlen($body));
+        // If a string is passed → determine the Content-Type
+        elseif (is_string($_body)) {
+            $headers->setHeader('Content-Type', $this->detectMimeTypeFromContent($_body));
+            $headers->setHeader('Content-Length', (string) mb_strlen($_body));
         }
-        // Если неизвестный тип → приводим к строке
-        elseif (! is_string($body)) {
-            $body = (string) $body;
-            $headers->setHeader('Content-Type', $this->detectMimeTypeFromContent($body));
-            $headers->setHeader('Content-Length', (string) mb_strlen($body));
+        // If an unknown type is passed → convert to string
+        elseif (! is_string($_body)) {
+            $_body = (string) $_body;
+            $headers->setHeader('Content-Type', $this->detectMimeTypeFromContent($_body));
+            $headers->setHeader('Content-Length', (string) mb_strlen($_body));
         }
 
-        $stream->write($body);
+        $stream->write($_body);
         $stream->rewind();
 
-        // Устанавливаем заголовки
-        $this->headers = $headers->getAll();
-        return $stream;
+        // Return an array of headers and a stream
+        return [$headers->getAll(), $stream];
     }
 
-    // Определяет MIME-тип по содержимому строки
     private function detectMimeTypeFromContent(string $content): string {
         if (preg_match('/^\s*[{[]/', $content)) {
             return 'application/json';
@@ -91,7 +87,6 @@ trait StreamTrait
         return 'text/plain';
     }
 
-    // Определение MIME-типа по расширению файла
     private function getMimeType(string $filePath): ?string {
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 

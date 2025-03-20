@@ -15,22 +15,16 @@ use Scaleum\Core\Contracts\ResponderInterface;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 
 /**
- * Response
+ * OutboundResponse
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ServerResponse extends Message implements ResponseInterface, ResponderInterface {
+class OutboundResponse extends Message implements ResponseInterface, ResponderInterface {
     use StreamTrait;
     protected int $statusCode;
-    public function __construct(
-        int $statusCode = 200,
-        array $headers = [],
-        mixed $body = null,
-        string $protocol = '1.1'
-    ) {
-        $this->body       = $this->createStream($body);
-        $this->headers    = $headers;
-        $this->statusCode = $statusCode;
+    public function __construct(int $statusCode = 200, array $headers = [], mixed $body = null, string $protocol = '1.1') {
+        [$this->headers, $this->body] = $this->prepareHeadersAndStream($headers, $body);
+        $this->statusCode             = $statusCode;
 
         parent::__construct($this->headers, $this->body, $protocol);
     }
@@ -50,9 +44,10 @@ class ServerResponse extends Message implements ResponseInterface, ResponderInte
         return HttpHelper::getStatusMessage($this->statusCode);
     }
 
-    // Отправка HTTP-ответа клиенту
+    // Send HTTP response to client
     public function send(): void {
         header(sprintf('HTTP/%s %d %s', $this->protocol, $this->statusCode, $this->getReasonPhrase()), true, $this->statusCode);
+
         foreach ($this->headers as $name => $values) {
             foreach ($values as $value) {
                 header(sprintf('%s: %s', $name, $value), false);
@@ -62,4 +57,4 @@ class ServerResponse extends Message implements ResponseInterface, ResponderInte
         fpassthru($this->body->detach());
     }
 }
-/** End of ServerResponse **/
+/** End of OutboundResponse **/

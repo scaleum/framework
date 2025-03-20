@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Scaleum\Http\Client;
 
 use Scaleum\Http\Client\Transport\TransportInterface;
-use Scaleum\Http\ClientRequest;
-use Scaleum\Http\ClientResponse;
+use Scaleum\Http\OutboundRequest;
+use Scaleum\Http\InboundResponse;
 use Scaleum\Stdlib\Base\Hydrator;
 
 
@@ -139,6 +139,6 @@ abstract class RequesterAbstract extends Hydrator
         return $result;
     }
 
-    abstract public function send(ClientRequest $request): ClientResponse;
+    abstract public function send(OutboundRequest $request): InboundResponse;
 }
 /** End of RequesterAbstract **/

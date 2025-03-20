@@ -16,11 +16,11 @@ use Psr\Http\Message\StreamInterface;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 
 /**
- * ClientResponse
+ * InboundResponse
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ClientResponse extends Message implements ResponseInterface {
+class InboundResponse extends Message implements ResponseInterface {
     private mixed $parsedBody = null;
     protected int $statusCode;
     public function __construct(
@@ -124,4 +124,4 @@ class ClientResponse extends Message implements ResponseInterface {
         return $this->parsedBody;
     }
 }
-/** End of ClientResponse **/
+/** End of InboundResponse **/
