@@ -19,7 +19,7 @@ use Scaleum\Stdlib\Helpers\StringHelper;
 use Scaleum\Stdlib\Helpers\Utf8Helper;
 
 /**
- * InboundRequest
+ * InboundRequest - Incoming request to our server
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */

@@ -15,7 +15,7 @@ use Scaleum\Core\Contracts\ResponderInterface;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 
 /**
- * OutboundResponse
+ * OutboundResponse - Outgoing response from our server
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */

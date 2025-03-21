@@ -16,7 +16,7 @@ use Psr\Http\Message\StreamInterface;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 
 /**
- * InboundResponse
+ * InboundResponse - Incoming response from external server
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */

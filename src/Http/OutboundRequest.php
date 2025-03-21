@@ -15,7 +15,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
 
 /**
- * OutboundRequest
+ * OutboundRequest - Outgoing request to external server
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
