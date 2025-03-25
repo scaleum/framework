@@ -1,0 +1,59 @@
+<?php
+declare (strict_types = 1);
+/**
+ * This file is part of Scaleum Framework.
+ *
+ * (C) 2009-2025 Maxim Kirichenko <kirichenko.maxim@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Scaleum\Auth\Authenticators;
+
+use Scaleum\Auth\Contracts\AuthenticatableInterface;
+use Scaleum\Auth\Contracts\AuthenticatorInterface;
+use Scaleum\Auth\Contracts\UserRepositoryInterface;
+use Scaleum\Auth\Services\JwtService;
+use Scaleum\Auth\Supports\TokenResolver;
+use Scaleum\Stdlib\SAPI\Explorer;
+use Scaleum\Stdlib\SAPI\SapiMode;
+
+/**
+ * JwtAuthenticator
+ *
+ * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
+ */
+class JwtAuthenticator implements AuthenticatorInterface {
+    public function __construct(
+        private TokenResolver $tokenResolver,
+        private JwtService $jwtService,
+        private UserRepositoryInterface $userRepository
+    ) {}
+
+    public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface {
+        if(Explorer::getTypeFamily() !== SapiMode::HTTP) {
+            return null;
+        }
+        
+        if (empty($headers)) {
+            $headers = function_exists('getallheaders') ? getallheaders() : TokenResolver::fromServer($_SERVER);
+        } elseif (TokenResolver::isServerHeaders($headers)) {
+            $headers = TokenResolver::fromServer($headers);
+        }
+
+        $token = $credentials['token'] ?? $this->tokenResolver->resolve($_GET, $_POST, $headers, $_COOKIE);
+
+        if (! $token) {
+            return null;
+        }
+
+        $payload = $this->jwtService->verify($token);
+        if ($payload && $payload->getUserId()) {
+            return $this->userRepository->findById($payload->getUserId());
+        }
+
+        return null;
+    }
+}
+/** End of JwtAuthenticator **/

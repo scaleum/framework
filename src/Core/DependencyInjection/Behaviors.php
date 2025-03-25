@@ -27,12 +27,12 @@ class Behaviors implements ConfiguratorInterface {
         $container
             ->addDefinition(Kernel::class, function (ContainerInterface $container) {
                 $result = new Kernel($container->get('kernel'));
-                $result->register($container->get('event.manager'));
+                $result->register($container->get(Framework::SVC_EVENTS));
                 return $result;
             })
             ->addDefinition(Exceptions::class, function (ContainerInterface $container) {
                 $result = new Exceptions($container->get('kernel'));
-                $result->register($container->get('event.manager'));
+                $result->register($container->get(Framework::SVC_EVENTS));
                 return $result;
             });
     }

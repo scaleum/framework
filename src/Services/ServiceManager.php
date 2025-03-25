@@ -28,16 +28,16 @@ class ServiceManager implements ServiceProviderInterface {
     protected array $normalized       = [];
 
     public function getService(string $name, mixed $default = null): mixed {
-        $_name = $this->normalized[$name] ?? $this->normalize($name, false);
+        $normalizeName = $this->normalized[$name] ?? $this->normalize($name, false);
 
-        if (isset($this->instances[$_name])) {
-            return $this->instances[$_name];
+        if (isset($this->instances[$normalizeName])) {
+            return $this->instances[$normalizeName];
         }
 
         // lazy loading
         $instance = null;
-        if (isset($this->invokableClasses[$_name])) {
-            $instance = $this->createInstance($_name);
+        if (isset($this->invokableClasses[$normalizeName])) {
+            $instance = $this->createInstance($normalizeName);
         }
 
         if ($instance === null) {
@@ -45,7 +45,7 @@ class ServiceManager implements ServiceProviderInterface {
             return $default;
         }
 
-        return $this->instances[$_name] = $instance;
+        return $this->instances[$normalizeName] = $instance;
     }
 
     public function getAll(): array {
@@ -124,12 +124,12 @@ class ServiceManager implements ServiceProviderInterface {
             return $reflection->newInstance();
         }
 
-        if($reflection->implementsInterface(HydratorInterface::class)) {
+        if ($reflection->implementsInterface(HydratorInterface::class)) {
             return $reflection->newInstance($config);
         }
-        
+
         $parameters = $constructor->getParameters();
-        $args = [];
+        $args       = [];
         foreach ($parameters as $parameter) {
             $name = $parameter->getName();
             if (array_key_exists($name, $config)) {

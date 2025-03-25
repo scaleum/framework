@@ -204,7 +204,6 @@ abstract class KernelAbstract implements KernelInterface {
                 'environment'        => $this->getEnvironment(),
                 'kernel.project_dir' => $this->getProjectDir(),
                 'kernel.config_dir'  => $this->getConfigDir(),
-                // 'kernel.start'       => microtime(true),
                 'kernel'             => $this,
             ]);
 

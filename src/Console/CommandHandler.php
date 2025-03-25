@@ -15,6 +15,7 @@ use Psr\Container\ContainerInterface;
 use Scaleum\Config\LoaderResolver;
 use Scaleum\Core\Contracts\HandlerInterface;
 use Scaleum\Core\Contracts\ResponderInterface;
+use Scaleum\Core\DependencyInjection\Framework;
 use Scaleum\Events\EventManagerInterface;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\ArrayHelper;
@@ -28,7 +29,7 @@ class CommandHandler implements HandlerInterface {
     protected EventManagerInterface $events;
 
     public function __construct(protected ContainerInterface $container) {
-        if (! ($events = $this->container->get('event.manager')) instanceof EventManagerInterface) {
+        if (! ($events = $this->container->get(Framework::SVC_EVENTS)) instanceof EventManagerInterface) {
             throw new ERuntimeError("Event manager is not an instance of EventManagerInterface");
         }
         $this->events = $events;
