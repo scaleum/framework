@@ -9,16 +9,18 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Auth\Contracts;
+namespace Scaleum\Security\Contracts;
 
 
 /**
- * HasPasswordInterface
+ * UserRepositoryInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface HasPasswordInterface
+interface UserRepositoryInterface
 {
-    public function getPasswordHash(): string;
+    public function findById(int $id): ?AuthenticatableInterface;
+    public function findByEmail(string $email): ?AuthenticatableInterface;
+
 }
-/** End of HasPasswordInterface **/
+/** End of UserRepositoryInterface **/

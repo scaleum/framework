@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -9,16 +9,18 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Auth\Contracts;
+namespace Scaleum\Security\Supports;
 
+use Scaleum\Stdlib\Base\AttributeContainer;
 
 /**
- * AuthenticatableInterface
+ * JwtTokenPayload
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface AuthenticatableInterface
-{
-
+class JwtTokenPayload extends AttributeContainer {
+    public function getUserId(): int {
+        return (int)$this->getAttribute('user_id', 0);
+    }
 }
-/** End of AuthenticatableInterface **/
+/** End of JwtTokenPayload **/

@@ -9,13 +9,13 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Auth\Authenticators;
+namespace Scaleum\Security\Authenticators;
 
-use Scaleum\Auth\Contracts\AuthenticatableInterface;
-use Scaleum\Auth\Contracts\AuthenticatorInterface;
-use Scaleum\Auth\Contracts\UserRepositoryInterface;
-use Scaleum\Auth\Services\JwtService;
-use Scaleum\Auth\Supports\TokenResolver;
+use Scaleum\Security\Contracts\AuthenticatableInterface;
+use Scaleum\Security\Contracts\AuthenticatorInterface;
+use Scaleum\Security\Contracts\UserRepositoryInterface;
+use Scaleum\Security\Services\JwtService;
+use Scaleum\Security\Supports\TokenResolver;
 use Scaleum\Stdlib\SAPI\Explorer;
 use Scaleum\Stdlib\SAPI\SapiMode;
 
@@ -32,10 +32,10 @@ class JwtAuthenticator implements AuthenticatorInterface {
     ) {}
 
     public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface {
-        if(Explorer::getTypeFamily() !== SapiMode::HTTP) {
+        if (Explorer::getTypeFamily() !== SapiMode::HTTP) {
             return null;
         }
-        
+
         if (empty($headers)) {
             $headers = function_exists('getallheaders') ? getallheaders() : TokenResolver::fromServer($_SERVER);
         } elseif (TokenResolver::isServerHeaders($headers)) {

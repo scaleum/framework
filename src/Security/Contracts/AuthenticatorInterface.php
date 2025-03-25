@@ -8,19 +8,15 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
-namespace Scaleum\Auth\Contracts;
-
+namespace Scaleum\Security\Contracts;
 
 /**
- * UserRepositoryInterface
+ * AuthenticatorInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface UserRepositoryInterface
+interface AuthenticatorInterface
 {
-    public function findById(int $id): ?AuthenticatableInterface;
-    public function findByEmail(string $email): ?AuthenticatableInterface;
-
+    public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface;
 }
-/** End of UserRepositoryInterface **/
+/** End of AuthenticatorInterface **/

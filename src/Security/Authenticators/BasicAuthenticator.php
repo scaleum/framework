@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -9,30 +9,28 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Auth\Authenticators;
+namespace Scaleum\Security\Authenticators;
 
-use Scaleum\Auth\Contracts\AuthenticatableInterface;
-use Scaleum\Auth\Contracts\AuthenticatorInterface;
-use Scaleum\Auth\Contracts\HasPasswordInterface;
-use Scaleum\Auth\Contracts\UserRepositoryInterface;
+use Scaleum\Security\Contracts\AuthenticatableInterface;
+use Scaleum\Security\Contracts\AuthenticatorInterface;
+use Scaleum\Security\Contracts\HasPasswordInterface;
+use Scaleum\Security\Contracts\UserRepositoryInterface;
 
 /**
  * PasswordAuthenticator
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class PasswordAuthenticator implements AuthenticatorInterface
-{
+class BasicAuthenticator implements AuthenticatorInterface {
     public function __construct(
         private UserRepositoryInterface $userRepository
     ) {}
 
-    public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface
-    {
-        $email = $credentials['email'] ?? null;
+    public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface {
+        $email    = $credentials['email'] ?? null;
         $password = $credentials['password'] ?? null;
 
-        if (!$email || !$password) {
+        if (! $email || ! $password) {
             return null;
         }
 
@@ -45,9 +43,8 @@ class PasswordAuthenticator implements AuthenticatorInterface
         return null;
     }
 
-    private function verifyPassword(string $password, AuthenticatableInterface $user): bool
-    {
-        if (!$user instanceof HasPasswordInterface) {
+    private function verifyPassword(string $password, AuthenticatableInterface $user): bool {
+        if (! $user instanceof HasPasswordInterface) {
             return false;
         }
 

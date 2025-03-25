@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -9,30 +9,29 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Auth\Authenticators;
+namespace Scaleum\Security\Authenticators;
 
-use Scaleum\Auth\Contracts\AuthenticatableInterface;
-use Scaleum\Auth\Contracts\AuthenticatorInterface;
-use Scaleum\Auth\Contracts\UserRepositoryInterface;
+use Scaleum\Security\Contracts\AuthenticatableInterface;
+use Scaleum\Security\Contracts\AuthenticatorInterface;
+use Scaleum\Security\Contracts\UserRepositoryInterface;
 use Scaleum\Stdlib\SAPI\Explorer;
 use Scaleum\Stdlib\SAPI\SapiMode;
+
 /**
  * UserConsoleAuthenticator
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class UserConsoleAuthenticator implements AuthenticatorInterface
-{
+class UserConsoleAuthenticator implements AuthenticatorInterface {
     public function __construct(private UserRepositoryInterface $userRepository) {}
 
-    public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface
-    {
-        if(Explorer::getTypeFamily() !== SapiMode::CONSOLE) {
+    public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface {
+        if (Explorer::getTypeFamily() !== SapiMode::CONSOLE) {
             return null;
         }
 
         $userId = $credentials['user_id'] ?? getenv('AUTH_USER_ID');
-        if (!$userId) {
+        if (! $userId) {
             return null;
         }
 

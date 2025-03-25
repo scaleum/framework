@@ -9,10 +9,10 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Auth\Services;
+namespace Scaleum\Security\Services;
 
 use Avant\Http\Helpers\IpAddressHelper;
-use Scaleum\Auth\Supports\JwtTokenPayload;
+use Scaleum\Security\Supports\JwtTokenPayload;
 use Scaleum\Stdlib\Base\Hydrator;
 
 /**

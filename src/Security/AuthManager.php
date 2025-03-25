@@ -9,10 +9,9 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Auth;
+namespace Scaleum\Security;
 
-use JsonSerializable;
-use Scaleum\Auth\Contracts\AuthenticatableInterface;
+use Scaleum\Security\Contracts\AuthenticatableInterface;
 
 
 /**

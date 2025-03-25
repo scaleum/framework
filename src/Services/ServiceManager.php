@@ -114,6 +114,17 @@ class ServiceManager implements ServiceProviderInterface {
             $config = array_merge($config, $this->configs[$normalizeName]);
         }
 
+        if (isset($config['dependencies']) && is_array($config['dependencies'])) {
+            foreach ($config['dependencies'] as $key => $dependencyName) {
+                if (($dependency = $this->getService($dependencyName)) !== null) {
+                    $config[$key] = $dependency;
+                } else {
+                    throw new ENotFoundError(sprintf('Dependency "%s" not found for "%s"', $dependencyName, $invokable));
+                }
+            }
+            unset($config['dependencies']);
+        }
+
         $reflection = new ReflectionClass($invokable);
         if (empty($config)) {
             return $reflection->newInstance();
