@@ -11,6 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Helpers;
 
+use Avant\Http\Helpers\IpAddressHelper;
 use Scaleum\Stdlib\SAPI\Explorer;
 use Scaleum\Stdlib\SAPI\SapiIdentifier;
 
@@ -20,13 +21,13 @@ use Scaleum\Stdlib\SAPI\SapiIdentifier;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class HttpHelper {
-    public const METHOD_GET        = 'GET';
-    public const METHOD_POST       = 'POST';
-    public const METHOD_PUT        = 'PUT';
-    public const METHOD_PATCH      = 'PATCH';
-    public const METHOD_DELETE     = 'DELETE';
-    public const METHOD_OPTIONS    = 'OPTIONS';
-    public const METHOD_HEAD       = 'HEAD';
+    public const METHOD_GET           = 'GET';
+    public const METHOD_POST          = 'POST';
+    public const METHOD_PUT           = 'PUT';
+    public const METHOD_PATCH         = 'PATCH';
+    public const METHOD_DELETE        = 'DELETE';
+    public const METHOD_OPTIONS       = 'OPTIONS';
+    public const METHOD_HEAD          = 'HEAD';
     public const ALLOWED_HTTP_METHODS = [
         self::METHOD_GET,
         self::METHOD_POST,
@@ -175,5 +176,79 @@ class HttpHelper {
         return isset(self::$statuses[$code]);
     }
 
+    public static function isMethod(string $method): bool {
+        return in_array($method, self::ALLOWED_HTTP_METHODS);
+    }
+
+    public static function getUserIP()
+    {
+        $result = '';
+        if (!empty( $_SERVER['HTTP_CLIENT_IP'] )) {
+            // to get shared ISP IP address
+            $result = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty( $_SERVER['HTTP_X_FORWARDED_FOR'] )) {
+            // check for IPs passing through proxy servers
+            // check if multiple IP addresses are set and take the first one
+            $ipAddressList = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] );
+            foreach ($ipAddressList as $ip) {
+                if (!empty( $ip )) {
+                    // if you prefer, you can check for valid IP address here
+                    $result = $ip;
+                    break;
+                }
+            }
+        } elseif (!empty( $_SERVER['HTTP_X_FORWARDED'] )) {
+            $result = $_SERVER['HTTP_X_FORWARDED'];
+        } elseif (!empty( $_SERVER['HTTP_X_CLUSTER_CLIENT_IP'] )) {
+            $result = $_SERVER['HTTP_X_CLUSTER_CLIENT_IP'];
+        } elseif (!empty( $_SERVER['HTTP_FORWARDED_FOR'] )) {
+            $result = $_SERVER['HTTP_FORWARDED_FOR'];
+        } elseif (!empty( $_SERVER['HTTP_FORWARDED'] )) {
+            $result = $_SERVER['HTTP_FORWARDED'];
+        } elseif (!empty( $_SERVER['REMOTE_ADDR'] )) {
+            $result = $_SERVER['REMOTE_ADDR'];
+        }
+
+        return $result;
+    }
+
+    public static function isIpAddress($ip)
+    {
+        if (filter_var( $ip, FILTER_VALIDATE_IP,
+            FILTER_FLAG_IPV4 |
+            FILTER_FLAG_IPV6 |
+            FILTER_FLAG_NO_PRIV_RANGE |
+            FILTER_FLAG_NO_RES_RANGE
+          ) === false) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function getUserAgent(string $default = 'Unknown'): string {
+        $headers = [
+            // The default User-Agent string.
+            'HTTP_USER_AGENT',
+            // Header can occur on devices using Opera Mini.
+            'HTTP_X_OPERAMINI_PHONE_UA',
+            // Vodafone specific header: http://www.seoprinciple.com/mobile-web-community-still-angry-at-vodafone/24/
+            'HTTP_X_DEVICE_USER_AGENT',
+            'HTTP_X_ORIGINAL_USER_AGENT',
+            'HTTP_X_SKYFIRE_PHONE',
+            'HTTP_X_BOLT_PHONE_UA',
+            'HTTP_DEVICE_STOCK_UA',
+            'HTTP_X_UCBROWSER_DEVICE_UA',
+        ];
+
+        $str = '';
+        foreach ($headers as $header) {
+            if (isset($_SERVER[$header]) && ! empty($_SERVER[$header])) {
+                $str .= $_SERVER[$header] . ' ';
+            }
+        }
+
+        return trim(empty($str) ? $default : substr($str, 0, 512));
+    }
 }
 /** End of HttpHelper **/

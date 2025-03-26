@@ -18,7 +18,7 @@ use Scaleum\Stdlib\Exceptions\ENotFoundError;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
- * InstanceManager
+ * ServiceManager
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class ServiceManager implements ServiceProviderInterface {
@@ -170,4 +170,4 @@ class ServiceManager implements ServiceProviderInterface {
 
 }
 
-/* End of file InstanceManager.php */
+/* End of file ServiceManager.php */

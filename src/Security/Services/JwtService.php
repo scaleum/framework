@@ -14,6 +14,7 @@ namespace Scaleum\Security\Services;
 use Avant\Http\Helpers\IpAddressHelper;
 use Scaleum\Security\Supports\JwtTokenPayload;
 use Scaleum\Stdlib\Base\Hydrator;
+use Scaleum\Stdlib\Helpers\HttpHelper;
 
 /**
  * JwtService
@@ -93,7 +94,7 @@ class JwtService extends Hydrator {
             return null;
         }
 
-        if (! empty($payload['ip_address']) && $payload['ip_address'] !== IpAddressHelper::getIpAddress()) {
+        if (! empty($payload['ip_address']) && $payload['ip_address'] !== HttpHelper::getUserIP()) {
             $this->last_error = "Token has invalid IP-address";
             return null;
         }

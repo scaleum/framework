@@ -10,6 +10,8 @@ declare (strict_types = 1);
  */
 
 namespace Scaleum\Http;
+
+use Avant\Http\Helpers\IpAddressHelper;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
@@ -255,35 +257,14 @@ class InboundRequest extends Message implements ServerRequestInterface {
 
     public function getUserAgent(): ?string {
         if ($this->userAgent === null) {
-            $headers = [
-                // The default User-Agent string.
-                'HTTP_USER_AGENT',
-                // Header can occur on devices using Opera Mini.
-                'HTTP_X_OPERAMINI_PHONE_UA',
-                // Vodafone specific header: http://www.seoprinciple.com/mobile-web-community-still-angry-at-vodafone/24/
-                'HTTP_X_DEVICE_USER_AGENT',
-                'HTTP_X_ORIGINAL_USER_AGENT',
-                'HTTP_X_SKYFIRE_PHONE',
-                'HTTP_X_BOLT_PHONE_UA',
-                'HTTP_DEVICE_STOCK_UA',
-                'HTTP_X_UCBROWSER_DEVICE_UA',
-            ];
-
-            $str = '';
-            foreach ($headers as $header) {
-                if (isset($this->serverParams[$header]) && ! empty($this->serverParams[$header])) {
-                    $str .= $this->serverParams[$header] . ' ';
-                }
-            }
-
-            $this->userAgent = trim(empty($str) ? 'Unknown' : substr($str, 0, 512));
+            $this->userAgent = HttpHelper::getUserAgent();
         }
 
         return $this->userAgent;
     }
 
     public function getUserIP(): string {
-        return $this->serverParams['REMOTE_ADDR'] ?? '0.0.0.0';
+        return $this->serverParams['REMOTE_ADDR'] ?? HttpHelper::getUserIP();
     }
 
     public function getContentType(): string {
