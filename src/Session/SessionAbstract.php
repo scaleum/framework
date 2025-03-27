@@ -63,10 +63,11 @@ abstract class SessionAbstract extends Hydrator {
      */
     protected string $timeReference = 'time';
     protected string $cookieDomain  = '';
-    protected bool $cookieEncode    = true;
+    protected bool $cookieEncode    = false;
     protected bool $cookieHttpOnly  = false;
     protected string $cookiePath    = '/';
     protected bool $cookieSecure    = false;
+    protected bool $logging         = true;
     protected ?EventManagerInterface $events;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -158,7 +159,7 @@ abstract class SessionAbstract extends Hydrator {
                 $value = rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
             }
 
-            $cookieExpire = ($this->destroyOnClose === true) ? 0 : (($this->expiration > 0) ? $this->expiration + time() : mktime(0, 0, 0, (int) date('m'), (int) date('d'), (int) date('Y') + 1));
+            $cookieExpire = $this->getTimestamp($this->expiration);
             setcookie($key, $value, $cookieExpire, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHttpOnly);
 
             // Hack: only for current session
@@ -171,13 +172,14 @@ abstract class SessionAbstract extends Hydrator {
     }
 
     public function isValid(): bool {
-        if (($this->get('last_activity', 0) + $this->expiration) < $this->getTimestamp()) {
-            // $this->debug('Session has expired, and will be flushed');
+        // var_export($this->data);
+        if (($expire = (int) $this->get('last_activity', 0) + $this->expiration) < $this->getTimestamp()) {
+            ! $this->logging || $this->debug(sprintf('Session has expired(%d/%d)', $expire, $this->getTimestamp()));
             return false;
         }
 
         if ($this->get('user_ip') != HttpHelper::getUserIP()) {
-            // $this->debug('Session has incorrect data(user IP), and will be flushed');
+            ! $this->logging || $this->debug('Session has incorrect data(user IP), and will be flushed');
             return false;
         }
 
@@ -193,26 +195,25 @@ abstract class SessionAbstract extends Hydrator {
             // return true;
         }
 
-        $this->debug('Session opening...');
+        ! $this->logging || $this->debug('Session opening...');
 
         // if session_id not found - open new
         if ($notFound = ($id = $this->getAnchor($this->name, false)) === FALSE) {
+            ! $this->logging || $this->debug('Session not found, open new');
             $id = UniqueHelper::getUniqueID(UniqueHelper::getUniquePrefix() . HttpHelper::getUserIP());
         }
 
-        $this->data = [];
         $this->name = $name;
         $this->id   = $id;
+        $this->data = $this->read();
 
         // if session loaded, verify execute
-        if ($this->read()) {
-            if (! $this->isValid()) {
-                $this->update(true);
-                return false;
-            }
-
-            $this->debug('Session has successfully loaded');
+        if (! $this->isValid()) {
+            $this->update(true);
+            return false;
         }
+
+        ! $this->logging || $this->debug('Session has successfully loaded');
 
         // update if session is new
         if ($notFound == true) {
@@ -230,7 +231,7 @@ abstract class SessionAbstract extends Hydrator {
     protected function update(bool $flush = false) {
         // flush all data
         if ($flush === true) {
-            $this->debug('Session was flushed');
+            ! $this->logging || $this->debug('Session was flushed');
             $this->data = [];
         }
 
@@ -250,17 +251,17 @@ abstract class SessionAbstract extends Hydrator {
         }
 
         $this->setAnchor($this->name, $this->id); // Refresh cookie info
-        $this->debug('Session has successfully updated');
+        ! $this->logging || $this->debug('Session has successfully updated');
     }
 
-    protected function getTimestamp(): int {
+    protected function getTimestamp(int $shift = 0): int {
         switch (strtolower($this->timeReference)) {
         case 'gmt':
-            $now    = time();
+            $now    = time() + $shift;
             $result = (int) mktime((int) gmdate("H", $now), (int) gmdate("i", $now), (int) gmdate("s", $now), (int) gmdate("m", $now), (int) gmdate("d", $now), (int) gmdate("Y", $now));
             break;
         default:
-            $result = time();
+            $result = time() + $shift;
             break;
         }
 

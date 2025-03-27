@@ -26,6 +26,10 @@ class StringHelper
      */
     public static function isSerialized($str)
     {
+        if (!is_string($str) || strlen($str) < 4 || $str[1] !== ':') {
+            return false;
+        }
+
         try {
             return $str === 'b:0;' || @unserialize($str) !== false;
         } catch (Exception $exception) {

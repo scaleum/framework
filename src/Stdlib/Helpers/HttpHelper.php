@@ -180,7 +180,7 @@ class HttpHelper {
         return in_array($method, self::ALLOWED_HTTP_METHODS);
     }
 
-    public static function getUserIP()
+    public static function getUserIP():string
     {
         $result = '';
         if (!empty( $_SERVER['HTTP_CLIENT_IP'] )) {
