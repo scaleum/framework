@@ -30,13 +30,14 @@ use Scaleum\Stdlib\SAPI\SapiMode;
  */
 abstract class SessionAbstract extends Hydrator {
     use LoggerChannelTrait;
-    protected const MAX_ANCHOR_LEN = 32;
-    protected array $data          = [];
+    protected const EXPIRATION_DEFAULT = 3600;
+    protected const MAX_ANCHOR_LEN     = 32;
+    protected array $data              = [];
     /**
      * Lifetime session(in seconds)
      * @var int
      */
-    protected int $expiration = 3600;
+    protected int $expiration = self::EXPIRATION_DEFAULT;
     /**
      * Destroy session cookie on close
      * @var bool
@@ -172,9 +173,8 @@ abstract class SessionAbstract extends Hydrator {
     }
 
     public function isValid(): bool {
-        // var_export($this->data);
-        if (($expire = (int) $this->get('last_activity', 0) + $this->expiration) < $this->getTimestamp()) {
-            ! $this->logging || $this->debug(sprintf('Session has expired(%d/%d)', $expire, $this->getTimestamp()));
+        if ((int) $this->get('last_activity', 0) < $this->getTimestamp() - $this->getExpiration()) {
+            ! $this->logging || $this->debug('Session has expired');
             return false;
         }
 
@@ -198,7 +198,7 @@ abstract class SessionAbstract extends Hydrator {
         ! $this->logging || $this->debug('Session opening...');
 
         // if session_id not found - open new
-        if ($notFound = ($id = $this->getAnchor($this->name, false)) === FALSE) {
+        if ($sessionNotExists = ($id = $this->getAnchor($this->name, false)) === false) {
             ! $this->logging || $this->debug('Session not found, open new');
             $id = UniqueHelper::getUniqueID(UniqueHelper::getUniquePrefix() . HttpHelper::getUserIP());
         }
@@ -216,7 +216,7 @@ abstract class SessionAbstract extends Hydrator {
         ! $this->logging || $this->debug('Session has successfully loaded');
 
         // update if session is new
-        if ($notFound == true) {
+        if ($sessionNotExists === true) {
             $this->update();
         }
 
@@ -300,6 +300,15 @@ abstract class SessionAbstract extends Hydrator {
         if ($updateImmediately == true) {
             $this->update();
         }
+    }
+
+    public function getExpiration() {
+        return $this->expiration;
+    }
+
+    public function setExpiration(int $expiration) {
+        $this->expiration = $expiration > 0 ? $expiration : self::EXPIRATION_DEFAULT;
+        return $this;
     }
 }
 /** End of SessionAbstract **/

@@ -111,8 +111,8 @@ class RedisDriver extends Hydrator implements CacheInterface {
      * @return Client
      */
     protected function getRedisResource() {
-        if ($this->resource == null) {
-            $this->resource = new Client(['server' => $this->getServer(), 'ttl' => $this->getLifetime(), 'db' => $this->getDb()]);
+        if (! $this->resource instanceof Client) {
+            $this->resource = new Client(['host' => $this->getHost(),'port' => $this->getPort(), 'lifetime' => $this->getLifetime(), 'db' => $this->getDb()]);
         }
 
         return $this->resource;

@@ -11,7 +11,6 @@ declare (strict_types = 1);
 
 namespace Scaleum\Session;
 
-use PDO;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Storages\PDO\Database;
 
@@ -34,41 +33,50 @@ class DatabaseSession extends SessionAbstract {
             ->addColumn([
                 $schema->columnString(64)->setColumn('session_id')->setNotNull(TRUE),
                 $schema->columnText()->setColumn('data'),
-                $schema->columnInt(11)->setColumn('updated_at')->setDefaultValue(0),
+                $schema->columnInt(11)->setColumn('last_activity')->setDefaultValue(0),
             ])
             ->addIndex([
                 $schema->primaryKey('session_id'),
             ])
             ->createTable($this->table, true);
-
-        // $sql = sprintf(
-        //     'CREATE TABLE IF NOT EXISTS `%s` (
-        //         `session_id` VARCHAR(64) NOT NULL PRIMARY KEY,
-        //         `data` TEXT NOT NULL,
-        //         `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        //     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;',
-        //     str_replace('`', '``', $this->table) // защита от инъекций
-        // );
     }
 
     protected function read(): array {
-        $result = [];
-        $query  = $this->getDatabase()->getQueryBuilder();
-        if ($row = $query->prepare(false)->optimize(false)->select()->from($this->table)->where('session_id', $this->id)->limit(1)->row()) {
-            $result = json_decode($row['data'], TRUE);
+        $result  = [];
+        $builder = $this->getDatabase()->getQueryBuilder();
+        if ($row = $builder->select()->from($this->table)->where('session_id', $this->id)->limit(1)->row()) {
+            $result                  = json_decode($row['data'], TRUE);
+            $result['last_activity'] = $row['last_activity'] ?? 0;
         }
         return $result;
     }
 
     protected function write(array $data): void {
-        $count = $this->getDatabase()->setQuery('SELECT COUNT(*) FROM sessions WHERE session_id = :id', ['id' => $this->id])->fetchColumn();
-        $sql   = ($count > 0) ? 'UPDATE sessions SET data = :data, updated_at = :updated_at WHERE session_id = :id' : 'INSERT INTO sessions (session_id, data, updated_at) VALUES (:id, :data, :updated_at)';
+        $time = $data['last_activity'] ?? $this->getTimestamp();
+        unset($data['last_activity']);
 
-        $this->getDatabase()->setQuery($sql, ['id' => $this->id, 'data' => json_encode($data, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE), 'updated_at' => time()])->execute();
+        $dataPrepared = json_encode($data, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE);
+
+        $query = $this->getDatabase()->getQueryBuilder();
+        $count = $query->select('COUNT(*)')->from($this->table)->where('session_id', $this->id)->rowColumn();
+        if ($count > 0) {
+            $query->set(['data' => $dataPrepared, 'last_activity' => $time])->where('session_id', $this->id)->update($this->table);
+        } else {
+            $query->set(['data' => $dataPrepared, 'last_activity' => $time, 'session_id' => $this->id])->insert($this->table);
+        }
     }
 
-    protected function delete(): void {}
-    public function cleanup(): void {}
+    protected function delete(): void {
+        $query = $this->getDatabase()->getQueryBuilder();
+        $query->where('session_id', $this->id)->delete($this->table);
+    }
+
+    public function cleanup(): void {
+        if ((rand() % 100) < 5) {
+            $query = $this->getDatabase()->getQueryBuilder();
+            $query->where("last_activity < ", $this->getTimestamp() - $this->getExpiration(), false)->delete($this->table);
+        }
+    }
     public function close() {
         parent::close();
         $this->cleanup();
