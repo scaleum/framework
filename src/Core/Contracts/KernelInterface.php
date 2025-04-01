@@ -12,6 +12,8 @@ declare (strict_types = 1);
 namespace Scaleum\Core\Contracts;
 
 use Scaleum\DependencyInjection\Contracts\ContainerProviderInterface;
+use Scaleum\Events\EventManagerInterface;
+use Scaleum\Services\ServiceProviderInterface;
 
 /**
  * KernelInterface
@@ -24,15 +26,14 @@ interface KernelInterface extends ContainerProviderInterface {
      *
      * @return string The project directory path.
      */
-    public function getProjectDir(): string;
+    public function getApplicationDir(): string;
 
     /**
      * Get the directory path of the configuration files.
      *
      * @return string The path to the configuration directory.
      */
-    public function getConfigDir(): string;
-
+    public function getConfigDir(): string;    
     /**
      * Retrieves the current environment of the application.
      *
@@ -40,8 +41,28 @@ interface KernelInterface extends ContainerProviderInterface {
      */
     public function getEnvironment(): string;
 
+    /**
+     * Bootstraps the kernel with the given configuration.
+     *
+     * @param array $config An optional array of configuration settings to initialize the kernel.
+     * @return self Returns the current instance of the kernel for method chaining.
+     */
     public function bootstrap(array $config = []): self;
+    /**
+     * Executes the kernel's main process.
+     *
+     * This method is responsible for running the core logic of the kernel.
+     *
+     * @return void
+     */
     public function run(): void;
-    public function halt($status, $message = null): void;
+    /**
+     * Halts the execution of the application with the given exit code.
+     *
+     * @param int $code The exit code to terminate the application with. Defaults to 0.
+     *
+     * @return void
+     */
+    public function halt(int $code = 0): void;
 }
 /** End of KernelInterface **/

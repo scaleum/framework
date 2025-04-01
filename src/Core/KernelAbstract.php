@@ -117,10 +117,15 @@ abstract class KernelAbstract implements KernelInterface {
             $response->send();
         }
         $this->getEventManager()->dispatch(KernelEvents::FINISH);
+        
+        $this->halt(0);
     }
 
-    public function halt($status, $message = null): void {
-
+    public function halt(int $code = 0): void{
+        $this->getEventManager()->dispatch(KernelEvents::HALT, [
+            'code' => $code,
+        ]);
+        exit($code);
     }
 
     abstract public function getHandler(): HandlerInterface;
@@ -144,15 +149,12 @@ abstract class KernelAbstract implements KernelInterface {
         return $result;
     }
 
-    /**
-     * Get the value of project_dir
-     */
-    public function getProjectDir(): string {
-        return $this->getRegistry()->get('project_dir', realpath(PathHelper::getScriptDir()));
+    public function getApplicationDir(): string {
+        return $this->getRegistry()->get('application_dir', realpath(PathHelper::getScriptDir()));
     }
 
     public function getConfigDir(): string {
-        return $this->getRegistry()->get('config_dir', realpath(PathHelper::join($this->getProjectDir(), 'config')));
+        return $this->getRegistry()->get('config_dir', realpath(PathHelper::join($this->getApplicationDir(), 'config')));
     }
 
     public function getConfig(string $filename): array {
@@ -201,10 +203,10 @@ abstract class KernelAbstract implements KernelInterface {
             ContainerFactory::addConfigurators($this->getRegistry()->get('kernel.configurators', []));
             ContainerFactory::addDefinitions($this->getRegistry()->get('kernel.definitions', []));
             ContainerFactory::addDefinitions([
-                'environment'        => $this->getEnvironment(),
-                'kernel.project_dir' => $this->getProjectDir(),
-                'kernel.config_dir'  => $this->getConfigDir(),
-                'kernel'             => $this,
+                'environment'            => $this->getEnvironment(),
+                'kernel.application_dir' => $this->getApplicationDir(),
+                'kernel.config_dir'      => $this->getConfigDir(),
+                'kernel'                 => $this,
             ]);
 
             $this->container = ContainerFactory::create();

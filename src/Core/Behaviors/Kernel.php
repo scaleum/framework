@@ -69,6 +69,9 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
             $this->debug(sprintf('Application amount of memory allocated for PHP: %s kb.', BytesHelper::bytesTo(memory_get_usage(false))));
             $this->debug(sprintf('Application peak value of memory allocated by PHP: %s kb.', BytesHelper::bytesTo(memory_get_peak_usage(false))));
             break;
+        case KernelEvents::HALT:
+            $this->debug('Application halted');
+            break;
         default:
             $this->debug(sprintf('Event `%s` has been triggered', $event->getName()));
         }

@@ -50,18 +50,21 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
         ?int $errline = null,
     ): void {
         if (error_reporting() & $errno) {
-            $exception = new \ErrorException($errstr, 0, $errno, $errfile, $errline);
-            $this->error($exception->getMessage(), ['exception' => $exception]);
-            throw $exception;
+            throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
         }
     }
 
     public function handlerException(
         \Throwable $exception
     ): void {
-        $this->error($exception->getMessage(), ['exception' => $exception]);
-        $this->getHandler()->handle($exception);
-        # TODO call Kernel::halt()
+        try {
+            $this->error($exception->getMessage(), ['exception' => $exception]);
+            $this->getHandler()->handle($exception);
+        } catch (\Throwable $e) {
+            error_log($e->getMessage());
+        }
+    
+        $this->getKernel()->halt(1);
     }
 
     public function handlerShutdown(): void {
@@ -82,10 +85,14 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
         $exception = new \ErrorException($err['errstr'], 0, $err['errno'], $err['errfile'], $err['errline']);
 
         if (error_reporting() & $err['type']) {
-            $this->emergency($exception->getMessage(), ['exception' => $exception]);
-            $this->getHandler()->handle($exception);
-            # TODO call Kernel::halt()
-            exit(1);
+            try {
+                $this->emergency($exception->getMessage(), ['exception' => $exception]);
+                $this->getHandler()->handle($exception);
+                $this->getKernel()->halt(1);
+                exit(1);
+            } catch (\Throwable $e) {
+                error_log($e->getMessage());
+            }            
         }
     }
 

@@ -19,8 +19,7 @@ namespace Scaleum\Core;
 class KernelEvents {
     public const BOOTSTRAP = 'kernel:Bootstrap';
     public const START     = 'kernel:Start';
-    public const HALTED    = 'kernel:Halted';
-    public const HALT      = 'kernel:Halt';
     public const FINISH    = 'kernel:Finish';
+    public const HALT      = 'kernel:Halt';
 }
 /** End of KernelEvents **/
