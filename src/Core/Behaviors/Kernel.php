@@ -32,8 +32,9 @@ use Scaleum\Stdlib\Helpers\BytesHelper;
 class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
     protected float $time_start, $time_end;
     public function register(EventManagerInterface $events): void {
-        $events->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9999);
-        $events->on("*", [$this, 'onEvent'], -9990);
+        $events->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], 0);
+        $events->on(KernelEvents::FINISH, [$this, 'onFinish'], 9999);
+        $events->on("*", [$this, 'onEvent'], 10);
     }
 
     public function onBootstrap(Event $event): void {
@@ -62,19 +63,19 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
             $this->debug('Application start');
             $this->time_start = microtime(true);
             break;
-        case KernelEvents::FINISH:
-            $this->time_end = microtime(true);
-
-            $this->debug(sprintf('Application finished, execution time: %s sec.', number_format($this->time_end - $this->time_start, 4)));
-            $this->debug(sprintf('Application amount of memory allocated for PHP: %s kb.', BytesHelper::bytesTo(memory_get_usage(false))));
-            $this->debug(sprintf('Application peak value of memory allocated by PHP: %s kb.', BytesHelper::bytesTo(memory_get_peak_usage(false))));
-            break;
         case KernelEvents::HALT:
             $this->debug('Application halted');
             break;
         default:
-            $this->debug(sprintf('Event `%s` has been triggered', $event->getName()));
+            $this->debug(sprintf('Event `%s` has been dispatched', $event->getName()));
         }
+    }
+
+    public function onFinish(Event $event): void {
+        $this->time_end = microtime(true);
+        $this->debug('Application finished, execution time: ' . number_format($this->time_end - $this->time_start, 4) . ' sec.');
+        $this->debug('Application amount of memory allocated for PHP: ' . BytesHelper::bytesTo(memory_get_usage(false)) . ' kb.');
+        $this->debug('Application peak value of memory allocated by PHP: ' . BytesHelper::bytesTo(memory_get_peak_usage(false)) . ' kb.');
     }
 }
 /** End of KernelBehavior **/

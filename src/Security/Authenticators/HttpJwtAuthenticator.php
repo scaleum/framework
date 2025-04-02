@@ -14,7 +14,7 @@ namespace Scaleum\Security\Authenticators;
 use Scaleum\Security\Contracts\AuthenticatableInterface;
 use Scaleum\Security\Contracts\AuthenticatorInterface;
 use Scaleum\Security\Contracts\UserRepositoryInterface;
-use Scaleum\Security\Services\JwtService;
+use Scaleum\Security\Services\JwtManager;
 use Scaleum\Security\Supports\TokenResolver;
 use Scaleum\Stdlib\SAPI\Explorer;
 use Scaleum\Stdlib\SAPI\SapiMode;
@@ -24,10 +24,10 @@ use Scaleum\Stdlib\SAPI\SapiMode;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class JwtAuthenticator implements AuthenticatorInterface {
+class HttpJwtAuthenticator implements AuthenticatorInterface {
     public function __construct(
         private TokenResolver $tokenResolver,
-        private JwtService $jwtService,
+        private JwtManager $jwtService,
         private UserRepositoryInterface $userRepository
     ) {}
 

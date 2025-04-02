@@ -27,7 +27,7 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
     protected ?ExceptionHandlerInterface $handler = null;
 
     public function register(EventManagerInterface $events): void {
-        $events->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], -9990);
+        $events->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], 0);
     }
 
     public function onBootstrap(Event $event): void {

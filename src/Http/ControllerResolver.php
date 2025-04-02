@@ -22,7 +22,7 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class ControllerResolver {
-    public const EVENT_CONTROLLER_RESOLVED = 'controller::resolved';
+    public const CONTROLLER_RESOLVED = 'controller::resolved';
 
     protected EventManagerInterface $events;
     public function __construct(protected ContainerInterface $container) {
@@ -76,7 +76,7 @@ class ControllerResolver {
                 }
             }
 
-            $this->events->dispatch(self::EVENT_CONTROLLER_RESOLVED, $this, ['controller' => $result]);
+            $this->events->dispatch(self::CONTROLLER_RESOLVED, $this, ['controller' => $result]);
             return $result;
         }
 

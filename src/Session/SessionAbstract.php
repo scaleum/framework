@@ -28,7 +28,7 @@ use Scaleum\Stdlib\SAPI\SapiMode;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-abstract class SessionAbstract extends Hydrator {
+abstract class SessionAbstract extends Hydrator implements SessionInterface {
     use LoggerChannelTrait;
     protected const EXPIRATION_DEFAULT = 3600;
     protected const MAX_ANCHOR_LEN     = 32;
@@ -81,19 +81,17 @@ abstract class SessionAbstract extends Hydrator {
     public function __construct(array $config = []) {
         parent::__construct($config);
 
-        $this->getEvents()->on(KernelEvents::START, function () {
-            // $this->debug('Session started');
-            $this->open($this->name);
-        }, -9900);
         $this->getEvents()->on(KernelEvents::FINISH, function () {
-            // $this->debug('Session finished');
+            // FIXME - переделать, т.к. ссылка на SESSION_UPDATED подразумевает совместную работу с SSE
             if (! defined('SESSION_UPDATED')) {
                 $this->cleanup();
                 $this->update();
 
                 define('SESSION_UPDATED', true);
             }
-        }, -9999);
+        }, 0);
+
+        $this->open($this->name);
     }
     public function getLoggerChannel(): string {
         return 'kernel';
@@ -104,7 +102,7 @@ abstract class SessionAbstract extends Hydrator {
             if (! ($events = ServiceLocator::get(Framework::SVC_EVENTS, null)) instanceof EventManagerInterface) {
                 throw new ERuntimeError(
                     sprintf(
-                        "Events service `%s` not found or is not an instance of `%a`, given `%s`.",
+                        "Events service `%s` is not found or is not an instance of `%a`, given `%s`.",
                         Framework::SVC_EVENTS,
                         EventManagerInterface::class,
                         is_object($events) ? get_class($events) : gettype($events)
@@ -186,12 +184,12 @@ abstract class SessionAbstract extends Hydrator {
         return true;
     }
 
-    public function open($name) {
+    public function open($name): bool {
 
         if (($name == $this->name) && ! empty($this->data)) {
             $this->debug('Session is already opened...synchronization');
 
-            // if session is already opened, synchronize for correct work of SSE
+            // FIXME - if session is already opened, synchronize for correct work of SSE
             // return true;
         }
 
@@ -279,7 +277,7 @@ abstract class SessionAbstract extends Hydrator {
         return $default;
     }
 
-    public function set(int | string $var, mixed $value = null, bool $updateImmediately = true) {
+    public function set(int | string $var, mixed $value = null, bool $updateImmediately = true): static {
         if (! is_array($var)) {
             $var = [$var => $value];
         }
@@ -300,6 +298,8 @@ abstract class SessionAbstract extends Hydrator {
         if ($updateImmediately == true) {
             $this->update();
         }
+
+        return $this;
     }
 
     public function getExpiration() {

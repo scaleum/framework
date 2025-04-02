@@ -147,7 +147,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
      */
     public function load(array $input): self {
         $relations = $this->getRelations();
-        //TODO: Добавить снятие слепка "до" и "после" загрузки, чтобы можно было фиксировать изменения
+        //TODO Добавить снятие слепка "до" и "после" загрузки, чтобы можно было фиксировать изменения
         if ($this->beforeLoad()) {
             foreach ($input as $key => $value) {
                 if (array_key_exists($key, $relations)) {

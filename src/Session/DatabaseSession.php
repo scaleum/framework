@@ -24,9 +24,7 @@ class DatabaseSession extends SessionAbstract {
     protected ?Database $database = null;
     protected string $table       = 'sessions';
 
-    public function __construct(array $config = []) {
-        parent::__construct($config);
-
+    public function open($name): bool {
         // Create table if not exists
         $schema = $this->getDatabase()->getSchemaBuilder();
         $schema
@@ -39,6 +37,7 @@ class DatabaseSession extends SessionAbstract {
                 $schema->primaryKey('session_id'),
             ])
             ->createTable($this->table, true);
+        return parent::open($name);
     }
 
     protected function read(): array {

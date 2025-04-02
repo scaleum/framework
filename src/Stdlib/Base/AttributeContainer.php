@@ -16,7 +16,7 @@ namespace Scaleum\Stdlib\Base;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class AttributeContainer {
+class AttributeContainer implements AttributeContainerInterface {
     protected array $attributes = [];
     public function __construct(array $attributes = []) {
         $this->attributes = $attributes;
@@ -30,7 +30,7 @@ class AttributeContainer {
         $this->setAttribute($name, $value);
     }
 
-    public function deleteAttribute(string $key): self {
+    public function deleteAttribute(string $key): static {
         if ($this->hasAttribute($key)) {
             unset($this->attributes[$key]);
         }
@@ -53,12 +53,12 @@ class AttributeContainer {
         return array_key_exists($key, $this->attributes);
     }
 
-    public function setAttribute(string $key, mixed $value = null): self {
+    public function setAttribute(string $key, mixed $value = null): static {
         $this->attributes[$key] = $value;
         return $this;
     }
 
-    public function setAttributes(array $value): self {
+    public function setAttributes(array $value): static {
         $this->attributes = $value;
         return $this;
     }

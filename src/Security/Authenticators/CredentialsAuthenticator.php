@@ -17,24 +17,24 @@ use Scaleum\Security\Contracts\HasPasswordInterface;
 use Scaleum\Security\Contracts\UserRepositoryInterface;
 
 /**
- * PasswordAuthenticator
+ * CredentialsAuthenticator
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class BasicAuthenticator implements AuthenticatorInterface {
+class CredentialsAuthenticator implements AuthenticatorInterface {
     public function __construct(
         private UserRepositoryInterface $userRepository
     ) {}
 
     public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface {
-        $email    = $credentials['email'] ?? null;
+        $identity = $credentials['identity'] ?? null;
         $password = $credentials['password'] ?? null;
 
-        if (! $email || ! $password) {
+        if (! $identity || ! $password) {
             return null;
         }
 
-        $user = $this->userRepository->findByEmail($email);
+        $user = $this->userRepository->findByIdentity($identity);
 
         if ($user && $this->verifyPassword($password, $user)) {
             return $user;
@@ -52,4 +52,4 @@ class BasicAuthenticator implements AuthenticatorInterface {
     }
 }
 
-/** End of PasswordAuthenticator **/
+/** End of CredentialsAuthenticator **/

@@ -14,37 +14,28 @@ namespace Scaleum\Security\Authenticators;
 use Scaleum\Security\Contracts\AuthenticatableInterface;
 use Scaleum\Security\Contracts\AuthenticatorInterface;
 use Scaleum\Security\Contracts\UserRepositoryInterface;
-use Scaleum\Security\Services\JwtService;
 use Scaleum\Stdlib\SAPI\Explorer;
 use Scaleum\Stdlib\SAPI\SapiMode;
 
 /**
- * JwtConsoleAuthenticator
+ * UserConsoleAuthenticator
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class JwtConsoleAuthenticator implements AuthenticatorInterface {
-    public function __construct(
-        private JwtService $jwtService,
-        private UserRepositoryInterface $userRepository
-    ) {}
+class ConsoleUserIdAuthenticator implements AuthenticatorInterface {
+    public function __construct(private UserRepositoryInterface $userRepository) {}
 
     public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface {
         if (Explorer::getTypeFamily() !== SapiMode::CONSOLE) {
             return null;
         }
 
-        $token = $credentials['token'] ?? getenv('AUTH_TOKEN');
-        if (! $token) {
+        $userId = $credentials['user_id'] ?? getenv('AUTH_USER_ID');
+        if (! $userId) {
             return null;
         }
 
-        $payload = $this->jwtService->verify($token);
-        if ($payload && $payload->getUserId()) {
-            return $this->userRepository->findById($payload->getUserId());
-        }
-
-        return null;
+        return $this->userRepository->findById((int) $userId);
     }
 }
-/** End of JwtConsoleAuthenticator **/
+/** End of UserConsoleAuthenticator **/

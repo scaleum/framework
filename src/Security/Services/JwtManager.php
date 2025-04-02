@@ -11,7 +11,6 @@ declare (strict_types = 1);
 
 namespace Scaleum\Security\Services;
 
-use Avant\Http\Helpers\IpAddressHelper;
 use Scaleum\Security\Supports\JwtTokenPayload;
 use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Stdlib\Helpers\HttpHelper;
@@ -21,7 +20,7 @@ use Scaleum\Stdlib\Helpers\HttpHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class JwtService extends Hydrator {
+class JwtManager extends Hydrator {
 /**
  * @var string|null $secret The secret used for token generation and verification.
  */

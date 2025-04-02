@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -11,16 +11,38 @@ declare(strict_types=1);
 
 namespace Scaleum\Security\Contracts;
 
-
 /**
  * UserRepositoryInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface UserRepositoryInterface
-{
+interface UserRepositoryInterface {
+    /**
+     * Find a user by their unique numeric ID.
+     *
+     * Commonly used in token-based authentication (e.g. JWT).
+     *
+     * @param int $id
+     * @return AuthenticatableInterface|null
+     */
     public function findById(int $id): ?AuthenticatableInterface;
-    public function findByEmail(string $email): ?AuthenticatableInterface;
+    
+    /**
+     * Find a user by a unique identity value such as email, username, phone, etc.
+     *
+     * This method provides a flexible lookup mechanism for interactive login forms,
+     * supporting various types of user identifiers.
+     *
+     * Example implementation:
+     * if (str_contains($identity, '@')) {
+     *     return $this->findByEmail($identity);
+     * }
+     * return $this->findByUsername($identity);
+     *
+     * @param string $identity
+     * @return AuthenticatableInterface|null
+     */
+    public function findByIdentity(string $identity): ?AuthenticatableInterface;
 
 }
 /** End of UserRepositoryInterface **/
