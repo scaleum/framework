@@ -20,7 +20,7 @@ use Scaleum\Stdlib\Helpers\StringCaseHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-trait RestfulDispatcherTrait {
+trait MethodDispatcherTrait {
     abstract public function getRequest(): InboundRequest;
 
     public function __methodName($str) {

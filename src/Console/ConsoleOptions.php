@@ -138,7 +138,7 @@ class ConsoleOptions extends Hydrator {
             } // Check if it's a short option '-' or '/'
             elseif (in_array($this->args[$i][0], ['-', '/'])) {
                 $arg    = $this->args[$i][1];
-                $argVal = strlen($this->args[$i]) == 2 ? (($this->args_count > ($i + 1) ? ($this->args[$i + 1][0] == '-' ? null : $this->args[$i + 1]) : null)) : substr($this->args[$i], 2);
+                $argVal = strlen($this->args[$i]) == 2 ? ($this->args_count > ($i + 1) ? ($this->args[$i + 1][0] == '-' ? NULL : $this->args[$i + 1]) : NULL) : substr($this->args[$i], 2);
             } // Option is not found
             else {
                 continue;

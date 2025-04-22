@@ -314,7 +314,7 @@ class FileHelper {
     public static function prepFilename(string $filename, bool $normalize = true): string {
         $parts   = explode(DIRECTORY_SEPARATOR, trim($filename, DIRECTORY_SEPARATOR));
         $file    = array_pop($parts);
-        $file    = pathinfo($file, PATHINFO_EXTENSION) ? $file : $file . self::getFileExtension(__FILE__);
+        $file    = pathinfo($file, PATHINFO_EXTENSION) ? $file : $file . '.'. self::getFileExtension(__FILE__);
         $parts[] = $file;
 
         $file = PathHelper::join(...$parts);
