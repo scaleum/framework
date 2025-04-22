@@ -12,6 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Storages\PDO;
 
 use Scaleum\Stdlib\Exceptions\EDatabaseError;
+use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
 
 /**
  * ModelAbstract
@@ -71,13 +72,18 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
      * @param array $conditions An associative array of conditions to match against.
      * @return self|null The found record as an instance of the class, or null if no record is found.
      */
-    public function findOneBy(array $conditions): ?self {
+    public function findOneBy(array $conditions,string $operator = 'AND'): ?self {
+        $operator = strtoupper(trim($operator));
+        if (!in_array($operator, ['AND', 'OR'])) {
+            throw new EInvalidArgumentException("Invalid logical operator '$operator'");
+        }
+
         $db = $this->getDatabase();
         if (! $db) {
             return null;
         }
 
-        $whereClauses = implode(" AND ", array_map(fn($key) => "$key = :$key", array_keys($conditions)));
+        $whereClauses = implode(" $operator ", array_map(fn($key) => "$key = :$key", array_keys($conditions)));
         $sql          = "SELECT * FROM {$this->table} WHERE {$whereClauses} LIMIT 1";
         $data         = $db->setQuery($sql, $conditions)->fetch();
         if (! $data) {
@@ -118,13 +124,18 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
      * @param array $conditions An associative array of conditions where the key is the column name and the value is the value to match.
      * @return array An array of records that match the given conditions.
      */
-    public function findAllBy(array $conditions): array {
+    public function findAllBy(array $conditions,string $operator = 'AND'): array {
+        $operator = strtoupper(trim($operator));
+        if (!in_array($operator, ['AND', 'OR'])) {
+            throw new EInvalidArgumentException("Invalid logical operator '$operator'");
+        }
+                
         $db = $this->getDatabase();
         if (! $db) {
             return [];
         }
 
-        $whereClauses = implode(" AND ", array_map(fn($key) => "$key = :$key", array_keys($conditions)));
+        $whereClauses = implode(" $operator ", array_map(fn($key) => "$key = :$key", array_keys($conditions)));
         $sql          = "SELECT * FROM {$this->table} WHERE {$whereClauses}";
         $data         = $db->setQuery($sql, $conditions)->fetchAll([\PDO::FETCH_ASSOC]);
         $results      = [];

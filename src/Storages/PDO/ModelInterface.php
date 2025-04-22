@@ -13,9 +13,9 @@ namespace Scaleum\Storages\PDO;
 
 interface ModelInterface {
     public function find(mixed $id): ?self;
-    public function findOneBy(array $conditions): ?self;
+    public function findOneBy(array $conditions,string $operator = 'AND'): ?self;
     public function findAll(): array;
-    public function findAllBy(array $conditions): array;
+    public function findAllBy(array $conditions,string $operator = 'AND'): array;
     public function load(array $input): self;
     public function insert(): int;
     public function update(): int;
