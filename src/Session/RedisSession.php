@@ -31,7 +31,7 @@ class RedisSession extends SessionAbstract {
             $parts = explode(':', $key);
             $var   = end($parts);
 
-            $result[$var] = json_decode($this->getRedisResource()->get($key), TRUE);
+            $result[$var] = unserialize(base64_decode($this->getRedisResource()->get($key)));
         }
 
         return $result;
@@ -39,14 +39,14 @@ class RedisSession extends SessionAbstract {
 
     protected function write(array $data): void {
         foreach ($data as $key => $value) {
-            $this->getRedisResource()->set($this->getKey($key), json_encode($value, JSON_FORCE_OBJECT), $this->getExpiration());
-        }        
+            $this->getRedisResource()->set($this->getKey($key), base64_encode(serialize($value)), $this->getExpiration());
+        }
     }
 
     protected function delete(): void {
         // do nothing
         // all resources will be deleted automatically after expiration time
-        
+
         // FIXME - implement delete method
     }
 
@@ -66,7 +66,7 @@ class RedisSession extends SessionAbstract {
 
     protected function getRedisResource() {
         if (! $this->resource instanceof Client) {
-            $this->resource = new Client(['host' => $this->getHost(),'port' => $this->getPort(), 'lifetime' => $this->getExpiration(), 'db' => $this->getDatabase()]);
+            $this->resource = new Client(['host' => $this->getHost(), 'port' => $this->getPort(), 'lifetime' => $this->getExpiration(), 'db' => $this->getDatabase()]);
         }
 
         return $this->resource;

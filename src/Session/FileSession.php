@@ -26,7 +26,7 @@ class FileSession extends SessionAbstract {
 
     protected function read(): array {
         $file = $this->getFilePath();
-        return file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+        return file_exists($file) ? unserialize(file_get_contents($file)) : [];
     }
 
     protected function write(array $data): void {
@@ -34,7 +34,7 @@ class FileSession extends SessionAbstract {
             mkdir(dirname($this->getFilePath()), 0777, true);
         }
 
-        file_put_contents($this->getFilePath(), json_encode($data));
+        file_put_contents($this->getFilePath(), serialize($data));
     }
 
     protected function delete(): void {
