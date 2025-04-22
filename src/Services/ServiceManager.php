@@ -75,7 +75,7 @@ class ServiceManager implements ServiceProviderInterface {
                 $className = $definition;
             } // Array [class[,config]]
             elseif (is_array($definition)) {
-                if (! isset($definition['class']) /*|| !isset($var['config'])*/) {
+                if (! isset($definition['class'])) {
                     throw new EComponentError(sprintf("Class '%s' cannot be registered", $name));
                 }
                 $className             = $definition['class'];
@@ -89,6 +89,12 @@ class ServiceManager implements ServiceProviderInterface {
             }
 
             $this->invokableClasses[$_name] = $className;
+            
+            // Automatic initialization, only for array based definitions
+            if(isset($this->configs[$_name]['eager']) && $this->configs[$_name]['eager'] === true) {
+                unset($this->configs[$_name]['eager']);
+                $this->getService($_name);
+            }
             return true;
         }
 
