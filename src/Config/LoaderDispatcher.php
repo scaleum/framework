@@ -24,10 +24,7 @@ class LoaderDispatcher extends ServiceManager {
         'php'      => Loaders\PhpArray::class,
         'json'     => Loaders\Json::class,
         'ini'      => Loaders\Ini::class,
-        // 'yaml' => Loaders\Yaml::class,
-        // 'yml' => Loaders\Yaml::class,
         'xml'      => Loaders\Xml::class,
     ];
-
 }
 /** End of LoaderManager **/

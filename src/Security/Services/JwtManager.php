@@ -80,6 +80,7 @@ class JwtManager extends Hydrator {
      */
     public function verify(string $token): ?JwtTokenPayload {
         [$payload, $signature] = explode('.', $token, 2);
+        $this->last_error      = null;
 
         if (hash_hmac('sha256', $payload, $this->getSecret()) !== $signature) {
             $this->last_error = "Token has invalid signature";

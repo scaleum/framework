@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -11,16 +11,18 @@ declare(strict_types=1);
 
 namespace Scaleum\Session;
 
-
 /**
  * SessionInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-interface SessionInterface
-{
+interface SessionInterface {
     public function get(int | string $var, mixed $default = false): mixed;
+    public function getByPrefix(?string $prefix = null): array;
     public function has(int | string $var): bool;
-    public function set(int | string $var, mixed $value = null, bool $updateImmediately = true):static;
+    public function set(int | string $var, mixed $value = null, bool $updateImmediately = true): static;
+    public function remove(string $key, bool $updateImmediately = true): static;
+    public function removeByPrefix(string $prefix, bool $updateImmediately = true): static;
+    public function clear(bool $updateImmediately = true): static;
 }
 /** End of SessionInterface **/

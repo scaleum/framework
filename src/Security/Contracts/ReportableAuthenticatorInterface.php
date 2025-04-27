@@ -35,7 +35,12 @@ interface ReportableAuthenticatorInterface
     public function addReport(string $type, string $message, ?string $code = null): void;
 
     /**
-     * Clears the current reports
+     * Clears all authentication reports.
+     *
+     * This method is responsible for resetting or removing any stored
+     * reports related to authentication processes.
+     *
+     * @return void
      */
     public function clearReports(): void;
 }

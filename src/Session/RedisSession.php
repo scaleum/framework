@@ -31,7 +31,7 @@ class RedisSession extends SessionAbstract {
             $parts = explode(':', $key);
             $var   = end($parts);
 
-            $result[$var] = unserialize(base64_decode($this->getRedisResource()->get($key)));
+            $result[$var] = unserialize(gzuncompress(base64_decode($this->getRedisResource()->get($key))));
         }
 
         return $result;
@@ -39,7 +39,7 @@ class RedisSession extends SessionAbstract {
 
     protected function write(array $data): void {
         foreach ($data as $key => $value) {
-            $this->getRedisResource()->set($this->getKey($key), base64_encode(serialize($value)), $this->getExpiration());
+            $this->getRedisResource()->set($this->getKey($key), base64_encode(gzcompress(serialize($value))), $this->getExpiration());
         }
     }
 

@@ -15,13 +15,14 @@ use Scaleum\Security\Contracts\AuthenticatableInterface;
 use Scaleum\Security\Contracts\AuthenticatorInterface;
 use Scaleum\Security\Contracts\HasPasswordInterface;
 use Scaleum\Security\Contracts\UserRepositoryInterface;
+use Scaleum\Security\ReportableAbstract;
 
 /**
  * CredentialsAuthenticator
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class CredentialsAuthenticator implements AuthenticatorInterface {
+class CredentialsAuthenticator extends ReportableAbstract implements AuthenticatorInterface {
     public function __construct(
         private UserRepositoryInterface $userRepository
     ) {}
@@ -36,8 +37,14 @@ class CredentialsAuthenticator implements AuthenticatorInterface {
 
         $user = $this->userRepository->findByIdentity($identity);
 
-        if ($user && $this->verifyPassword($password, $user)) {
-            return $user;
+        if ($user) {
+            if ($this->verifyPassword($password, $user)) {
+                return $user;
+            } else {
+                $this->addReport('error', 'Invalid password', 'INVALID_PASSWORD');
+            }
+        } else {
+            $this->addReport('error', 'Identity not found or invalid', 'INVALID_CREDENTIALS');
         }
 
         return null;

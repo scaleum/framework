@@ -59,5 +59,4 @@ interface CacheInterface {
      * @return bool Returns true if the data was successfully saved, false otherwise.
      */
     public function save(string $id, mixed $data): bool;
-
 }

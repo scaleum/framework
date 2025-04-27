@@ -44,7 +44,7 @@ class DatabaseSession extends SessionAbstract {
         $result  = [];
         $builder = $this->getDatabase()->getQueryBuilder();
         if ($row = $builder->select()->from($this->table)->where('session_id', $this->id)->limit(1)->row()) {
-            $result                  = unserialize($row['data']);
+            $result                  = unserialize(gzuncompress(base64_decode($row['data'])));
             $result['last_activity'] = $row['last_activity'] ?? 0;
         }
         return $result;
@@ -54,7 +54,7 @@ class DatabaseSession extends SessionAbstract {
         $time = $data['last_activity'] ?? $this->getTimestamp();
         unset($data['last_activity']);
 
-        $dataPrepared = serialize($data);
+        $dataPrepared = base64_encode(gzcompress(serialize($data)));
         $query        = $this->getDatabase()->getQueryBuilder();
         $count        = $query->select('COUNT(*)')->from($this->table)->where('session_id', $this->id)->rowColumn();
         if ($count > 0) {

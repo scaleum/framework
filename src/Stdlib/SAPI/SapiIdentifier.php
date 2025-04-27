@@ -31,22 +31,20 @@ case EMBED     = 9;
 case UWSGI     = 10;
 case UNKNOWN   = 100;
 
-    public const NAMES = [
-        self::CLI       => 'Command Line Interface',
-        self::PHPDBG    => 'PHP Debugger',
-        self::APACHE    => 'Apache Handler',
-        self::CGI       => 'Common Gateway Interface',
-        self::FASTCGI   => 'FastCGI',
-        self::FPM       => 'FastCGI Process Manager',
-        self::LITESPEED => 'LiteSpeed',
-        self::ISAPI     => 'Internet Server API',
-        self::EMBED     => 'Embedded PHP',
-        self::UWSGI     => 'uWSGI Interface',
-        self::UNKNOWN   => 'Unknown',
-    ];
-
     public function getName(): string {
-        return self::NAMES[$this->value];
+        return match ($this) {
+            self::CLI       => 'Command Line Interface',
+            self::PHPDBG    => 'PHP Debugger',
+            self::APACHE    => 'Apache Handler',
+            self::CGI       => 'Common Gateway Interface',
+            self::FASTCGI   => 'FastCGI',
+            self::FPM       => 'FastCGI Process Manager',
+            self::LITESPEED => 'LiteSpeed',
+            self::ISAPI     => 'Internet Server API',
+            self::EMBED     => 'Embedded PHP',
+            self::UWSGI     => 'uWSGI Interface',
+            default         => 'Unknown SAPI',
+        };
     }
 
     public static function fromString(string $str): self {

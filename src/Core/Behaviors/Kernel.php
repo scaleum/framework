@@ -34,7 +34,7 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
     public function register(EventManagerInterface $events): void {
         $events->on(KernelEvents::BOOTSTRAP, [$this, 'onBootstrap'], 0);
         $events->on(KernelEvents::FINISH, [$this, 'onFinish'], 9999);
-        $events->on("*", [$this, 'onEvent'], 10);
+        $events->on("*", [$this, 'onEvent'], 2);
     }
 
     public function onBootstrap(Event $event): void {

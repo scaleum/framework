@@ -239,7 +239,6 @@ class ArrayHelper {
 
         return $result;
     }
-
 }
 
 /* End of file ArrayHelper.php */

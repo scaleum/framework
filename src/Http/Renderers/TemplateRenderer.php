@@ -11,6 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Http\Renderers;
 
+use Scaleum\Http\Renderers\Plugins\Gettext;
 use Scaleum\Http\Renderers\Plugins\IncludeAsset;
 use Scaleum\Http\Renderers\Plugins\IncludeTemplate;
 use Scaleum\Http\Renderers\Plugins\RendererPluginInterface;
@@ -51,6 +52,7 @@ class TemplateRenderer extends Hydrator {
         $this->setPlugins([
             IncludeTemplate::class,
             IncludeAsset::class,
+            Gettext::class,
         ]);
     }
 
@@ -290,10 +292,25 @@ class TemplateRenderer extends Hydrator {
 
     public function renderTemplate(Template $template): string {
         try {
-            $data = $template->getData();
-            if (array_key_exists('this', $data)) {
-                unset($data['this']);
+            $raw = $template->getData();
+            if (array_key_exists('this', $raw)) {
+                unset($raw['this']);
             }
+
+            // Normalize array keys
+            $data = [];
+            foreach ($raw as $key => $value) {
+                // Acceptable: a-zA-Z_, digits
+                if (preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $key)) {
+                    $data[$key] = $value;
+                } else {
+                    // Transform: key.name → key_name
+                    $normalized        = preg_replace('/[^a-zA-Z0-9_]/', '_', $key);
+                    $data[$normalized] = $value;
+                }
+            }
+            unset($raw);
+
             extract($data);
             $buffer = '';
 

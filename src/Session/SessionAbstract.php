@@ -277,6 +277,21 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $default;
     }
 
+    public function getByPrefix(?string $prefix = null): array {
+        if ($prefix !== null && $prefix !== '') {
+            $result = [];
+            foreach ($this->data as $key => $value) {
+                if (str_starts_with($key, $prefix)) {
+                    $result[$key] = $value;
+                }
+            }
+            return $result;
+        }
+    
+        return $this->data;
+    }
+    
+
     public function set(int | string $var, mixed $value = null, bool $updateImmediately = true): static {
         if (! is_array($var)) {
             $var = [$var => $value];
@@ -299,6 +314,38 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
             $this->update();
         }
 
+        return $this;
+    }
+
+    public function remove(string $key, bool $updateImmediately = true): static {
+        unset($this->data[$key]);
+        if ($updateImmediately == true) {
+            $this->update();
+        }
+        return $this;
+    }
+
+    public function removeByPrefix(string $prefix, bool $updateImmediately = true): static {
+        if ($prefix !== null && $prefix !== '') {
+            foreach ($this->data as $key => $value) {
+                if (str_starts_with($key, $prefix)) {
+                    unset($this->data[$key]);
+                }
+            }
+        }
+
+        if ($updateImmediately == true) {
+            $this->update();
+        }
+        return $this;
+    }
+
+    public function clear(bool $updateImmediately = true): static{
+        $this->data = [];
+
+        if ($updateImmediately == true) {
+            $this->update();
+        }
         return $this;
     }
 

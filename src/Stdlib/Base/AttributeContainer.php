@@ -53,8 +53,23 @@ class AttributeContainer implements AttributeContainerInterface {
         return array_key_exists($key, $this->attributes);
     }
 
-    public function setAttribute(string $key, mixed $value = null): static {
-        $this->attributes[$key] = $value;
+    public function setAttribute(string $key, mixed $value = null, bool $overwrite = true): static {
+        if (array_key_exists($key, $this->attributes) && ! $overwrite) {
+            return $this;
+        }
+
+        if (array_key_exists($key, $this->attributes)) {
+            if (is_array($this->attributes[$key])) {
+                $this->attributes[$key] = is_array($value)
+                ? array_merge($this->attributes[$key], $value)
+                : [ ...$this->attributes[$key], $value];
+            } else {
+                $this->attributes[$key] = $value;
+            }
+        } else {
+            $this->attributes[$key] = $value;
+        }
+
         return $this;
     }
 
