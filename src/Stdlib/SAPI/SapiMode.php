@@ -24,15 +24,13 @@ case HTTP      = 2;
 case UNIVERSAL = 3;
 case UNKNOWN   = 4;
 
-    public const NAMES = [
-        self::CONSOLE   => 'Console',
-        self::HTTP      => 'Http',
-        self::UNIVERSAL => 'Universal',
-        self::UNKNOWN   => 'Unknown',
-    ];
-
     public function getName(): string {
-        return self::NAMES[$this->value];
+        return match($this) {
+            self::CONSOLE   => 'Console',
+            self::HTTP      => 'Http',
+            self::UNIVERSAL => 'Universal',
+            self::UNKNOWN   => 'Unknown',
+        };
     }
 
     public static function fromValue(int $value): self {

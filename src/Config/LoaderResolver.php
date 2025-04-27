@@ -29,7 +29,6 @@ class LoaderResolver {
         'phparray' => 'php',
         'ini'      => 'ini',
         'json'     => 'json',
-        // 'yaml'        => 'yaml',
         'xml'      => 'xml',
     ];
 
