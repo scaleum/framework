@@ -163,7 +163,7 @@ class ConsoleOptions extends Hydrator {
             }
         }
 
-        return $this->opts_parsed;
+        return $this;
     }
 
     public function setArgs(array $args): static

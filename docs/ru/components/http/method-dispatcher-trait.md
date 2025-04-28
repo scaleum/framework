@@ -17,7 +17,7 @@
 
 ## Методы трейта
 
-### __methodName
+### __methodName()
 ```php
 public function __methodName(string $str): string
 ```
@@ -26,7 +26,7 @@ public function __methodName(string $str): string
   - Символьную строку `$str` (часть пути без расширения).
 - Пример для GET-запроса `user/profile`: `getUserProfile`.
 
-### __dispatch
+### __dispatch()
 ```php
 public function __dispatch(): ResponderInterface
 ```
@@ -55,7 +55,7 @@ public function __dispatch(): ResponderInterface
 class UserController {
     use MethodDispatcherTrait;
 
-    public function getUser(InboundRequest $request): ResponderInterface {
+    public function getUser(): ResponderInterface {
         // Обработка /user для GET-запроса
     }
 }
@@ -72,17 +72,16 @@ $response = $controller->__dispatch('user');
 class ArticleController {
     use MethodDispatcherTrait;
 
-    public function getArticleList(): ResponderInterface { /* GET /article/list */ }
-    public function getArticleListByCategory(string $category): ResponderInterface { /* GET /article/list/category */ }
+    public function getArticleList(string $category): ResponderInterface {
+        //...
+    }
 }
 
 // GET-запрос к /article/list/sports
 $response = $controller->__dispatch('article', 'list', 'sports');
 // Поиск методов:
-//  - getArticle
-//  - getArticleList
-//  - getArticleListSports — отсутствует
-// Выберется getArticleListByCategory с args=['sports']
+//  - getArticle - отсутствует
+//  - getArticleList - вызывается с аргументом 'sports'
 ```
 
 ### 3. Обработка отсутствующего метода

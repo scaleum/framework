@@ -89,7 +89,7 @@ use Scaleum\Http\Client\Transport\TransportInterface;
 use Scaleum\Http\OutboundRequest;
 use Scaleum\Http\InboundResponse;
 
-class CurlRequester extends RequesterAbstract {
+class Requester extends RequesterAbstract {
     protected function getDefaultClient(): TransportInterface {
         return new CurlTransport(); // собственный класс cURL
     }
@@ -104,19 +104,19 @@ class CurlRequester extends RequesterAbstract {
 ### 2. Конфигурация и отправка запроса
 
 ```php
-$requester = new CurlRequester();
+$requester = new Requester();
 $requester
     ->setProtocol('https')
     ->setHost('api.example.com')
     ->setPort(443);
 
+// Сформирует URL https://api.example.com:443/v1/items?limit=10
+$url = $requester->getRequestUrl('v1/items?limit=10');
+
 $request = new OutboundRequest(
     'GET',
     new Uri('/v1/items?limit=10')
 );
-
-// Сформирует URL https://api.example.com:443/v1/items?limit=10
-$url = $requester->getRequestUrl('v1/items?limit=10');
 
 $response = $requester->send($request);
 $data = $response->getParsedBody();
@@ -127,13 +127,13 @@ $data = $response->getParsedBody();
 ```php
 // Можно внедрить MockTransport для тестирования
 $mock = new class implements TransportInterface {
-    public function sendRequest($req) {
+    public function send($req) {
         return new InboundResponse(200, ['Content-Type'=>'application/json'], json_encode(['ok'=>true]));
     }
 };
 
-$requester = (new CurlRequester())
-    ->hydrate(['transport' => $mock]); // метод Hydrator
+$requester = (new Requester())
+    ->init(['transport' => $mock]); // метод Hydrator
 
 $response = $requester->send(new OutboundRequest('POST', new Uri('/test'), [], ['foo'=>'bar']));
 echo $response->getParsedBody()['ok']; // true

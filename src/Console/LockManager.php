@@ -87,6 +87,19 @@ class LockManager extends Hydrator {
         return null; // Process is already locked
     }
 
+    public function release(LockHandle $handle): void {
+        if($this->isLocked($handle->processName)) {
+            if (!is_resource($handle->fileHandle)) {
+                return;
+            }
+            
+            fclose($handle->fileHandle);
+            if (file_exists($handle->lockFile)) {
+                unlink($handle->lockFile);
+            }
+        }
+    }
+
     /**
      * Releases the given lock handle.
      *
