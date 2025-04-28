@@ -14,8 +14,35 @@
 
 ### 5. Работа с ядром
 - [KernelAbstract](./kernel-abstract.md)
-- [Application](./application.md)
-
+- [Http/Application](./application.md)
+    - Client
+      - [RequesterAbstract](./components/http/client/requester-abstract.md)
+      - Transport
+        - [TransportInterface](./components/http/client/transport/transport-interface.md)
+        - [TransportAbstract](./components/http/client/transport/transport-abstract.md)
+        - [CurlTransport](./components/http/client/transport/curl-transport.md)
+        - [SocketTransport](./components/http/client/transport/socket-transport.md)
+    - Renderers
+      - [Template](./components/http/renderers/template.md)
+      - [TemplateRenderer](./components/http/renderers/template-renderer.md)
+      - Plugins
+        - [RendererPluginInterface](./components/http/renderers/plugins/renderer-plugin-interface.md)
+        - [Gettext](./components/http/renderers/plugins/gettext.md)
+        - [IncludeAsset](./components/http/renderers/plugins/include-asset.md)
+        - [IncludeTemplate](./components/http/renderers/plugins/include-template.md)
+    - [InboundRequest](./components/http/inbound-request.md)
+    - [InboundRespons](./components/http/inbound-response.md)
+    - [OutboundRequest](./components/http/outbound-request.md)
+    - [OutboundResponse](./components/http/outbound-response.md)
+    - [RequestHandler](./components/http/request-handler.md)
+    - [ControllerResolver](./components/http/controller-resolver.md)
+    - [ControllerInvoker](./components/http/controller-invoker.md)
+    - [Uri](./components/http/uri.md)
+    - [Message](./components/http/message.md)
+    - [Stream](./components/http/stream.md)
+    - [StreamTrait](./components/http/stream-trait.md)
+    - [HeadersManager](./components/http/headers-manager.md)
+    - [MethodDispatcherTrait](./components/http/method-dispatcher-trait.md)
 ### 6. Компоненты
 - [Cache](./components/cache.md)
 - [DependencyInjection](./components/dependency-injection.md)

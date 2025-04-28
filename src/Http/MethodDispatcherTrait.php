@@ -50,11 +50,6 @@ trait MethodDispatcherTrait {
             $args  = $args_data['args'];
         }
 
-        // $pattern = '/^(.*)\.(' . implode('|', array_keys($this->response_formats)) . ')$/';
-        // if (preg_match($pattern, $route, $matches)) {
-        // 	$route = $matches[1];
-        // }
-
         // Define method
         $method = $this->__methodName($route);
 

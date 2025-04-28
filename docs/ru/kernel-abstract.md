@@ -19,8 +19,8 @@
 1. Объединение пользовательских параметров с реестром (`Registry`).
 2. Загрузка файлов конфигурации (`kernel.configs`).
 3. Регистрация конфигураторов контейнера.
-4. Регистрация поведений (`behaviors`) через `EventHandlerInterface`.
-5. Регистрация сервисов (`services`) в `ServiceManager`.
+4. Регистрация поведений (`behaviors`) через [EventManager](./components/events.md).
+5. Регистрация сервисов (`services`) в [ServiceManager](./components/service-locator.md).
 6. Генерация события `KernelEvents::BOOTSTRAP`.
 7. Установка флага готовности (`inReadiness = true`).
 8. Запуск основного потока.
