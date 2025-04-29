@@ -41,18 +41,19 @@ class IncludeTemplate implements RendererPluginInterface {
 
 1. **Включение простого шаблона**
    ```twig
-   {{include:partials/header}}
+   {{include:partials/header.tmpl}}
    ```
    Эквивалент PHP:
    ```php
-   echo $this->include('partials/header');
+   echo $this->include('partials/header.tmpl');
    ```
 
-2. **Передача данных**
+2. **Передача данных**    
    ```php
    echo $this->include('components/card.php',['title' => 'Page title', 'items' => [...]]);
    ```
-   В `components/card.php` будут доступны переменные `$title` и `$items`.
+   В `components/card.php` будут доступны переменные `$title` и `$items`.  
+   Обратите внимание, что передача данных в "подключаемый" шаблон доступна только в `PHP-нотации`.
 
 ## Пример в коде
 
@@ -64,15 +65,15 @@ $renderer = new TemplateRenderer([
     'locations' => [__DIR__ . '/views'],
 ]);
 
-// В views/page.php:
-// <h1>{{title}}</h1>
-// <?php echo $this->include('partials/sidebar',['items'=>$sidebarItems??[]]); ?>
-// <p>Content...</p>
-
 echo $renderer->render('page.php', [
     'title' => 'Страница',
     'sidebarItems' => ['Home','About','Contact'],
 ]);
+
+// В views/page.php:
+<h1>{{title}}</h1>
+<?php echo $this->include('partials/sidebar.php',['items'=>$sidebarItems??[]]); ?>
+<p>Content...</p>
 ```
 
 При рендере `page.php` будет автоматически вставлен HTML из `views/partials/sidebar.php`, получив данные `items`.

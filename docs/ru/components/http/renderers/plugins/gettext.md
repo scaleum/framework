@@ -47,28 +47,42 @@ class Gettext implements RendererPluginInterface {
 
 1. **Перевод по ключу** (используется текстовый домен по умолчанию и текущая локаль):
    ```twig
-   <h1>{{gettext:'welcome_message'}}</h1>
+   <h1>{{gettext:welcome_message}}</h1>
+   <!-- или так -->
+   <h1>{{gettext:--message=welcome_message}}</h1>
+   <!-- или так, если `welcome message` содержит пробелы -->
+   <h1>{{gettext:--message="welcome message"}}</h1>
    ```
    Эквивалент PHP:
    ```php
    echo $translator->translate('welcome_message');
+   // или
+   echo $translator->translate('welcome message');
    ```
 
 2. **Указание домена** (файл переводов):
    ```twig
    <p>{{gettext:error_not_found|errors}}</p>
+   <!-- или так -->
+   <p>{{gettext:--message=error_not_found --textDomain=errors}}</p>
    ```
    где `'errors'` — имя текстового домена (см. настройки и инициализацию `Translator`).
 
 3. **Принудительная локаль**:
    ```twig
    <span>{{gettext:date_format|default|fr_FR}}</span>
+   <!-- или так -->
+   <span>{{gettext:--message=date_format --locale=fr_FR --textDomain=default}}</span>
    ```
    Переведёт ключ `date_format` для французской локали и текстового домена `default`.
 
-4. **Использование в двойных скобках с содержимым** (встроенный контент не нужен):
+4. **Использование квотирования** (двойных кавычек):
    ```twig
-   <button>{{gettext:submit}}</button>
+   <!-- квотирование не нужно -->
+   <button>{{gettext:Submit}}</button>
+   <button>{{gettext:Welcome, Username}}</button>
+   <!-- при использовании разименованных параметров нужно квотирование строк с пробелами -->
+   <button>{{gettext:--message="Press any button"}}</button>
    ```
 
 ## Примеры в коде

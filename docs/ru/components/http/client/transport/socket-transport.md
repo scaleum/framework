@@ -22,13 +22,13 @@
 
 ## Методы
 
-### isSupported
+### isSupported()
 ```php
 public function isSupported(): bool
 ```
 Проверяет наличие функции `fsockopen`. Если сокеты не поддерживаются, возвращает `false`.
 
-### send
+### send()
 ```php
 public function send(OutboundRequest $request): InboundResponse
 ```
@@ -131,7 +131,7 @@ $response = $transport->send($request);
 ```php
 $transport = (new SocketTransport())
     ->setAuthType('BEARER')
-    ->setToken('jwt-token');
+    ->setToken('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHBpcnkiOjE2MjIwNzYwMzA');
 
 $request  = new OutboundRequest('DELETE', new Uri('/resource/123'));
 $response = $transport->send($request);

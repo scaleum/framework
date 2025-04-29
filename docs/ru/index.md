@@ -4,7 +4,7 @@
 - [Введение](./introduction.md)
 
 ### 2. Концепция использования
-- [Концепция использования](./concept.md)
+- [Концепция использования**](./concept.md)
 
 ### 3. Установка
 - [Установка](./installation.md)
@@ -14,8 +14,8 @@
 
 ### 5. Работа с ядром
 - [KernelAbstract](./kernel-abstract.md)
-  - [HandlerInterface](./handler-interface.md)
-  - [ResponderInterface](./responder-interface.md)
+  - [HandlerInterface**](./handler-interface.md)
+  - [ResponderInterface**](./responder-interface.md)
 - [Http\Application](./components/http/application.md)
     - Client
       - [RequesterAbstract](./components/http/client/requester-abstract.md)
