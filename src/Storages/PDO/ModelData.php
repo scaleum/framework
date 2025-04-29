@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Scaleum\Storages\PDO;
 
+use Scaleum\Stdlib\Helpers\ArrayHelper;
+
 /**
  * ModelData
  *
@@ -22,7 +24,8 @@ class ModelData
 
     public function __construct(array $initialData = [])
     {
-        foreach ($initialData as $key => $value) {
+        $data = ArrayHelper::naturalize($initialData);
+        foreach ($data as $key => $value) {
             $this->__set($key, $value);
         }
     }

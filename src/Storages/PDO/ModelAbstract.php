@@ -577,7 +577,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
     private function syncRelations(): array {
         $result = [];
         foreach ($this->getRelations() as $relation => $config) {
-            /** @var ModelAbstract $relatedData */
+            /** @var ModelAbstract|array $relatedData */
             $relatedData = $this->$relation ?? null;
             if ($relatedData === null) {
                 continue;
@@ -585,19 +585,20 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
 
             $foreignKey = $config['foreign_key'];
 
-            if ($config['type'] === 'hasOne' || $config['type'] === 'belongsTo') {
+            if (($relatedData instanceof ModelAbstract) && ($config['type'] === 'hasOne' || $config['type'] === 'belongsTo')) {
                 $relatedData->$foreignKey = $this->{$this->primaryKey};
                 if ($relatedData->{$relatedData->primaryKey}) {
-                    $relatedData->updateInternal();
+                    $relatedData->update();
                     $result[$relation] = 'updated';
                 } else {
-                    $relatedData->insertInternal();
+                    $relatedData->insert();
                     $result[$relation] = 'inserted';
                 }
-            } elseif ($config['type'] === 'hasMany') {
+            } elseif (is_array($relatedData) && $config['type'] === 'hasMany') {
                 $updated  = 0;
-                $inserted = 0;
+                $inserted = 0;                
                 foreach ($relatedData as $item) {
+                    /** @var ModelAbstract $item */
                     $item->$foreignKey = $this->{$this->primaryKey};
                     if ($item->{$item->primaryKey}) {
                         $updated += $item->update() ? 1 : 0;
