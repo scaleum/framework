@@ -216,10 +216,10 @@ class ArrayHelper {
                     if (is_array($result[$key]) && is_array($value)) {
                         $result[$key] = self::merge($result[$key], $value);
                     } else {
-                        if (!is_numeric($key)) {
+                        if (! is_numeric($key)) {
                             $result[$key] = $value;
                         } else {
-                            if (! in_array($value, $result,true)) {
+                            if (! in_array($value, $result, true)) {
                                 $result[] = $value;
                             }
                         }
@@ -228,6 +228,49 @@ class ArrayHelper {
                     $result[$key] = $value;
                 }
             }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Приводит значения входного ассоциативного массива к «нативным» типам PHP:
+     *  - строка из цифр (в том числе с минусом) → int
+     *  - числовая строка с точкой или экспонентой → float
+     *  - 'true'/'false' → bool
+     *  - всё остальное остаётся без изменений
+     *
+     * @param  array<string, mixed> $items
+     * @return array<string, int|float|bool|string>
+     */
+    public static function naturalize(array $items): array {
+        $result = [];
+
+        foreach ($items as $key => $value) {
+            if (is_string($value)) {
+                $lower = strtolower($value);
+
+                // Булевы литералы
+                if ($lower === 'true' || $lower === 'false') {
+                    $result[$key] = $lower === 'true';
+                    continue;
+                }
+
+                // Целые числа (включая отрицательные)
+                if (preg_match('/^-?\d+$/', $value)) {
+                    $result[$key] = (int) $value;
+                    continue;
+                }
+
+                // Дробные и экспонентные числа
+                if (is_numeric($value)) {
+                    $result[$key] = (float) $value;
+                    continue;
+                }
+            }
+
+            // Остальные типы оставляем как есть
+            $result[$key] = $value;
         }
 
         return $result;
