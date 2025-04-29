@@ -195,14 +195,7 @@ class ArrayHelper {
      * @return bool True if the array is associative, false otherwise.
      */
     public static function isAssociative(array $array): bool {
-        // foreach (array_keys($array) as $key) {
-        //     if (is_string($key)) {
-        //         return true;
-        //     }
-        // }
-        // return false;
-
-        return (bool) array_filter(array_keys($array), 'is_string');
+        return (bool) count(array_filter(array_keys($array), 'is_string')) > 0;
     }
 
     /**
