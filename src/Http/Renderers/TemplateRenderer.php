@@ -1,4 +1,5 @@
 <?php
+
 declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
@@ -19,6 +20,7 @@ use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Stdlib\Exceptions\EInOutException;
 use Scaleum\Stdlib\Exceptions\ENotFoundError;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Stdlib\Helpers\ArrayHelper;
 use Scaleum\Stdlib\Helpers\FileHelper;
 use Scaleum\Stdlib\Helpers\PathHelper;
 
@@ -205,77 +207,114 @@ class TemplateRenderer extends Hydrator {
 
         return $this;
     }
-
-    protected function parsePlugins($str): string {
-
-        /**
-         * изоляция синтаксиса "фильтров" для input & textarea
-         * критично для использования разметки "фильтров" при редактировании (под)шаблонов через панель управления
-         */
+    protected function parsePlugins(string $str): string {
+        // isolation of {{}} syntax in <input> and <textarea>
         $patterns = [
             '~<textarea.*?>(.*?)</textarea>~isu',
             '~<input.*?(?:value\s*=\s*"(.*?)"\s*).*?/?>~isu',
         ];
-
         foreach ($patterns as $pattern) {
             preg_match_all($pattern, $str, $matches);
-            for ($i = 0; $i < count($matches[0]); $i++) {
+            for ($i = 0, $cnt = count($matches[0]); $i < $cnt; $i++) {
                 if (! empty($matches[1][$i])) {
-                    $replace = str_replace($matches[1][$i], str_replace(['{', '}'], ['<insul>', '</insul>'], $matches[1][$i]), $matches[0][$i]);
-                    $str     = str_replace($matches[0][$i], $replace, $str);
-                    unset($replace);
+                    $safe = str_replace(['{', '}'], ['<insul>', '</insul>'], $matches[1][$i]);
+                    $str  = str_replace($matches[0][$i], str_replace($matches[1][$i], $safe, $matches[0][$i]), $str);
                 }
             }
         }
 
-        preg_match_all('~{{(' . implode('|', array_keys($this->plugins)) . ')(?:[\: ]([^}{]+))?}}(?:([\x00-\xFF]*?){/\\1}})?~i', $str, $matches);
-        foreach ($matchesUnique = array_unique($matches[0]) as $key => $value) {
-            if ($this->hasPlugin($matches[1][$key])) {
-                $plugin = $this->getPlugin($matches[1][$key]);
-                if (is_callable($plugin)) {
+        // matching {{pluginName:arg1 arg2 arg3}} and {{pluginName:arg1 arg2 arg3}}content{/pluginName} tags
+        preg_match_all(
+            '~{{(' . implode('|', array_keys($this->plugins)) . ')(?:[\: ]([^}{]+))?}}(?:([\x00-\xFF]*?){/\\1}})?~i',
+            $str,
+            $matches
+        );
 
-                    // any string, below after ":"
-                    $params = trim($matches[2][$key]);
+        // handle unique tags, keeping corresponding indexes
+        $tags = array_unique($matches[0]);
+        foreach ($tags as $tag) {
+            // corresponding index in the original array of matches
+            $key     = array_search($tag, $matches[0], true);
+            $name    = $matches[1][$key];
+            $args    = trim($matches[2][$key] ?? '');
+            $content = trim($matches[3][$key] ?? '');
 
-                    // params may be string '-var1=val1 --var2=val2 -var3 value3 --var4="value4"', key value pair based
-                    if (preg_match_all('~ --?(?<key> [^= ]+ ) [ =] (?|" (?<value> [^\\\\"]*+ (?s:\\\\.[^\\\\"]*)*+ ) "|([^ ?"]*) )~x', $params, $matches_internal) !== false) {
-                        if (count($matches_internal['key'])) {
-                            $params = array_combine($matches_internal['key'], $matches_internal['value']);
-                        }
-                    }
+            if (! $this->hasPlugin($name)) {
+                continue;
+            }
 
-                    // params may be string 'param1[|param2|param3|..paramN]', value based
-                    if (is_scalar($params) && strpos($params, '|') !== false) {
-                        $params = explode('|', $params);
-                    }
+            $plugin = $this->getPlugin($name);
+            if (! is_callable($plugin)) {
+                continue;
+            }
 
-                    // params is string?
-                    if (is_scalar($params)) {
-                        $params = [$params];
-                    }
-
-                    // add to params any string from "content" part - {plugin}content{/plugin}
-                    if (! empty($matches[3][$key])) {
-                        $params[] = trim($matches[3][$key]);
-                    }
-
-                    $replacement = call_user_func_array($plugin, array_values($params));
-                    if (is_scalar($replacement) || (is_object($replacement) && method_exists($replacement, '__toString'))) {
-                        $pattern = "~" . preg_quote($value) . "~i";
-                        $str     = preg_replace($pattern, trim($replacement), $str);
-                    }
-                    unset($replacement, $pattern);
+            // parse named parameters: --var=val, --var val, --var "val with spaces"
+            // simple mask: '~--?(?<key>[^=\s]+)[=\s](?:"(?<quoted>[^"]*)"|(?<simple>[^\s"]+))~x' does not support escaped characters inside quotes (\\.) and does not preserve a readable group structure
+            $params = $args;
+            $parsed = [];
+            if (preg_match_all(
+                '~--?(?<key>[^=\s]+)[=\s]+(?:"(?<quoted>(?:\\\\.|[^"\\\\])*)"|(?<simple>[^\s"]+))~x',
+                $args,
+                $mkv
+            )) {
+                foreach ($mkv['key'] as $i => $keyName) {
+                    $parsed[$keyName] = $mkv['quoted'][$i] !== '' ? $mkv['quoted'][$i] : $mkv['simple'][$i];
                 }
-                unset($plugin);
+                $params = $parsed;
+            }
+            // if pipe-separated like: var1|var2
+            elseif (is_string($args) && strpos($args, '|') !== false) {
+                $params = explode('|', $args);
+            }
+            // one string parameter
+            if (is_string($params) && empty($parsed)) {
+                $params = [$params];
+            }
+
+            // add `content` as last argument(?)
+            if ($content !== '') {
+                if (! is_array($params)) {
+                    $params = [$content];
+                } else {
+                    $params[] = $content;
+                }
+            }
+
+            // call plugin: named parameters through reflection
+            if (is_array($params) && ArrayHelper::isAssociative($params)) {
+                $refMethod = new \ReflectionMethod($plugin, '__invoke');
+                $args      = [];
+                foreach ($refMethod->getParameters() as $paramMeta) {
+                    $pName = $paramMeta->getName();
+                    if (array_key_exists($pName, $params)) {
+                        $args[] = $params[$pName];
+                    } elseif ($paramMeta->isDefaultValueAvailable()) {
+                        $args[] = $paramMeta->getDefaultValue();
+                    } else {
+                        throw new ERuntimeError(
+                            sprintf('Missing parameter "%s" for plugin "%s"', $pName, $name)
+                        );
+                    }
+                }
+                $replacement = $refMethod->invokeArgs($plugin, $args);
+            } else {
+                // positional parameters are passed as an array, so we need to convert them to a list of arguments
+                $replacement = call_user_func_array($plugin, array_values((array) $params));
+            }
+
+            // substitution of result
+            if (is_scalar($replacement) || (is_object($replacement) && method_exists($replacement, '__toString'))) {
+                $str = preg_replace(
+                    '~' . preg_quote($tag, '~') . '~i',
+                    trim((string) $replacement),
+                    $str,
+                    1
+                );
             }
         }
 
-        /**
-         *  реконструкция "фильтров" для input & textarea
-         */
-        $str = str_replace(['<insul>', '</insul>'], ['{', '}'], $str);
-
-        return trim($str);
+        // recovery of literal brackets
+        return str_replace(['<insul>', '</insul>'], ['{', '}'], trim($str));
     }
 
     protected function parseStr(string $str, array $data = []) {
@@ -326,7 +365,6 @@ class TemplateRenderer extends Hydrator {
             } else {
                 $buffer = $template->getContent();
             }
-
         } catch (\Exception $exception) {
             @ob_end_clean();
             throw new ERuntimeError(sprintf('%s: %s', __METHOD__, $exception->getMessage()), $exception->getCode(), previous: $exception);
