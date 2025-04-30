@@ -19,7 +19,7 @@ use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
+abstract class ModelAbstract extends DatabaseProvider implements ModelInterface {
     public const ON_INSERT   = 0x01;
     public const ON_UPDATE   = 0x02;
     public const ON_DELETE   = 0x04;
@@ -56,13 +56,11 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
             return null;
         }
 
-        $data = $db->setQuery("SELECT * FROM {$this->getTable()} WHERE {$this->primaryKey} = :id LIMIT 1", ['id' => $id])->fetch();
-        if (! $data) {
+        if (! $data = ($db->getQueryBuilder())->select()->from($this->getTable())->where($this->primaryKey, $id)->limit(1)->row()) {
             return null;
         }
 
-        $this->data = new ModelData($data);
-        $this->loadRelations($this->data);
+        $this->setData(new ModelData($data));
         return $this;
     }
 
@@ -72,26 +70,28 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
      * @param array $conditions An associative array of conditions to match against.
      * @return self|null The found record as an instance of the class, or null if no record is found.
      */
-    public function findOneBy(array $conditions,string $operator = 'AND'): ?self {
-        $operator = strtoupper(trim($operator));
-        if (!in_array($operator, ['AND', 'OR'])) {
-            throw new EInvalidArgumentException("Invalid logical operator '$operator'");
-        }
+    public function findOneBy(array $conditions, string $operator = 'AND'): ?self {
 
         $db = $this->getDatabase();
         if (! $db) {
             return null;
         }
 
-        $whereClauses = implode(" $operator ", array_map(fn($key) => "$key = :$key", array_keys($conditions)));
-        $sql          = "SELECT * FROM {$this->table} WHERE {$whereClauses} LIMIT 1";
-        $data         = $db->setQuery($sql, $conditions)->fetch();
-        if (! $data) {
+        $operator = strtoupper(trim($operator));
+        if (! in_array($operator, ['AND', 'OR'])) {
+            throw new EInvalidArgumentException("Invalid logical operator '$operator'");
+        }
+
+        $where = match ($operator) {
+            'AND' => 'where',
+            'OR' => 'orWhere',
+        };
+
+        if (! $data = ($db->getQueryBuilder())->select()->from($this->getTable())->$where($conditions)->limit(1)->row()) {
             return null;
         }
 
-        $this->data = new ModelData($data);
-        $this->loadRelations($this->data);
+        $this->setData(new ModelData($data));
         return $this;
     }
 
@@ -106,12 +106,15 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
             return [];
         }
 
-        $data    = $db->setQuery("SELECT * FROM {$this->getTable()}")->fetchAll([\PDO::FETCH_ASSOC]);
+        if (! $rows = ($db->getQueryBuilder())->select()->from($this->getTable())->rows([\PDO::FETCH_ASSOC])) {
+            return [];
+        }
+
         $results = [];
-        foreach ($data as $row) {
-            $model       = new static($db);
-            $model->data = new ModelData($row);
-            $model->loadRelations($model->data);
+        foreach ($rows as $row) {
+            $model = new static($db);
+            $model->setData(new ModelData($row));
+
             $results[] = $model;
         }
 
@@ -124,25 +127,30 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
      * @param array $conditions An associative array of conditions where the key is the column name and the value is the value to match.
      * @return array An array of records that match the given conditions.
      */
-    public function findAllBy(array $conditions,string $operator = 'AND'): array {
-        $operator = strtoupper(trim($operator));
-        if (!in_array($operator, ['AND', 'OR'])) {
-            throw new EInvalidArgumentException("Invalid logical operator '$operator'");
-        }
-                
-        $db = $this->getDatabase();
+    public function findAllBy(array $conditions, string $operator = 'AND'): array {
+        $results = [];
+        $db      = $this->getDatabase();
         if (! $db) {
-            return [];
+            return $results;
         }
 
-        $whereClauses = implode(" $operator ", array_map(fn($key) => "$key = :$key", array_keys($conditions)));
-        $sql          = "SELECT * FROM {$this->table} WHERE {$whereClauses}";
-        $data         = $db->setQuery($sql, $conditions)->fetchAll([\PDO::FETCH_ASSOC]);
-        $results      = [];
-        foreach ($data as $row) {
-            $model       = new static($db);
-            $model->data = new ModelData($row);
-            $model->loadRelations($model->data);
+        $operator = strtoupper(trim($operator));
+        if (! in_array($operator, ['AND', 'OR'])) {
+            throw new EInvalidArgumentException("Invalid logical operator '$operator'");
+        }
+
+        $where = match ($operator) {
+            'AND' => 'where',
+            'OR' => 'orWhere',
+        };
+
+        if (! $rows = ($db->getQueryBuilder())->select()->from($this->getTable())->$where($conditions)->rows([\PDO::FETCH_ASSOC])) {
+            return $results;
+        }
+
+        foreach ($rows as $row) {
+            $model = new static($db);
+            $model->setData(new ModelData($row));
 
             $results[] = $model;
         }
@@ -397,7 +405,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
             $result          = $db->setQuery("DELETE FROM {$this->getTable()} WHERE {$this->primaryKey} = :id", ['id' => $id])->execute();
 
             if ($result) {
-                $this->data = new ModelData(); // Очищаем данные после удаления
+                $this->setData(new ModelData());
             }
 
             $this->lastStatus = [
@@ -465,7 +473,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
      *     'user' => self::ON_INSERT | self::ON_UPDATE | self::ON_DELETE | self::ON_TRUNCATE,
      * ];
      *
-     * The above declsyncRelationsfies that in the "admin" mode, the insert operation ([[insert()]])
+     * The above defines that in the "admin" mode, the insert operation ([[insert()]])
      * should be done in a transaction; and in the "user" mode, all the operations should be done
      * in a transaction.
      *
@@ -512,8 +520,15 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
     /**
      * Get the value of data
      */
-    public function getData() {
+    public function getData(): ModelData {
         return $this->data;
+    }
+
+    public function setData(ModelData $data): void {
+        $this->data = $data;
+        if(!$this->data->isEmpty()){
+            $this->loadRelations();
+        }
     }
 
     /**
@@ -530,42 +545,52 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
      */
     protected function getRelations(): array {
         // return [
-        //     'profile' => [
+        //     'relation_1' => [
         //         'model'       => ModelClassA::class,
         //         'method'      => 'findByUserId',
         //         'primary_key' => 'id',
         //         'foreign_key' => 'user_id',
         //         'type'        => 'hasOne', // hasOne|hasMany|belongsTo
+        //         'persist'      => true, // true|false
         //     ],
-        //     'comments' => [
+        //     'relation_2' => [
         //         'model'       => ModelClassB::class,
         //         'method'      => 'findByUserId',
         //         'primary_key' => 'id',
         //         'foreign_key' => 'user_id',
         //         'type'        => 'hasMany',
+        //         'persist'      => true, // true|false; if true, the relation will be updated(insert/update/delete) in the database
         //     ],
-        // ];        
+        // ];
         return [];
     }
 
-    public function toArray(): array {
-        return $this->clearRelations($this->data->toArray());
+    /**
+     * Converts the current model instance to an associative array.
+     *
+     * @param bool $strict Determines whether to strictly include only the properties
+     *                     defined in the model. If true, only model-defined properties
+     *                     will be included; if false, additional properties(relations) will be included.
+     * @return array An associative array representation of the model instance.
+     */
+    public function toArray(bool $strict = true): array {
+        $result = $this->data->toArray();
+        if ($strict) {
+            $result = $this->clearRelations($result);
+        }
+        return $result;
     }
 
     /**
      * Loads the relations for the given model data.
      *
-     * @param ModelData $modelData The model data for which to load relations.
-     *
      * @return void
      */
-    private function loadRelations(ModelData $modelData): void {
+    private function loadRelations(): void {
         foreach ($this->getRelations() as $relation => $config) {
-            $relatedModel  = new $config['model']($this->getDatabase());
-            $relatedMethod = $config['method'];
-            $primaryKey    = $config['primary_key'];
-
-            $this->$relation = $relatedModel->$relatedMethod($modelData->{$primaryKey});
+            $model           = new $config['model']($this->getDatabase());
+            $method          = $config['method'];
+            $this->$relation = $model->{$method}($this->{$this->primaryKey});
         }
     }
 
@@ -577,6 +602,11 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
     private function syncRelations(): array {
         $result = [];
         foreach ($this->getRelations() as $relation => $config) {
+            // if the persist option is set to false, skip this relation
+            if (isset($config['persist']) && $config['persist'] === false) {
+                continue;
+            }
+
             /** @var ModelAbstract|array $relatedData */
             $relatedData = $this->$relation ?? null;
             if ($relatedData === null) {
@@ -596,7 +626,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
                 }
             } elseif (is_array($relatedData) && $config['type'] === 'hasMany') {
                 $updated  = 0;
-                $inserted = 0;                
+                $inserted = 0;
                 foreach ($relatedData as $item) {
                     /** @var ModelAbstract $item */
                     $item->$foreignKey = $this->{$this->primaryKey};
@@ -623,6 +653,11 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface{
     private function removeRelations(): array {
         $result = [];
         foreach ($this->getRelations() as $relation => $config) {
+            // if the persist option is set to false, skip this relation
+            if (isset($config['persist']) && $config['persist'] === false) {
+                continue;
+            }
+
             $relatedData = $this->$relation ?? null;
             if ($relatedData === null) {
                 continue;

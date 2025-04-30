@@ -53,12 +53,50 @@ class ModelData
 
     public function toArray(): array
     {
-        return $this->data;
+        $result = [];
+        foreach ($this->data as $key => $value) {
+            $result[$key] = $this->normalizeValue($value);
+        }
+        return $result;
     }
+
+    protected function normalizeValue(mixed $value): mixed
+    {
+        // included ModelData
+        if ($value instanceof self) {
+            return $value->toArray();
+        }
+
+        // included ModelAbstract
+        if($value instanceof ModelAbstract) {
+            return $value->getData()->toArray();
+        }
+
+        // anything with toArray() method
+        if (is_object($value) && method_exists($value, 'toArray')) {
+            return $value->toArray();
+        }
+
+        // array of models or objects with toArray() method
+        if (is_array($value)) {
+            return array_map(
+                fn($item) => $this->normalizeValue($item),
+                $value
+            );
+        }
+
+        // otherwise, return the value as is
+        return $value;
+    }    
 
     public function has(string $key): bool
     {
         return array_key_exists($key, $this->data);
+    }
+
+    public function isEmpty(): bool
+    {
+        return empty($this->data);
     }
 }
 /** End of ModelData **/
