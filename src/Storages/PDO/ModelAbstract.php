@@ -11,8 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Storages\PDO;
 
+use Closure;
 use Scaleum\Stdlib\Exceptions\EDatabaseError;
-use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
 
 /**
  * ModelAbstract
@@ -65,29 +65,29 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
     }
 
     /**
-     * Finds a single record based on the specified conditions.
+     * Finds a single record in the database that matches the given conditions.
      *
-     * @param array $conditions An associative array of conditions to match against.
-     * @return self|null The found record as an instance of the class, or null if no record is found.
+     * @param array|Closure $conditions An array of conditions or a Closure that defines the conditions for the query.
+     * @param string $operator The logical operator to combine conditions (e.g., 'AND', 'OR'). Default is 'AND'.
+     *
+     * @return self|null Returns an instance of the model if a matching record is found, or null if no match is found.
      */
-    public function findOneBy(array $conditions, string $operator = 'AND'): ?self {
+    public function findOneBy(array | Closure $conditions, string $operator = 'AND'): ?self {
 
         $db = $this->getDatabase();
         if (! $db) {
             return null;
         }
 
-        $operator = strtoupper(trim($operator));
-        if (! in_array($operator, ['AND', 'OR'])) {
-            throw new EInvalidArgumentException("Invalid logical operator '$operator'");
+        $query = ($db->getQueryBuilder())->select()->from($this->getTable());
+        if ($conditions instanceof Closure) {
+            $conditions($query);
+        } else {
+            $method = strtoupper($operator) === 'OR' ? 'orWhere' : 'where';
+            $query->$method($conditions);
         }
 
-        $where = match ($operator) {
-            'AND' => 'where',
-            'OR' => 'orWhere',
-        };
-
-        if (! $data = ($db->getQueryBuilder())->select()->from($this->getTable())->$where($conditions)->limit(1)->row()) {
+        if (! $data = $query->limit(1)->row()) {
             return null;
         }
 
@@ -122,29 +122,28 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
     }
 
     /**
-     * Finds all records that match the given conditions.
+     * Retrieves all records from the database that match the specified conditions.
      *
-     * @param array $conditions An associative array of conditions where the key is the column name and the value is the value to match.
-     * @return array An array of records that match the given conditions.
+     * @param array|Closure $conditions An array of conditions or a Closure that defines the query logic.
+     * @param string $operator The logical operator to combine conditions (e.g., 'AND', 'OR'). Default is 'AND'.
+     * @return array An array of records that match the specified conditions.
      */
-    public function findAllBy(array $conditions, string $operator = 'AND'): array {
+    public function findAllBy(array | Closure $conditions, string $operator = 'AND'): array {
         $results = [];
         $db      = $this->getDatabase();
         if (! $db) {
             return $results;
         }
 
-        $operator = strtoupper(trim($operator));
-        if (! in_array($operator, ['AND', 'OR'])) {
-            throw new EInvalidArgumentException("Invalid logical operator '$operator'");
+        $query = ($db->getQueryBuilder())->select()->from($this->getTable());
+        if ($conditions instanceof Closure) {
+            $conditions($query);
+        } else {
+            $method = strtoupper($operator) === 'OR' ? 'orWhere' : 'where';
+            $query->$method($conditions);
         }
 
-        $where = match ($operator) {
-            'AND' => 'where',
-            'OR' => 'orWhere',
-        };
-
-        if (! $rows = ($db->getQueryBuilder())->select()->from($this->getTable())->$where($conditions)->rows([\PDO::FETCH_ASSOC])) {
+        if (! $rows = $query->rows([\PDO::FETCH_ASSOC])) {
             return $results;
         }
 
@@ -166,7 +165,6 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
      */
     public function load(array $input): self {
         $relations = $this->getRelations();
-        //TODO Добавить снятие слепка "до" и "после" загрузки, чтобы можно было фиксировать изменения
         if ($this->beforeLoad()) {
             foreach ($input as $key => $value) {
                 if (array_key_exists($key, $relations)) {
@@ -201,7 +199,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
                         } else {
                             $this->$key = array_map(fn($item) => (new $relationModel($this->getDatabase()))->load($item), $value);
                         }
-                    } elseif (($relationType === 'hasOne' || $relationType === 'belongsTo') && is_array($value)) {
+                    } elseif ($relationType === 'hasOne' && is_array($value)) {
                         if ($this->$key instanceof ModelAbstract) {
                             $primaryKey = $this->$key->primaryKey;
                             if (isset($value[$primaryKey]) && $value[$primaryKey] === $this->$key->$primaryKey) {
@@ -266,10 +264,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
 
         if ($this->beforeInsert()) {
             $data         = $this->clearRelations($this->data->toArray());
-            $columns      = implode(", ", array_keys($data));
-            $placeholders = ":" . implode(", :", array_keys($data));
-
-            $result       = $db->setQuery("INSERT INTO {$this->getTable()} ({$columns}) VALUES ({$placeholders})", $data)->execute();
+            $result       = ($db->getQueryBuilder())->insert($this->getTable(), $data);
             $lastInsertId = $db->getLastInsertID();
 
             if ($lastInsertId) {
@@ -334,12 +329,11 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
 
         if ($this->beforeUpdate()) {
             $data             = $this->clearRelations($this->data->toArray());
-            $fields           = implode(", ", array_map(fn($key) => "$key = :$key", array_keys($data)));
-            $status           = $db->setQuery("UPDATE {$this->getTable()} SET {$fields} WHERE {$this->primaryKey} = :{$this->primaryKey}", $data)->execute();
+            $result           = ($db->getQueryBuilder())->set($data)->where($this->primaryKey, $this->{$this->primaryKey})->update($this->getTable());
             $relationResults  = $this->syncRelations();
             $this->lastStatus = [
-                'status'      => (bool) $status,
-                'status_text' => $status ? 'Record updated' : 'Record not updated',
+                'status'      => (bool) $result,
+                'status_text' => $result ? 'Record updated' : 'Record not updated',
                 'relations'   => $relationResults,
             ];
 
@@ -402,8 +396,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         if ($this->beforeDelete()) {
             $id              = $this->data->{$this->primaryKey};
             $relationResults = $cascade ? $this->removeRelations() : [];
-            $result          = $db->setQuery("DELETE FROM {$this->getTable()} WHERE {$this->primaryKey} = :id", ['id' => $id])->execute();
-
+            $result          = ($db->getQueryBuilder())->from($this->getTable())->where($this->primaryKey, $id)->delete();
             if ($result) {
                 $this->setData(new ModelData());
             }
@@ -420,6 +413,55 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         return $result;
     }
 
+    public function truncate(): int {
+        if (! $this->isTransactional(self::ON_TRUNCATE)) {
+            return $this->truncateInternal();
+        }
+
+        $this->getDatabase()->begin();
+        try {
+            $result = $this->truncateInternal();
+            if ($result === false) {
+                $this->getDatabase()->rollBack();
+            } else {
+                $this->getDatabase()->commit();
+            }
+
+            return $result;
+        } catch (\Exception $except) {
+            $this->getDatabase()->rollback();
+            throw $except;
+        }
+    }
+
+    protected function truncateInternal(): int {
+        $this->lastStatus = [];
+        $result           = 0;
+        $db               = $this->getDatabase();
+
+        if (! $db) {
+            $this->lastStatus = [
+                'status'      => (bool) $result,
+                'status_text' => 'Database connection error or empty data',
+            ];
+            return $result;
+        }
+
+        if ($this->beforeTruncate()) {
+            if ($query = $this->getDatabase()->getQueryBuilder()) {
+                $result = $query->truncate($this->getTable());
+
+                $this->lastStatus = [
+                    'status'      => (bool) $result,
+                    'status_text' => "Model table `{$this->getTable()}` was " . ($result ? 'truncated' : 'not truncated'),
+                ];
+                $this->afterTruncate();
+                return $result;
+            }
+        }
+
+        return $result;
+    }
     /**
      * Checks if the current model instance exists in the database.
      *
@@ -526,7 +568,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
 
     public function setData(ModelData $data): void {
         $this->data = $data;
-        if(!$this->data->isEmpty()){
+        if (! $this->data->isEmpty()) {
             $this->loadRelations();
         }
     }
@@ -551,7 +593,8 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         //         'primary_key' => 'id',
         //         'foreign_key' => 'user_id',
         //         'type'        => 'hasOne', // hasOne|hasMany|belongsTo
-        //         'persist'      => true, // true|false
+        //         'persist'      => true,
+        //         // 'reference_key' => 'user_id', // not required, if the same as `foreign_key`
         //     ],
         //     'relation_2' => [
         //         'model'       => ModelClassB::class,
@@ -560,6 +603,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         //         'foreign_key' => 'user_id',
         //         'type'        => 'hasMany',
         //         'persist'      => true, // true|false; if true, the relation will be updated(insert/update/delete) in the database
+        //         // 'reference_key' => 'user_id', // not required, if the same as `foreign_key`
         //     ],
         // ];
         return [];
@@ -590,7 +634,8 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         foreach ($this->getRelations() as $relation => $config) {
             $model           = new $config['model']($this->getDatabase());
             $method          = $config['method'];
-            $this->$relation = $model->{$method}($this->{$this->primaryKey});
+            $referenceKey    = $config['reference_key'] ?? $this->primaryKey;
+            $this->$relation = $model->{$method}($this->data->{$referenceKey});
         }
     }
 
@@ -613,10 +658,11 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
                 continue;
             }
 
-            $foreignKey = $config['foreign_key'];
+            $foreignKey   = $config['foreign_key'];
+            $referenceKey = $config['reference_key'] ?? $this->primaryKey;
 
-            if (($relatedData instanceof ModelAbstract) && ($config['type'] === 'hasOne' || $config['type'] === 'belongsTo')) {
-                $relatedData->$foreignKey = $this->{$this->primaryKey};
+            if (($relatedData instanceof ModelAbstract) && $config['type'] === 'hasOne') {
+                $relatedData->$foreignKey = $this->data->{$referenceKey};
                 if ($relatedData->{$relatedData->primaryKey}) {
                     $relatedData->update();
                     $result[$relation] = 'updated';
@@ -629,7 +675,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
                 $inserted = 0;
                 foreach ($relatedData as $item) {
                     /** @var ModelAbstract $item */
-                    $item->$foreignKey = $this->{$this->primaryKey};
+                    $item->$foreignKey = $this->data->{$referenceKey};
                     if ($item->{$item->primaryKey}) {
                         $updated += $item->update() ? 1 : 0;
                     } else {
@@ -663,7 +709,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
                 continue;
             }
 
-            if ($config['type'] === 'hasOne' || $config['type'] === 'belongsTo') {
+            if ($config['type'] === 'hasOne') {
                 $relatedData->delete();
                 $result[$relation] = 'deleted';
             } elseif ($config['type'] === 'hasMany' && is_array($relatedData)) {
@@ -721,6 +767,14 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
     }
 
     /**
+     * What should I do after truncating?
+     * @return mixed
+     */
+    protected function afterTruncate() {
+
+    }
+
+    /**
      * What should I do before deleting? You must always return a Boolean value
      * @return bool [FALSE|TRUE]
      */
@@ -749,6 +803,14 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
      * @return bool [FALSE|TRUE]
      */
     protected function beforeUpdate() {
+        return true;
+    }
+
+    /**
+     * What should I do before truncating? You must always return a Boolean value
+     * @return bool [FALSE|TRUE]
+     */
+    protected function beforeTruncate() {
         return true;
     }
 }
