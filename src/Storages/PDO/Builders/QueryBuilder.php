@@ -12,6 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Storages\PDO\Builders;
 
 use Scaleum\Stdlib\Exceptions\EDatabaseError;
+use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
 use Scaleum\Stdlib\Helpers\ArrayHelper;
 use Scaleum\Storages\PDO\Exceptions\ESQLError;
 
@@ -32,8 +33,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected const BRACKET_START = '(';
     protected const BRACKET_END   = ')';
 
-    private array $cachedState = [];
-
+    private array $cachedState      = [];
     protected array $bracketsPrev   = [];
     protected array $bracketsSource = [];
     protected array $from           = [];
@@ -49,7 +49,10 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected array $tableAliased   = [];
     protected array $where          = [];
     protected ?string $whereKey     = null;
-
+    protected array $ctes           = [];
+    protected bool $cteRecursive    = false;
+    protected array $unions         = [];
+    
     protected function cache(): self {
         $this->cachedState = get_object_vars($this);
         unset($this->cachedState['cachedState']); // Prevent recursion
@@ -140,6 +143,9 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         $this->whereKey       = null;
         $this->bracketsSource = [];
         $this->bracketsPrev   = [];
+        $this->ctes           = [];
+        $this->cteRecursive   = false;
+        $this->unions         = [];
 
         return $this;
     }
@@ -149,7 +155,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             if (strpos($val, ',') !== false) {
                 foreach (explode(',', $val) as $v) {
                     $v = trim($v);
-                    $this->addTableAliase($v);
+                    $this->addTableAlias($v);
                     $this->from[] = $this->protectIdentifiers($v);
                 }
             } else {
@@ -157,7 +163,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
                 // Extract any aliases that might exist.  We use this information
                 // in the protectIdentifiers to know whether to add a table prefix
-                $this->addTableAliase($val);
+                $this->addTableAlias($val);
                 $this->from[] = $this->protectIdentifiers($val);
             }
         }
@@ -242,7 +248,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
         // Extract any aliases that might exist.  We use this information
         // in the _protect_identifiers to know whether to add a table prefix
-        $this->addTableAliase($table);
+        $this->addTableAlias($table);
 
         // Strip apart the condition and protect the identifiers
         if (preg_match('/([\w\.]+)([\W\s]+)(.+)/', $rule, $match)) {
@@ -459,7 +465,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this->set($field, $value, $quoting, true);
     }
 
-    public function truncate(string $table = null): bool {
+    public function truncate(string $table = null): mixed {
         if ($table === null) {
             if (! isset($this->from[0])) {
                 return false;
@@ -740,8 +746,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     }
 
     protected function makeSelect(): string {
-
-        $sql = 'SELECT ';
+        $sql = $this->makeWith();
+        $sql .= "\nSELECT ";
         if (count($this->modifiers)) {
             $sql .= implode(' ', $this->modifiers) . ' ';
         }
@@ -810,6 +816,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         if ($this->limit > 0 || $this->offset > 0) {
             $sql .= "\n";
             $sql = $this->makeLimit($sql, $this->limit, $this->offset);
+        }
+
+        // Write the UNION
+        foreach ($this->unions as $union) {
+            $sql .= $union['all']
+            ? "\n UNION ALL " . $union['sql']
+            : "\n UNION " . $union['sql'];
         }
 
         return $sql;
@@ -1017,10 +1030,10 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return count($this->bracketsSource) > 0;
     }
 
-    protected function addTableAliase(array | string $table): bool {
+    protected function addTableAlias(array | string $table): bool {
         if (is_array($table)) {
             foreach ($table as $tableItem) {
-                $this->addTableAliase($tableItem);
+                $this->addTableAlias($tableItem);
             }
 
             return true;
@@ -1029,7 +1042,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         // Does the string contain a comma?  If so, we need to separate
         // the string into discreet statements
         if (strpos($table, ',') !== false) {
-            return $this->addTableAliase(explode(',', $table));
+            return $this->addTableAlias(explode(',', $table));
         }
 
         // if a table alias is used we can recognize it by a space
@@ -1049,6 +1062,155 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         }
 
         return false;
+    }
+
+    public function whereBetween(string $field, array $range): self {
+        return $this->makeWhereBetween($field, $range, false, 'AND ');
+    }
+
+    public function orWhereBetween(string $field, array $range): self {
+        return $this->makeWhereBetween($field, $range, false, 'OR ');
+    }
+
+    public function whereNotBetween(string $field, array $range): self {
+        return $this->makeWhereBetween($field, $range, true, 'AND ');
+    }
+
+    public function orWhereNotBetween(string $field, array $range): self {
+        return $this->makeWhereBetween($field, $range, true, 'OR ');
+    }
+
+    protected function makeWhereBetween(string $field, array $range, bool $not = false, string $type = 'AND '): self {
+        if (count($range) !== 2) {
+            throw new EInvalidArgumentException('The range must contain exactly two values.');
+        }
+
+        [$start, $end] = $range;
+        $notSql        = $not ? ' NOT' : '';
+
+        if ($this->hasBrackets()) {
+            $prefix = $type;
+            if (end($this->bracketsSource) === static::BRACKET_START) {
+                $prefix = '';
+                while (end($this->bracketsSource) === static::BRACKET_START) {
+                    $prefix .= array_pop($this->bracketsSource);
+                }
+                if (count($this->bracketsSource)) {
+                    $prefix = "$type $prefix";
+                }
+            }
+        } else {
+            $prefix = count($this->where) > 0 ? $type : '';
+        }
+
+        $fieldQuoted = $this->protectIdentifiers($field);
+        $startQuoted = $this->quote($start);
+        $endQuoted   = $this->quote($end);
+        $statement   = "{$prefix}{$fieldQuoted}{$notSql} BETWEEN {$startQuoted} AND {$endQuoted}";
+
+        if ($this->hasBrackets()) {
+            $this->bracketsAccept($statement);
+        } else {
+            $this->where[] = $statement;
+        }
+
+        return $this;
+    }
+
+    public function with(string $alias, string $sql): self {
+        $this->ctes[$alias] = $sql;
+        return $this;
+    }
+
+    public function withRecursive(string $alias, string $sql): self {
+        $this->cteRecursive = true;
+        return $this->with($alias, $sql);
+    }
+
+    protected function makeWith(): string {
+        if (empty($this->ctes)) {
+            return '';
+        }
+
+        $keyword = $this->cteRecursive ? 'WITH RECURSIVE' : 'WITH';
+        $parts   = [];
+
+        foreach ($this->ctes as $alias => $subQuery) {
+            // экранируем алиас таблицы
+            $aliasQuoted = $this->protectIdentifiers($alias);
+            $parts[]     = "{$aliasQuoted} AS ({$subQuery})";
+        }
+
+        return $keyword . ' ' . implode(', ', $parts) . ' ';
+    }
+
+    public function union(callable $callback): self {
+        return $this->addUnion($callback, false);
+    }
+
+    public function unionAll(callable $callback): self {
+        return $this->addUnion($callback, true);
+    }
+
+    protected function addUnion(callable $callback, bool $all): self {
+        // create a new instance of the query builder
+        $subQb = new static($this->getDatabase());
+        $callback($subQb);
+
+        // building the SQL of the subquery and saving it
+        $this->unions[] = [
+            'sql' => $subQb->makeSelect(),
+            'all' => $all,
+        ];
+
+        return $this;
+    }
+
+    public function whereNull(string $field): self {
+        return $this->makeWhereNull($field, false, 'AND ');
+    }
+
+    public function orWhereNull(string $field): self {
+        return $this->makeWhereNull($field, false, 'OR ');
+    }
+
+    public function whereNotNull(string $field): self {
+        return $this->makeWhereNull($field, true, 'AND ');
+    }
+
+    public function orWhereNotNull(string $field): self {
+        return $this->makeWhereNull($field, true, 'OR ');
+    }
+
+    protected function makeWhereNull(string $field, bool $not, string $type = 'AND '): self {
+        if ($this->hasBrackets()) {
+            $prefix = $type;
+            if (end($this->bracketsSource) === static::BRACKET_START) {
+                $prefix = '';
+                while (end($this->bracketsSource) === static::BRACKET_START) {
+                    $prefix .= array_pop($this->bracketsSource);
+                }
+                if (count($this->bracketsSource)) {
+                    $prefix = "$type$prefix";
+                }
+            }
+        } else {
+            $prefix = count($this->where) > 0 ? $type : '';
+        }
+
+        // build expression
+        $fieldQuoted = $this->protectIdentifiers($field);
+        $notSql      = $not ? ' NOT' : '';
+        $statement   = "{$prefix}{$fieldQuoted} IS{$notSql} NULL";
+
+        // add to where or brackets logic
+        if ($this->hasBrackets()) {
+            $this->bracketsAccept($statement);
+        } else {
+            $this->where[] = $statement;
+        }
+
+        return $this;
     }
 }
 /** End of QueryBuilder **/

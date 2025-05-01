@@ -95,7 +95,7 @@ abstract class BuilderAbstract extends DatabaseProvider {
         $sql       = $this->getOptimizedQuery($sql);
         $prettySql = preg_replace(
             [
-                '/\b(FROM|WHERE|GROUP BY|ORDER BY|LIMIT|OFFSET|JOIN|HAVING|VALUES|SET|CREATE|ALTER)\b/i',
+                '/\b(SELECT|FROM|UNION|UNION ALL|WHERE|GROUP BY|ORDER BY|LIMIT|OFFSET|JOIN|HAVING|VALUES|SET|CREATE|ALTER)\b/i',
                 '/\b(AND|OR|CASE|END)\b/i',
                 '/\b(WHEN|THEN|ELSE)\b/i',
             ],

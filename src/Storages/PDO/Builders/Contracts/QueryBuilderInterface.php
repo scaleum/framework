@@ -49,7 +49,7 @@ interface QueryBuilderInterface {
     public function select(array | string $select = '*', bool $quoting = true): self;
     public function set(array | string $field, mixed $value = null, bool $quoting = true, bool $isBatch = false): self;
     public function setAsBatch(array $field, mixed $value = null, bool $quoting = true): self;
-    public function truncate(?string $table = null): bool;
+    public function truncate(?string $table = null): mixed;
     public function update(?string $table = null, array $set = [], array | string $where = null, ?string $whereKey = null, ?int $limit = null): mixed;
     public function where(array | string $field, mixed $value = null, bool $quoting = true): self;
     public function whereBrackets(): self;
@@ -57,5 +57,17 @@ interface QueryBuilderInterface {
     public function whereIn(string $field, array $values): self;
     public function whereNotIn(string $field, array $values): self;
     public function whereKey(string $key): self;
+    public function whereNull(string $field): self;
+    public function whereNotNull(string $field): self;
+    public function orWhereNull(string $field): self;
+    public function orWhereNotNull(string $field): self;
+    public function whereBetween(string $field, array $range): self;
+    public function orWhereBetween(string $field, array $range): self;
+    public function whereNotBetween(string $field, array $range): self;
+    public function orWhereNotBetween(string $field, array $range): self;
+    public function with(string $alias, string $sql): self;
+    public function withRecursive(string $alias, string $sql): self;
+    public function union(callable $callback): self;
+    public function unionAll(callable $callback): self;
 }
 /** End of QueryBuilderInterface **/
