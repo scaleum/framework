@@ -210,5 +210,12 @@ abstract class BuilderAbstract extends DatabaseProvider {
 
         return "$item$alias";
     }
+
+    public function getUniqueName(array $columns, string $prefix = 'key'): string {
+        $baseName = $prefix . '_' . implode('_', $columns);
+        $suffix   = bin2hex(random_bytes(4)); // 8 hex-символов, практически нулевая коллизия
+
+        return "{$baseName}_{$suffix}";
+    }
 }
 /** End of BuilderAbstract **/
