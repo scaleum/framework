@@ -11,6 +11,8 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Base;
 
+use SebastianBergmann\CodeUnit\FunctionUnit;
+
 /**
  * AttributeContainer
  *
@@ -45,6 +47,10 @@ class AttributeContainer implements AttributeContainerInterface {
         return $default;
     }
 
+    public function getAttributeCount(): int {
+        return count($this->attributes);
+    }
+    
     public function getAttributes(): array {
         return $this->attributes;
     }
