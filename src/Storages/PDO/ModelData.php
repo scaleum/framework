@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Scaleum\Storages\PDO;
 
+use Scaleum\Stdlib\Base\AttributeContainer;
 use Scaleum\Stdlib\Helpers\ArrayHelper;
 
 /**
@@ -18,43 +19,17 @@ use Scaleum\Stdlib\Helpers\ArrayHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ModelData
+class ModelData extends AttributeContainer
 {
-    protected array $data = [];
-
-    public function __construct(array $initialData = [])
+    public function __construct(array $attributes = [])
     {
-        $data = ArrayHelper::naturalize($initialData);
-        foreach ($data as $key => $value) {
-            $this->__set($key, $value);
-        }
-    }
-
-    public function __get(string $name): mixed
-    {
-        $method = 'get' . ucfirst($name);
-        if (method_exists($this, $method)) {
-            return $this->$method();
-        }
-
-        return $this->data[$name] ?? null;
-    }
-
-    public function __set(string $name, mixed $value): void
-    {
-        $method = 'set' . ucfirst($name);
-        if (method_exists($this, $method)) {
-            $this->$method($value);
-            return;
-        }
-
-        $this->data[$name] = $value;
+        parent::__construct(ArrayHelper::naturalize($attributes));
     }
 
     public function toArray(): array
     {
         $result = [];
-        foreach ($this->data as $key => $value) {
+        foreach ($this->attributes as $key => $value) {
             $result[$key] = $this->normalizeValue($value);
         }
         return $result;
@@ -87,16 +62,11 @@ class ModelData
 
         // otherwise, return the value as is
         return $value;
-    }    
-
-    public function has(string $key): bool
-    {
-        return array_key_exists($key, $this->data);
     }
 
     public function isEmpty(): bool
     {
-        return empty($this->data);
+        return $this->getAttributeCount() === 0;
     }
 }
 /** End of ModelData **/
