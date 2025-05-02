@@ -181,7 +181,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
         }
 
         $column    = implode(',', $this->protectIdentifiers($this->columns));
-        $indexName = $this->protectIdentifiers($this->indexName ?? "pk_" . implode('_', $this->columns));
+        $indexName = $this->protectIdentifiers($this->indexName ?? $this->getUniqueName($this->columns,'pk'));
 
         $result .= "CONSTRAINT $indexName PRIMARY KEY ($column)";
         return $result;
@@ -189,7 +189,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
 
     protected function makeUnique(): string {
         $column    = implode(',', $this->protectIdentifiers($this->columns));
-        $indexName = $this->protectIdentifiers($this->indexName ?? "unq_" . implode('_', $this->columns));
+        $indexName = $this->protectIdentifiers($this->indexName ?? $this->getUniqueName($this->columns,'unq'));
         if ($this->table !== null) {
             return "CREATE UNIQUE INDEX $indexName ON {$this->protectIdentifiers($this->table)} ($column)";
         } else {
@@ -206,7 +206,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
             $result .= "ALTER TABLE " . $this->protectIdentifiers($this->table) . " ADD ";
         }
 
-        $indexName = $this->protectIdentifiers($this->indexName ?? "fk_" . implode('_', $this->columns));
+        $indexName = $this->protectIdentifiers($this->indexName ?? $this->getUniqueName($this->columns,'fk'));
         $column    = implode(',', $this->protectIdentifiers($this->columns));
         $refTable  = $this->protectIdentifiers($this->tableForeign);
         $refColumn = implode(',', $this->protectIdentifiers($this->columnsForeign));
@@ -225,7 +225,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
     }
 
     protected function makeFulltext(): string {
-        $indexName = $this->protectIdentifiers($this->indexName ?? "ft_" . implode('_', $this->columns));
+        $indexName = $this->protectIdentifiers($this->indexName ?? $this->getUniqueName($this->columns,'ft'));
         $column    = implode(',', $this->protectIdentifiers($this->columns));
         if ($this->table !== null) {
             return "CREATE FULLTEXT INDEX $indexName ON {$this->protectIdentifiers($this->table)} ($column)";
@@ -235,7 +235,7 @@ class IndexBuilder extends BuilderAbstract implements IndexBuilderInterface {
     }
 
     protected function makeIndex(): string {
-        $indexName = $this->protectIdentifiers($this->indexName ?? "key_" . implode('_', $this->columns));
+        $indexName = $this->protectIdentifiers($this->indexName ?? $this->getUniqueName($this->columns));
         $column    = implode(',', $this->protectIdentifiers($this->columns));
         if ($this->table !== null) {
             return "CREATE INDEX $indexName ON {$this->protectIdentifiers($this->table)} ($column)";
