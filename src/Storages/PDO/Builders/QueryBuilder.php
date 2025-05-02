@@ -420,7 +420,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         if (is_string($select)) {
             $select = explode(',', $select);
         }
-
+        
+        $this->select = []; // overwrite/reset previous `select`, if it exists
         foreach ($select as $identifier) {
             $identifier = trim($identifier);
             if (! empty($identifier)) {
