@@ -263,20 +263,35 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         }
 
         if ($this->beforeInsert()) {
-            $data         = $this->clearRelations($this->data->toArray());
-            $result       = ($db->getQueryBuilder())->insert($this->getTable(), $data);
-            $lastInsertId = $db->getLastInsertID();
+            // PK already set?
+            $manualKey = $this->data->{$this->primaryKey} ?? null;
 
-            if ($lastInsertId) {
-                $this->data->{$this->primaryKey} = $lastInsertId;
+            $data      = $this->clearRelations($this->data->toArray());
+            $result    = (int) ($db->getQueryBuilder())->insert($this->getTable(), $data);
+
+            // if $manualKey is null, we should use lastInsertId
+            if ($manualKey === null) {
+                try {
+                    $lastId = $db->getLastInsertID();
+                } catch (\PDOException $except) {
+                    throw new EDatabaseError("Failed to get ID of inserted record: " . $except->getMessage());
+                }
+
+                if ($lastId === null) {
+                    throw new EDatabaseError("Failed to determine PK after insert");
+                }
+
+                $this->data->{$this->primaryKey} = $lastId;
             }
 
-            $relationResults  = $this->syncRelations();
+            $relationResults = $this->syncRelations();
+
             $this->lastStatus = [
                 'status'      => (bool) $result,
-                'status_text' => $lastInsertId ? 'Record inserted' : 'Record not inserted',
+                'status_text' => $result ? 'Record inserted' : 'Record not inserted',
                 'relations'   => $relationResults,
             ];
+
             $this->afterInsert();
         }
 
