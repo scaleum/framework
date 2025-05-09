@@ -65,8 +65,8 @@ interface QueryBuilderInterface {
     public function orWhereBetween(string $field, array $range): self;
     public function whereNotBetween(string $field, array $range): self;
     public function orWhereNotBetween(string $field, array $range): self;
-    public function with(string $alias, string $sql): self;
-    public function withRecursive(string $alias, string $sql): self;
+    public function with(string $alias, string $sql,array $columns = []): self;
+    public function withRecursive(string $alias, string $sql,array $columns = []): self;
     public function union(callable $callback): self;
     public function unionAll(callable $callback): self;
 }

@@ -52,7 +52,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected array $ctes           = [];
     protected bool $cteRecursive    = false;
     protected array $unions         = [];
-    
+
     protected function cache(): self {
         $this->cachedState = get_object_vars($this);
         unset($this->cachedState['cachedState']); // Prevent recursion
@@ -151,6 +151,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     }
 
     public function from(array | string $from): self {
+        $this->from = [];
         foreach ((array) $from as $val) {
             if (strpos($val, ',') !== false) {
                 foreach (explode(',', $val) as $v) {
@@ -420,7 +421,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         if (is_string($select)) {
             $select = explode(',', $select);
         }
-        
+
         $this->select = []; // overwrite/reset previous `select`, if it exists
         foreach ($select as $identifier) {
             $identifier = trim($identifier);
@@ -775,7 +776,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             $br_end   = self::BRACKET_END;
             $from     = implode(', ', $this->from);
 
-            if (preg_match('/\s*(SELECT|FROM|JOIN)\b/i', $from)) {
+            if (!preg_match('/\s*(SELECT|FROM|JOIN)\b/i', $from)) {
                 $br_start = $br_end = '';
             }
 
@@ -1118,14 +1119,27 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function with(string $alias, string $sql): self {
-        $this->ctes[$alias] = $sql;
+    public function with(string $alias, string $sql, array $columns = []): self {
+        // $this->ctes[$alias] = $sql;
+        $this->ctes[] = [
+            'alias'     => $alias,
+            'query'     => $sql,
+            'columns'   => $columns,
+            'recursive' => false,
+        ];
         return $this;
     }
 
-    public function withRecursive(string $alias, string $sql): self {
-        $this->cteRecursive = true;
-        return $this->with($alias, $sql);
+    public function withRecursive(string $alias, string $sql,array $columns = []): self {
+        // $this->cteRecursive = true;
+        // return $this->with($alias, $sql);
+        $this->ctes[] = [
+            'alias'     => $alias,
+            'query'     => $sql,
+            'columns'   => $columns,
+            'recursive' => true,
+        ];
+        return $this;
     }
 
     protected function makeWith(): string {
@@ -1133,13 +1147,30 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             return '';
         }
 
-        $keyword = $this->cteRecursive ? 'WITH RECURSIVE' : 'WITH';
+        $useRecursive = false;
+        foreach ($this->ctes as $cte) {
+            if ($cte['recursive']) {
+                $useRecursive = true;
+                break;
+            }
+        }
+
+        $keyword = $useRecursive ? 'WITH RECURSIVE' : 'WITH';
         $parts   = [];
 
-        foreach ($this->ctes as $alias => $subQuery) {
-            // экранируем алиас таблицы
-            $aliasQuoted = $this->protectIdentifiers($alias);
-            $parts[]     = "{$aliasQuoted} AS ({$subQuery})";
+        foreach ($this->ctes as $cte) {
+            // экранируем алиас
+            $alias = $this->protectIdentifiers($cte['alias']);
+            // если заданы колонки — формируем список в скобках
+            $cols = '';
+            if (! empty($cte['columns'])) {
+                $quoted = array_map(
+                    fn(string $col) => $this->protectIdentifiers($col),
+                    $cte['columns']
+                );
+                $cols = ' (' . implode(', ', $quoted) . ')';
+            }
+            $parts[] = "$alias$cols AS ({$cte['query']})";
         }
 
         return $keyword . ' ' . implode(', ', $parts) . ' ';
@@ -1155,12 +1186,12 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
     protected function addUnion(callable $callback, bool $all): self {
         // create a new instance of the query builder
-        $subQb = new static($this->getDatabase());
-        $callback($subQb);
+        $query = new static($this->getDatabase());
+        $callback($query);
 
         // building the SQL of the subquery and saving it
         $this->unions[] = [
-            'sql' => $subQb->makeSelect(),
+            'sql' => $query->makeSelect(),
             'all' => $all,
         ];
 

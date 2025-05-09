@@ -14,8 +14,6 @@ namespace Scaleum\Storages\PDO;
 use PDO;
 use Scaleum\Cache\Cache;
 use Scaleum\Logger\LoggerChannelTrait;
-use Scaleum\Services\ServiceLocator;
-use Scaleum\Stdlib\Base\Benchmark;
 use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
 use Scaleum\Storages\PDO\Builders\Contracts\SchemaBuilderInterface;
@@ -31,22 +29,30 @@ use Scaleum\Storages\PDO\Helpers\DatabaseHelper;
 class Database extends Hydrator {
     use LoggerChannelTrait;
 
-    protected string $dsn;
-    protected string $user;
-    protected string $password;
-    protected bool $multipleCommands = false;
-    private bool $connected          = false;
-    protected array $options         = [];
     private ?PDO $pdo                = null;
-    protected ?Cache $cache          = null;
-    protected bool $logging          = false;
-    private int $queryCounter        = 0;
     private array $queryParams       = [];
+    private bool $connected          = false;
+    private float $execTimeEnd       = 0;
+    private float $execTimeStart     = 0;
+    private int $queryCounter        = 0;
     private int $queryRowsAffected   = 0;
     private string $queryStr         = '';
+    protected ?Cache $cache          = null;
+    protected array $options         = [];
+    protected bool $logging          = false;
+    protected bool $multipleCommands = false;
+    protected string $dsn;
+    protected string $loggerChannel = 'kernel';
+    protected string $password;
+    protected string $user;
 
     public function getLoggerChannel(): string {
-        return 'kernel';
+        return $this->loggerChannel;
+    }
+
+    public function setLoggerChannel(string $str): static {
+        $this->loggerChannel = $str;
+        return $this;
     }
 
     public function begin(): bool {
@@ -393,6 +399,7 @@ class Database extends Hydrator {
             $this->pdo->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, true);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
 
             /**
              * Try to fix MySQL character encoding problems.
@@ -421,14 +428,14 @@ class Database extends Hydrator {
     private function beforeExecute() {
         $this->queryCounter++;
         if ($this->logging) {
-            $this->getBenchmark()?->start("query{$this->queryCounter}_execute");
+            $this->execTimeStart = microtime(true);
         }
     }
 
     private function afterExecute() {
         if ($this->logging) {
-            $index = $this->queryCounter;
-            $this->debug(sprintf('Database query #%d: "%s" executed in %s sec.', $index, $this->getQuery(),$this->getBenchmark()?->elapsed("query{$index}_execute") ?? '0.0000'));
+            $this->execTimeEnd = microtime(true);
+            $this->debug(sprintf('Database query #%d: "%s" executed in %s sec.', $this->queryCounter, $this->getQuery(), number_format($this->execTimeEnd - $this->execTimeStart, 4)));
         }
     }
 
@@ -448,11 +455,6 @@ class Database extends Hydrator {
     {
         $this->logging = $logging;
         return $this;
-    }
-
-    protected function getBenchmark(): ?Benchmark {
-        //TODO May be need to create a instance of Benchmark if it is not set?
-        return ServiceLocator::get('benchmark');
     }
 }
 /** End of Database **/

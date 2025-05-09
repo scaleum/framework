@@ -13,6 +13,7 @@ namespace Scaleum\Storages\PDO;
 
 use Closure;
 use Scaleum\Stdlib\Exceptions\EDatabaseError;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 /**
  * ModelAbstract
@@ -25,15 +26,26 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
     public const ON_DELETE   = 0x04;
     public const ON_TRUNCATE = 0x08;
 
-    protected ?string $table     = null;
-    protected string $primaryKey = 'id';
+    protected ?self $parent  = null;
+    protected ?string $mode  = null;
+    protected ?string $table = null;
     protected ModelData $data;
-    protected ?string $mode     = null;
-    protected array $lastStatus = [];
+    protected array $lastStatus  = [];
+    protected string $primaryKey = 'id';
 
-    public function __construct(?Database $database = null) {
+    /**
+     * Explicit factories for subclasses(relations) if the standard _construct is not applicable.
+     *
+     * Example:
+     * [ SpecialModel::class => fn() => new SpecialModel($this->getDatabase(), $this, 'extra'), ...]
+     * @var array<class-string, callable>
+     */
+    protected array $relationFactories = [];
+
+    public function __construct(?Database $database = null, ?self $parent = null) {
         parent::__construct($database);
-        $this->data = new ModelData();
+        $this->parent = $parent;
+        $this->data   = new ModelData();
     }
 
     public function __get(string $name): mixed {
@@ -112,7 +124,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
 
         $results = [];
         foreach ($rows as $row) {
-            $model = new static($db);
+            $model = $this->createModelInstance(static::class);
             $model->setData(new ModelData($row));
 
             $results[] = $model;
@@ -148,7 +160,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         }
 
         foreach ($rows as $row) {
-            $model = new static($db);
+            $model = $this->createModelInstance(static::class);
             $model->setData(new ModelData($row));
 
             $results[] = $model;
@@ -165,7 +177,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
      */
     public function load(array $input): self {
         $relations = $this->getRelations();
-        if ($this->beforeLoad()) {
+        if ($this->beforeLoad($input)) {
             foreach ($input as $key => $value) {
                 if (array_key_exists($key, $relations)) {
                     $relationDefinition = $relations[$key];
@@ -175,7 +187,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
                     if ($relationType === 'hasMany' && is_array($value)) {
                         if ($this->$key && is_array($this->$key)) {
                             $existingItems = $this->$key;
-                            $primaryKey    = (new $relationModel())->primaryKey;
+                            $primaryKey    = $this->createModelInstance($relationModel)->primaryKey;
 
                             $existingIds = array_map(fn($item) => $item->$primaryKey, $existingItems);
                             $newIds      = array_map(fn($item) => $item[$primaryKey] ?? null, $value);
@@ -194,10 +206,10 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
                                         return $existingItem;
                                     }
                                 }
-                                return (new $relationModel($this->getDatabase()))->load($item);
+                                return $this->createModelInstance($relationModel)->load($item);
                             }, $value);
                         } else {
-                            $this->$key = array_map(fn($item) => (new $relationModel($this->getDatabase()))->load($item), $value);
+                            $this->$key = array_map(fn($item) => $this->createModelInstance($relationModel)->load($item), $value);
                         }
                     } elseif ($relationType === 'hasOne' && is_array($value)) {
                         if ($this->$key instanceof ModelAbstract) {
@@ -208,7 +220,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
                                 throw new EDatabaseError("Data is not consistent with the current model data");
                             }
                         } else {
-                            $this->$key = (new $relationModel($this->getDatabase()))->load($value);
+                            $this->$key = $this->createModelInstance($relationModel)->load($value);
                         }
                     }
                 } else {
@@ -266,8 +278,8 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
             // PK already set?
             $manualKey = $this->data->{$this->primaryKey} ?? null;
 
-            $data      = $this->clearRelations($this->data->toArray());
-            $result    = (int) ($db->getQueryBuilder())->insert($this->getTable(), $data);
+            $data   = $this->clearRelations($this->data->toArray());
+            $result = (int) ($db->getQueryBuilder())->insert($this->getTable(), $data);
 
             // if $manualKey is null, we should use lastInsertId
             if ($manualKey === null) {
@@ -284,7 +296,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
                 $this->data->{$this->primaryKey} = $lastId;
             }
 
-            $relationResults = $this->syncRelations();
+            $relationResults = $this->updateRelations();
 
             $this->lastStatus = [
                 'status'      => (bool) $result,
@@ -345,7 +357,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         if ($this->beforeUpdate()) {
             $data             = $this->clearRelations($this->data->toArray());
             $result           = ($db->getQueryBuilder())->set($data)->where($this->primaryKey, $this->{$this->primaryKey})->update($this->getTable());
-            $relationResults  = $this->syncRelations();
+            $relationResults  = $this->updateRelations();
             $this->lastStatus = [
                 'status'      => (bool) $result,
                 'status_text' => $result ? 'Record updated' : 'Record not updated',
@@ -400,7 +412,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         $result           = 0;
 
         $db = $this->getDatabase();
-        if (! $db || ! $this->data->has($this->primaryKey)) {
+        if (! $db || ! $this->data->hasAttribute($this->primaryKey)) {
             $this->lastStatus = [
                 'status'      => (bool) $result,
                 'status_text' => 'Database connection error or empty data',
@@ -483,7 +495,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
      * @return bool True if the model instance exists, false otherwise.
      */
     public function isExisting(): bool {
-        return $this->data->has($this->primaryKey);
+        return $this->data->hasAttribute($this->primaryKey);
     }
 
     /**
@@ -625,6 +637,13 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
     }
 
     /**
+     * Get the value of parent
+     */
+    public function getParent(): ?self {
+        return $this->parent;
+    }
+
+    /**
      * Converts the current model instance to an associative array.
      *
      * @param bool $strict Determines whether to strictly include only the properties
@@ -647,7 +666,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
      */
     private function loadRelations(): void {
         foreach ($this->getRelations() as $relation => $config) {
-            $model           = new $config['model']($this->getDatabase());
+            $model           = $this->createModelInstance($config['model']);
             $method          = $config['method'];
             $referenceKey    = $config['reference_key'] ?? $this->primaryKey;
             $this->$relation = $model->{$method}($this->data->{$referenceKey});
@@ -655,11 +674,62 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
     }
 
     /**
+     * Creates and returns an instance of a (related) model.
+     *
+     * @template T of ModelAbstract
+     * @param class-string<T> $modelClass
+     * @return T
+     */
+    protected function createModelInstance(string $modelClass) {
+        if (isset($this->relationFactories[$modelClass])) {
+            $factory  = $this->relationFactories[$modelClass];
+            $instance = $factory();
+        } else {
+            $selfCtr     = (new \ReflectionClass($this))->getConstructor();
+            $targetClass = new \ReflectionClass($modelClass);
+            $targetCtr   = $targetClass->getConstructor();
+
+            $args = [];
+
+            if ($selfCtr && $targetCtr) {
+                $selfParams   = $selfCtr->getParameters();
+                $targetParams = $targetCtr->getParameters();
+
+                foreach ($targetParams as $i => $param) {
+                    $arg = null;
+                    if (isset($selfParams[$i])) {
+                        $name = $selfParams[$i]->getName();
+                        if (property_exists($this, $name)) {
+                            $arg = $this->$name;
+                        } elseif (method_exists($this, 'get' . ucfirst($name))) {
+                            $arg = $this->{'get' . ucfirst($name)}();
+                        } elseif ($selfParams[$i]->isDefaultValueAvailable()) {
+                            $arg = $selfParams[$i]->getDefaultValue();
+                        } else {
+                            throw new ERuntimeError("Unknown parameter `$name` in `{$modelClass}::__construct()`");
+                        }
+                    } elseif ($param->isDefaultValueAvailable()) {
+                        $arg = $param->getDefaultValue();
+                    } else {
+                        throw new ERuntimeError("Cannot resolve parameter in `{$modelClass}::__construct()`");
+                    }
+
+                    $args[] = $arg;
+                }
+            }
+
+            $instance = $targetClass->newInstanceArgs($args);
+        }
+
+        return $instance;
+    }
+
+    /**
      * Synchronizes the relations of the current model.
      *
      * @return array An array containing the synchronized relations.
      */
-    private function syncRelations(): array {
+    private function updateRelations(): array {
         $result = [];
         foreach ($this->getRelations() as $relation => $config) {
             // if the persist option is set to false, skip this relation
@@ -741,7 +811,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
 
     private function clearRelations(array $data): array {
         foreach ($this->getRelations() as $relation => $definition) {
-            if (isset($data[$relation])) {
+            if (array_key_exists($relation, $data)) {
                 unset($data[$relation]);
             }
         }
@@ -809,7 +879,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
      * What should I do before load? You must always return a Boolean value
      * @return bool [FALSE|TRUE]
      */
-    protected function beforeLoad() {
+    protected function beforeLoad(array &$input) {
         return true;
     }
 
