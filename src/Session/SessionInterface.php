@@ -20,9 +20,9 @@ interface SessionInterface {
     public function get(int | string $var, mixed $default = false): mixed;
     public function getByPrefix(?string $prefix = null): array;
     public function has(int | string $var): bool;
-    public function set(int | string $var, mixed $value = null, bool $updateImmediately = true): static;
-    public function remove(string $key, bool $updateImmediately = true): static;
-    public function removeByPrefix(string $prefix, bool $updateImmediately = true): static;
-    public function clear(bool $updateImmediately = true): static;
+    public function set(int | string $var, mixed $value = null, bool $updateImmediately = false): static;
+    public function remove(string $key, bool $updateImmediately = false): static;
+    public function removeByPrefix(string $prefix, bool $updateImmediately = false): static;
+    public function clear(bool $updateImmediately = false): static;
 }
 /** End of SessionInterface **/

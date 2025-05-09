@@ -21,22 +21,26 @@ use Scaleum\Storages\PDO\Database;
  */
 class DatabaseSession extends SessionAbstract {
 
-    protected ?Database $database = null;
-    protected string $table       = 'sessions';
+    protected ?Database $database  = null;
+    protected string $table        = 'sessions';
+    protected bool $autoDeployment = false;
 
     public function open($name): bool {
-        // Create table if not exists
-        $schema = $this->getDatabase()->getSchemaBuilder();
-        $schema
-            ->addColumn([
-                $schema->columnString(64)->setColumn('session_id')->setNotNull(TRUE),
-                $schema->columnText()->setColumn('data'),
-                $schema->columnInt(11)->setColumn('last_activity')->setDefaultValue(0),
-            ])
-            ->addIndex([
-                $schema->primaryKey('session_id'),
-            ])
-            ->createTable($this->table, true);
+        if ($this->autoDeployment) {
+            // Create table if not exists
+            $schema = $this->getDatabase()->getSchemaBuilder();
+            $schema
+                ->addColumn([
+                    $schema->columnString(64)->setColumn('session_id')->setNotNull(TRUE),
+                    $schema->columnText()->setColumn('data'),
+                    $schema->columnInt(11)->setColumn('last_activity')->setDefaultValue(0),
+                ])
+                ->addIndex([
+                    $schema->primaryKey('session_id'),
+                ])
+                ->createTable($this->table, true);
+        }
+
         return parent::open($name);
     }
 
@@ -95,6 +99,23 @@ class DatabaseSession extends SessionAbstract {
 
     public function setDatabase(Database $database) {
         $this->database = $database;
+        return $this;
+    }
+
+    /**
+     * Get the value of autoDeployment
+     */
+    public function getAutoDeployment(): bool {
+        return $this->autoDeployment;
+    }
+
+    /**
+     * Set the value of autoDeployment
+     *
+     * @return  self
+     */
+    public function setAutoDeployment(bool $value) {
+        $this->autoDeployment = $value;
         return $this;
     }
 }

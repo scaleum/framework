@@ -93,6 +93,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
 
         $this->open($this->name);
     }
+
     public function getLoggerChannel(): string {
         return 'kernel';
     }
@@ -292,7 +293,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
     }
     
 
-    public function set(int | string $var, mixed $value = null, bool $updateImmediately = true): static {
+    public function set(int | string $var, mixed $value = null, bool $updateImmediately = false): static {
         if (! is_array($var)) {
             $var = [$var => $value];
         }
@@ -325,7 +326,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this;
     }
 
-    public function removeByPrefix(string $prefix, bool $updateImmediately = true): static {
+    public function removeByPrefix(string $prefix, bool $updateImmediately = false): static {
         if ($prefix !== null && $prefix !== '') {
             foreach ($this->data as $key => $value) {
                 if (str_starts_with($key, $prefix)) {
@@ -340,7 +341,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this;
     }
 
-    public function clear(bool $updateImmediately = true): static{
+    public function clear(bool $updateImmediately = false): static{
         $this->data = [];
 
         if ($updateImmediately == true) {
