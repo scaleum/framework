@@ -57,14 +57,14 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
     public function onEvent(Event $event): void {
         switch ($event->getName()) {
         case KernelEvents::BOOTSTRAP:
-            $this->debug('Application booting up ...');
+            $this->info('Application booting up ...');
             break;
         case KernelEvents::START:
-            $this->debug('Application start');
+            $this->info('Application start');
             $this->time_start = microtime(true);
             break;
         case KernelEvents::HALT:
-            $this->debug('Application halted');
+            $this->info('Application halted');
             break;
         default:
             $this->debug(sprintf('Event `%s` has been dispatched', $event->getName()));
@@ -73,7 +73,7 @@ class Kernel extends KernelProviderAbstract implements EventHandlerInterface {
 
     public function onFinish(Event $event): void {
         $this->time_end = microtime(true);
-        $this->debug('Application finished, execution time: ' . number_format($this->time_end - $this->time_start, 4) . ' sec.');
+        $this->info('Application finished, execution time: ' . number_format($this->time_end - $this->time_start, 4) . ' sec.');
         $this->debug('Application amount of memory allocated for PHP: ' . BytesHelper::bytesTo(memory_get_usage(false)) . ' kb.');
         $this->debug('Application peak value of memory allocated by PHP: ' . BytesHelper::bytesTo(memory_get_peak_usage(false)) . ' kb.');
     }
