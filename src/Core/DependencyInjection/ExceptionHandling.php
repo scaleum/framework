@@ -52,8 +52,9 @@ class ExceptionHandling implements ConfiguratorInterface {
                 'error_renderer.http'             => ExceptionOutputHttp::class,
                 'error_renderer.config'           => [
                     'basePath'           => '@kernel.application_dir',
+                    'includeDetails'     => false,
                     'includeTraces'      => false,
-                    'allowFullnamespace' => true,
+                    'allowFullnamespace' => false,
                 ],
             ], true);
     }
