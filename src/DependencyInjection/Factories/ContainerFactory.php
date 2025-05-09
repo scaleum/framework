@@ -66,12 +66,14 @@ class ContainerFactory {
 
     public static function create(): Container {
         $container = new Container();
-        foreach (static::getDefinitions() as $id => $definition) {
-            $container->addDefinition($id, $definition['value'], $definition['singleton']);
-        }
-        
+        // Configurators are executed in the order they were added
         foreach (static::getConfigurators() as $configurator) {
             $configurator->configure($container);
+        }
+
+        // Configuration definitions take precedence over configurators
+        foreach (static::getDefinitions() as $id => $definition) {
+            $container->addDefinition($id, $definition['value'], $definition['singleton']);
         }        
         static::reset();
 
