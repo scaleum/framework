@@ -21,7 +21,7 @@ use SebastianBergmann\CodeUnit\FunctionUnit;
 class AttributeContainer implements AttributeContainerInterface {
     protected array $attributes = [];
     public function __construct(array $attributes = []) {
-        $this->attributes = $attributes;
+        $this->setAttributes($attributes);
     }
 
     public function __get(string $name) {
@@ -79,8 +79,8 @@ class AttributeContainer implements AttributeContainerInterface {
         return $this;
     }
 
-    public function setAttributes(array $value): static {
-        $this->attributes = $value;
+    public function setAttributes(array $attributes): static {
+        $this->attributes = $attributes;
         return $this;
     }
 }
