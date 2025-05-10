@@ -11,7 +11,6 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Helpers;
 
-use Avant\Http\Helpers\IpAddressHelper;
 use Scaleum\Stdlib\SAPI\Explorer;
 use Scaleum\Stdlib\SAPI\SapiIdentifier;
 
@@ -21,6 +20,37 @@ use Scaleum\Stdlib\SAPI\SapiIdentifier;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class HttpHelper {
+    public const FORMAT_JSON       = 'json';
+    public const FORMAT_JSONP      = 'jsonp';
+    public const FORMAT_SERIALIZED = 'serialized';
+    public const FORMAT_PHP        = 'php';
+    public const FORMAT_HTML       = 'html';
+    public const FORMAT_HTM        = 'htm';
+    public const FORMAT_XML        = 'xml';
+    public const FORMAT_CSV        = 'csv';
+
+    public const ALLOWED_FORMATS = [
+        self::FORMAT_HTML,
+        self::FORMAT_HTM,
+        self::FORMAT_JSON,
+        self::FORMAT_JSONP,
+        self::FORMAT_SERIALIZED,
+        self::FORMAT_PHP,
+        self::FORMAT_XML,
+        self::FORMAT_CSV,
+    ];
+
+    public const ALLOWED_MIME_TYPES = [
+        self::FORMAT_HTML       => 'text/html',
+        self::FORMAT_HTM        => 'text/html',
+        self::FORMAT_JSON       => 'application/json',
+        self::FORMAT_JSONP      => 'application/javascript',
+        self::FORMAT_SERIALIZED => 'application/vnd.php.serialized',
+        self::FORMAT_PHP        => 'text/plain',
+        self::FORMAT_XML        => 'application/xml',
+        self::FORMAT_CSV        => 'text/csv',
+    ];
+
     public const METHOD_GET           = 'GET';
     public const METHOD_POST          = 'POST';
     public const METHOD_PUT           = 'PUT';
@@ -108,6 +138,38 @@ class HttpHelper {
         511 => 'Network Authentication Required',
     ];
 
+    public static function getAllowedMimeTypes():array{
+        return array_values(self::ALLOWED_MIME_TYPES);
+    }
+
+    public static function getAllowedMimeType(string $format):string{
+        return self::ALLOWED_MIME_TYPES[$format] ?? self::ALLOWED_MIME_TYPES[self::FORMAT_HTML];
+    }
+    
+    public static function getAcceptFormat(): string
+    {
+        // ключ первого доступного формата — запасной вариант
+        $defaultFormat = self::FORMAT_HTML;
+    
+        foreach (['HTTP_ACCEPT', 'HTTP_CONTENT_TYPE', 'CONTENT_TYPE'] as $header) {
+            // если заголовок не передан — пропускаем
+            if (empty($_SERVER[$header])) {
+                continue;
+            }
+    
+            // забираем только первую часть до запятой и в нижнем регистре
+            $mime = strtolower(strtok($_SERVER[$header], ','));
+    
+            // ищем, есть ли такой MIME в наших форматах
+            $found = array_search($mime, self::ALLOWED_MIME_TYPES, true);
+            if ($found !== false) {
+                return $found;
+            }
+        }
+    
+        return $defaultFormat;
+    }
+    
     /**
      * Sets an HTTP header.
      *
@@ -180,46 +242,44 @@ class HttpHelper {
         return in_array($method, self::ALLOWED_HTTP_METHODS);
     }
 
-    public static function getUserIP():string
-    {
+    public static function getUserIP(): string {
         $result = '';
-        if (!empty( $_SERVER['HTTP_CLIENT_IP'] )) {
+        if (! empty($_SERVER['HTTP_CLIENT_IP'])) {
             // to get shared ISP IP address
             $result = $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (!empty( $_SERVER['HTTP_X_FORWARDED_FOR'] )) {
+        } elseif (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             // check for IPs passing through proxy servers
             // check if multiple IP addresses are set and take the first one
-            $ipAddressList = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] );
+            $ipAddressList = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
             foreach ($ipAddressList as $ip) {
-                if (!empty( $ip )) {
+                if (! empty($ip)) {
                     // if you prefer, you can check for valid IP address here
                     $result = $ip;
                     break;
                 }
             }
-        } elseif (!empty( $_SERVER['HTTP_X_FORWARDED'] )) {
+        } elseif (! empty($_SERVER['HTTP_X_FORWARDED'])) {
             $result = $_SERVER['HTTP_X_FORWARDED'];
-        } elseif (!empty( $_SERVER['HTTP_X_CLUSTER_CLIENT_IP'] )) {
+        } elseif (! empty($_SERVER['HTTP_X_CLUSTER_CLIENT_IP'])) {
             $result = $_SERVER['HTTP_X_CLUSTER_CLIENT_IP'];
-        } elseif (!empty( $_SERVER['HTTP_FORWARDED_FOR'] )) {
+        } elseif (! empty($_SERVER['HTTP_FORWARDED_FOR'])) {
             $result = $_SERVER['HTTP_FORWARDED_FOR'];
-        } elseif (!empty( $_SERVER['HTTP_FORWARDED'] )) {
+        } elseif (! empty($_SERVER['HTTP_FORWARDED'])) {
             $result = $_SERVER['HTTP_FORWARDED'];
-        } elseif (!empty( $_SERVER['REMOTE_ADDR'] )) {
+        } elseif (! empty($_SERVER['REMOTE_ADDR'])) {
             $result = $_SERVER['REMOTE_ADDR'];
         }
 
         return $result;
     }
 
-    public static function isIpAddress($ip)
-    {
-        if (filter_var( $ip, FILTER_VALIDATE_IP,
+    public static function isIpAddress($ip) {
+        if (filter_var($ip, FILTER_VALIDATE_IP,
             FILTER_FLAG_IPV4 |
             FILTER_FLAG_IPV6 |
             FILTER_FLAG_NO_PRIV_RANGE |
             FILTER_FLAG_NO_RES_RANGE
-          ) === false) {
+        ) === false) {
             return false;
         }
 
