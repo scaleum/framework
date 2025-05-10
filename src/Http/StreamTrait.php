@@ -12,55 +12,74 @@ declare (strict_types = 1);
 namespace Scaleum\Http;
 
 use Psr\Http\Message\StreamInterface;
+use Scaleum\Stdlib\Helpers\ArrayHelper;
+use Scaleum\Stdlib\Helpers\HttpHelper;
+use Scaleum\Stdlib\Helpers\XmlHelper;
+
 /**
  * StreamTrait
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 trait StreamTrait {
-    protected function prepareHeadersAndStream(array $_headers, mixed $_body): array {
+    protected function prepareHeadersAndStream(array $headers, mixed $body): array {
         // If the body is already a StreamInterface instance, return it as is
-        if ($_body instanceof StreamInterface) {
-            return [$_headers, $_body];
+        if ($body instanceof StreamInterface) {
+            return [$headers, $body];
         }
 
-        $stream  = new Stream(fopen('php://temp', 'w+'));
-        $headers = new HeadersManager($_headers);
+        $stream         = new Stream(fopen('php://temp', 'w+'));
+        $headersManager = new HeadersManager($headers);
 
         // If an object or array is passed → convert to JSON
-        if (is_array($_body) || is_object($_body)) {
-            $_body = json_encode($_body, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            $headers->setHeader('Content-Type', 'application/json');
-            $headers->setHeader('Content-Length', (string) strlen($_body));
+        if (is_array($body) || is_object($body)) {
+            $format = HttpHelper::getAcceptFormat();
+            switch ($format) {
+            case HttpHelper::FORMAT_XML:
+                $body = ArrayHelper::castToXml($body);
+                $headersManager->setHeader('Content-Type', 'application/xml; charset=utf-8');
+                $headersManager->setHeader('Content-Length', (string) strlen($body));
+                break;
+            case HttpHelper::FORMAT_SERIALIZED:
+                $body = ArrayHelper::castToSerialize($body);
+                $headersManager->setHeader('Content-Type', 'application/vnd.php.serialized; charset=utf-8');
+                break;
+            case HttpHelper::FORMAT_JSON:
+            case HttpHelper::FORMAT_JSONP:
+            default:
+                $body = json_encode($body, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                $headersManager->setHeader('Content-Type', 'application/json; charset=utf-8');
+                $headersManager->setHeader('Content-Length', (string) strlen($body));
+            }
         }
         // If a file is passed → determine the MIME type
-        elseif ($_body && is_file($_body)) {
-            if ($mimeType = $this->getMimeType($_body)) {
-                $headers->setHeader('Content-Type', $mimeType);
-                $headers->setHeader('Content-Disposition', 'attachment; filename="' . basename($_body) . '"');
-                $headers->setHeader('Content-Length', (string) filesize($_body));
-                $headers->setHeader('Content-Transfer-Encoding', 'binary');
-                $headers->setHeader('Last-Modified', gmdate('D, d M Y H:i:s', filemtime($_body)) . ' GMT');
+        elseif ($body && is_file($body)) {
+            if ($mimeType = $this->getMimeType($body)) {
+                $headersManager->setHeader('Content-Type', $mimeType);
+                $headersManager->setHeader('Content-Disposition', 'attachment; filename="' . basename($body) . '"');
+                $headersManager->setHeader('Content-Length', (string) filesize($body));
+                $headersManager->setHeader('Content-Transfer-Encoding', 'binary');
+                $headersManager->setHeader('Last-Modified', gmdate('D, d M Y H:i:s', filemtime($body)) . ' GMT');
             }
-            return [new Stream(fopen($_body, 'r+')), $headers->getAll()];
+            return [new Stream(fopen($body, 'r+')), $headersManager->getAll()];
         }
         // If a string is passed → determine the Content-Type
-        elseif (is_string($_body)) {
-            $headers->setHeader('Content-Type', $this->detectMimeTypeFromContent($_body));
-            $headers->setHeader('Content-Length', (string) mb_strlen($_body));
+        elseif (is_string($body)) {
+            $headersManager->setHeader('Content-Type', $this->detectMimeTypeFromContent($body));
+            $headersManager->setHeader('Content-Length', (string) mb_strlen($body));
         }
         // If an unknown type is passed → convert to string
-        elseif (! is_string($_body)) {
-            $_body = (string) $_body;
-            $headers->setHeader('Content-Type', $this->detectMimeTypeFromContent($_body));
-            $headers->setHeader('Content-Length', (string) mb_strlen($_body));
+        elseif (! is_string($body)) {
+            $body = (string) $body;
+            $headersManager->setHeader('Content-Type', $this->detectMimeTypeFromContent($body));
+            $headersManager->setHeader('Content-Length', (string) mb_strlen($body));
         }
 
-        $stream->write($_body);
+        $stream->write($body);
         $stream->rewind();
 
         // Return an array of headers and a stream
-        return [$headers->getAll(), $stream];
+        return [$headersManager->getAll(), $stream];
     }
 
     private function detectMimeTypeFromContent(string $content): string {
