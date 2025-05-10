@@ -20,7 +20,7 @@ use Psr\Http\Message\UriInterface;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class OutboundRequest extends Message implements RequestInterface {
-    use StreamTrait;
+    use MessagePayloadTrait;
 
     protected string $method;
     protected UriInterface $uri;
@@ -28,10 +28,12 @@ class OutboundRequest extends Message implements RequestInterface {
     protected bool $async            = false;
 
     public function __construct(string $method, UriInterface $uri, array $headers = [], mixed $body = null, string $protocol = '1.1', bool $async = false) {
-        [$this->headers, $this->body] = $this->prepareHeadersAndStream($headers, $body);
-        $this->async                  = $async;
-        $this->method                 = strtoupper($method);
-        $this->uri                    = $uri;
+        $payload       = $this->getMessagePayload($headers, $body);
+        $this->headers = $payload->getHeaders();
+        $this->body    = $payload->getBodyStream();
+        $this->async   = $async;
+        $this->method  = strtoupper($method);
+        $this->uri     = $uri;
 
         parent::__construct($this->headers, $this->body, $protocol);
     }

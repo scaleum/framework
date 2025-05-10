@@ -20,11 +20,13 @@ use Scaleum\Stdlib\Helpers\HttpHelper;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class OutboundResponse extends Message implements ResponseInterface, ResponderInterface {
-    use StreamTrait;
+    use MessagePayloadTrait;
     protected int $statusCode;
     public function __construct(int $statusCode = 200, array $headers = [], mixed $body = null, string $protocol = '1.1') {
-        [$this->headers, $this->body] = $this->prepareHeadersAndStream($headers, $body);
-        $this->statusCode             = $statusCode;
+        $payload          = $this->getMessagePayload($headers, $body);
+        $this->headers    = $payload->getHeaders();
+        $this->body       = $payload->getBodyStream();
+        $this->statusCode = $statusCode;
 
         parent::__construct($this->headers, $this->body, $protocol);
     }

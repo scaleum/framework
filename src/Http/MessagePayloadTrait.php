@@ -17,21 +17,21 @@ use Scaleum\Stdlib\Helpers\HttpHelper;
 use Scaleum\Stdlib\Helpers\XmlHelper;
 
 /**
- * StreamTrait
+ * MessagePayloadTrait
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-trait StreamTrait {
-    protected function prepareHeadersAndStream(array $headers, mixed $body): array {
+trait MessagePayloadTrait {
+    protected function getMessagePayload(array $headers, mixed $body): MessagePayload {
         // If the body is already a StreamInterface instance, return it as is
         if ($body instanceof StreamInterface) {
-            return [$headers, $body];
+            return new MessagePayload($headers, $body);
         }
 
         $stream         = new Stream(fopen('php://temp', 'w+'));
         $headersManager = new HeadersManager($headers);
 
-        // If an object or array is passed → convert to JSON
+        // If an object or array is passed → convert to JSON or XML
         if (is_array($body) || is_object($body)) {
             $format = HttpHelper::getAcceptFormat();
             switch ($format) {
@@ -61,7 +61,7 @@ trait StreamTrait {
                 $headersManager->setHeader('Content-Transfer-Encoding', 'binary');
                 $headersManager->setHeader('Last-Modified', gmdate('D, d M Y H:i:s', filemtime($body)) . ' GMT');
             }
-            return [new Stream(fopen($body, 'r+')), $headersManager->getAll()];
+            return new MessagePayload($headersManager->getAll(), new Stream(fopen($body, 'r+')));
         }
         // If a string is passed → determine the Content-Type
         elseif (is_string($body)) {
@@ -78,8 +78,7 @@ trait StreamTrait {
         $stream->write($body);
         $stream->rewind();
 
-        // Return an array of headers and a stream
-        return [$headersManager->getAll(), $stream];
+        return new MessagePayload($headersManager->getAll(), $stream);
     }
 
     private function detectMimeTypeFromContent(string $content): string {
@@ -133,4 +132,4 @@ trait StreamTrait {
         return $mimeTypes[$extension] ?? null;
     }
 }
-/** End of StreamTrait **/
+/** End of MessagePayloadTrait **/
