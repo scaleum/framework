@@ -241,7 +241,7 @@ class ArrayHelper {
      *  - всё остальное остаётся без изменений
      *
      * @param  array<string, mixed> $items
-     * @return array<string, int|float|bool|string>
+     * @return array<string, array|int|float|bool|string>
      */
     public static function naturalize(array $items): array {
         $result = [];
@@ -267,13 +267,61 @@ class ArrayHelper {
                     $result[$key] = (float) $value;
                     continue;
                 }
+            } elseif (is_array($value)) {
+                $result[$key] = self::naturalize($value);
+                continue;
             }
-
             // Остальные типы оставляем как есть
             $result[$key] = $value;
         }
 
         return $result;
+    }
+
+    public static function castToArray(object | array $data): array {
+        $result = [];
+        foreach ((array) $data as $key => $value) {
+            // Remove the service prefixes from the properties
+            $cleanKey = preg_replace('/^\x00.*\x00/', '', (string)$key);
+            if (is_object($value) || is_array($value)) {
+                $result[$cleanKey] = self::castToArray($value);
+            } else {
+                $result[$cleanKey] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    public static function castToXml(object | array $data, string $root = 'root'): string {
+        $data   = self::castToArray($data);
+        $encode = function (array $array, \SimpleXMLElement $xml) use (&$encode): void {
+            foreach ($array as $key => $value) {
+                $tag = is_numeric($key) ? 'item' : $key;
+                if (is_array($value)) {
+                    $child = $xml->addChild($tag);
+                    $encode($value, $child);
+                } else {
+                    $xml->addChild($tag, htmlspecialchars((string) $value));
+                }
+            }
+        };
+
+        $xml = new \SimpleXMLElement("<{$root}/>");
+        $xml->addAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+        $xml->addAttribute('xsi:noNamespaceSchemaLocation', 'http://www.w3.org/2001/XMLSchema-instance');
+        $xml->addAttribute('xmlns:xsd', 'http://www.w3.org/2001/XMLSchema');
+        $xml->addAttribute('version', '1.0');
+        $xml->addAttribute('encoding', 'UTF-8');
+
+        $encode($data, $xml);
+
+        return $xml->asXML();
+    }
+
+    public static function castToSerialize(object | array $data): string {
+        $data = self::castToArray($data);
+        return serialize($data);
     }
 }
 
