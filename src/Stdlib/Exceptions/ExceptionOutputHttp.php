@@ -12,6 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Stdlib\Exceptions;
 
 use ErrorException;
+use Scaleum\Stdlib\Helpers\ArrayHelper;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 use Scaleum\Stdlib\Helpers\PathHelper;
 use Scaleum\Stdlib\Helpers\StringHelper;
@@ -22,28 +23,10 @@ use Scaleum\Stdlib\Helpers\StringHelper;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class ExceptionOutputHttp extends ExceptionOutputAbstarct {
-    public const FORMAT_JSON       = 'json';
-    public const FORMAT_JSONP      = 'jsonp';
-    public const FORMAT_SERIALIZED = 'serialized';
-    public const FORMAT_PHP        = 'php';
-    public const FORMAT_HTML       = 'html';
-    public const FORMAT_HTM        = 'htm';
-    public const FORMAT_XML        = 'xml';
-
-    protected array $formats = [
-        self::FORMAT_HTML       => 'text/html',
-        self::FORMAT_HTM        => 'text/html',
-        self::FORMAT_JSON       => 'application/json',
-        self::FORMAT_JSONP      => 'application/javascript',
-        self::FORMAT_SERIALIZED => 'application/vnd.php.serialized',
-        self::FORMAT_PHP        => 'text/plain',
-        self::FORMAT_XML        => 'application/xml',
-    ];
-
     protected int $statusCode = 500;
 
     public function render(\Throwable $exception): void {
-        HttpHelper::setHeader('Content-Type', sprintf('%s; charset=utf-8', $this->formats[$format = $this->getResponseFormat()]));
+        HttpHelper::setHeader('Content-Type', sprintf('%s; charset=utf-8', HttpHelper::getAllowedMimeType($format = HttpHelper::getAcceptFormat())));
         HttpHelper::setStatusHeader(
             $this->statusCode = HttpHelper::isStatusCode(
                 $code = $exception instanceof ErrorException ? ($exception instanceof EBasicException ? $exception->getCode() : $exception->getSeverity()) : $exception->getCode()
@@ -52,53 +35,26 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
         echo $this->formatException($exception, $format);
     }
 
-    protected function getResponseFormat(): string {
-        /** Detect response type */
-        $types = [];
-        foreach (['HTTP_ACCEPT', 'CONTENT_TYPE'] as $header) {
-            if (isset($_SERVER[$header])) {
-                $type = strtolower($_SERVER[$header]);
-                if (strpos($type, ',')) {
-                    $type = current(explode(',', $type));
-                }
-                $types[] = trim($type);
-            }
-        }
-
-        // Default 'html' where $mimeType == '*/*'
-        $result = key($this->formats);
-        foreach ($this->formats as $key => $mimeType) {
-            foreach ($types as $type) {
-                if ($type == $mimeType) {
-                    $result = $key;
-                    break 2;
-                }
-            }
-        }
-
-        return $result;
-    }
-
     protected function formatException(\Throwable $exception, ?string $format = null): string {
         if ($format == null) {
-            $format = $this->getResponseFormat();
+            $format = HttpHelper::getAcceptFormat();
         }
 
         $result = $exception->getMessage();
         switch ($format) {
-        case self::FORMAT_JSON:
-        case self::FORMAT_JSONP:
+        case HttpHelper::FORMAT_JSON:
+        case HttpHelper::FORMAT_JSONP:
             $result = $this->formatAsJson($exception);
             break;
-        case self::FORMAT_SERIALIZED:
+        case HttpHelper::FORMAT_SERIALIZED:
             $result = $this->formatAsSerializable($exception);
             break;
-        case self::FORMAT_XML:
+        case HttpHelper::FORMAT_XML:
             $result = $this->formatAsXml($exception);
             break;
-        case self::FORMAT_PHP:
-        case self::FORMAT_HTML:
-        case self::FORMAT_HTM:
+        case HttpHelper::FORMAT_PHP:
+        case HttpHelper::FORMAT_HTML:
+        case HttpHelper::FORMAT_HTM:
         default:
             $result = $this->formatAsHtml($exception);
         }
@@ -106,7 +62,7 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
     }
 
     protected function formatAsSerializable(\Throwable $exception): string {
-        return serialize($this->errorToArray($exception));
+        return ArrayHelper::castToSerialize($this->errorToArray($exception));
     }
 
     protected function formatAsJson(\Throwable $exception): string {
@@ -114,20 +70,35 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
     }
 
     protected function formatAsXml(\Throwable $exception): string {
-        $xml = new \SimpleXMLElement('<exception/>');
-        $this->xml_encode($this->errorToArray($exception), $xml);
-        return $xml->asXML();
+        return ArrayHelper::castToXml($this->errorToArray($exception), 'exception');
     }
 
     protected function formatAsHtml(\Throwable $exception): string {
         $statusCode    = $this->statusCode;
         $statusMessage = HttpHelper::getStatusMessage($statusCode);
 
+        $encode = function (array $array, ?int $level = 0) use (&$encode): string {
+            $result = '<ul style="list-style-type:none; background-color: #f9f9f9; padding: 8px; font-family: sans-serif, monospace; font-size: 11px;">';
+            foreach ($array as $key => $value) {
+                $result .= '<li>';
+                $result .= '<strong>' . htmlspecialchars((string) $key) . ':</strong>&nbsp;';
+                if (is_array($value)) {
+                    $result .= $encode($value, ++$level);
+                } else {
+                    $result .= htmlspecialchars((string) $value);
+                }
+                $result .= '</li>';
+            }
+            $result .= '</ul>';
+
+            return $result;
+        };
+
         $result = "<!DOCTYPE html><html><head><title>HTTP Error {$statusCode} - {$statusMessage}</title></head><body>";
         $result .= "<h2>HTTP Error {$statusCode} - {$statusMessage}</h2>";
         $result .= '<h3 style="color:red">' . $exception->getMessage() . '</h3>';
         if ($this->includeDetails) {
-            $result .= '<div>' . $this->html_encode($this->errorToArray($exception)) . '</div>';
+            $result .= '<div>' . $encode($this->errorToArray($exception)) . '</div>';
         }
         $result .= '</body></html>';
         return $result;
@@ -156,16 +127,9 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
 
     protected function errorTraceToArray(array $trace): array {
         return array_map(function ($item) {
-            // return [
-            //     'class'    => $item['class'] ? StringHelper::className($item['class'], ! $this->allow_fullnamespace) : null,
-            //     'function' => $item['function'] ?? null,
-            //     'file'     => $item['file'] ? PathHelper::overlapPath($item['file'], $this->base_path) . ($item['line'] ? ":{$item['line']}" : '') : null,
-            //     'type'     => $traceItem['type'] ?? null,
-            // ];
-
             $result = '';
             $result .= $item['class'] ? StringHelper::className($item['class'], ! $this->allowFullnamespace) : '';
-            $result .= $item['type'] ?: "::";
+            $result .= $item['type'] ?: "";
             $result .= $item['function'] ? "{$item['function']}()" : '';
             $result .= $item['file'] ? " in " . PathHelper::overlapPath($item['file'], $this->basePath) . ($item['line'] ? ":{$item['line']}" : '') : '';
 
@@ -173,33 +137,5 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
         }, $trace);
     }
 
-    private function html_encode(array $array, ?int $level = 0): string {
-        $html = '<ul style="list-style-type:none; background-color: #f9f9f9; padding: 8px; font-family: sans-serif, monospace; font-size: 11px;">';
-        foreach ($array as $key => $value) {
-            $html .= '<li>';
-            $html .= '<strong>' . htmlspecialchars((string) $key) . ':</strong>&nbsp;';
-            if (is_array($value)) {
-                $html .= $this->html_encode($value, ++$level);
-            } else {
-                $html .= htmlspecialchars((string) $value);
-            }
-            $html .= '</li>';
-        }
-        $html .= '</ul>';
-
-        return $html;
-    }
-
-    private function xml_encode(array $array, \SimpleXMLElement $xmlElement): void {
-        foreach ($array as $key => $value) {
-            $key = is_numeric($key) ? 'item' : $key;
-            if (is_array($value)) {
-                $child = $xmlElement->addChild($key);
-                $this->xml_encode($value, $child);
-            } else {
-                $xmlElement->addChild($key, htmlspecialchars((string) $value));
-            }
-        }
-    }
 }
 /** End of RenderHttp **/
