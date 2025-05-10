@@ -43,27 +43,20 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
         }
     }
 
-    public function handlerError(
-        int $errno,
-        string $errstr,
-        ?string $errfile = null,
-        ?int $errline = null,
-    ): void {
+    public function handlerError(int $errno, string $errstr, ?string $errfile = null, ?int $errline = null): void {
         if (error_reporting() & $errno) {
             throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
         }
     }
 
-    public function handlerException(
-        \Throwable $exception
-    ): void {
+    public function handlerException(\Throwable $exception): void {
         try {
             $this->error($exception->getMessage(), ['exception' => $exception]);
             $this->getHandler()->handle($exception);
         } catch (\Throwable $e) {
             error_log($e->getMessage());
         }
-    
+
         $this->getKernel()->halt(1);
     }
 
@@ -92,7 +85,7 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
                 exit(1);
             } catch (\Throwable $e) {
                 error_log($e->getMessage());
-            }            
+            }
         }
     }
 
