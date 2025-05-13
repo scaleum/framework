@@ -14,7 +14,6 @@ namespace Scaleum\Http;
 use Psr\Http\Message\StreamInterface;
 use Scaleum\Stdlib\Helpers\ArrayHelper;
 use Scaleum\Stdlib\Helpers\HttpHelper;
-use Scaleum\Stdlib\Helpers\XmlHelper;
 
 /**
  * MessagePayloadTrait
