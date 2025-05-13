@@ -161,7 +161,7 @@ class InboundRequest extends Message implements ServerRequestInterface {
         if (is_array($str)) {
             $array = [];
             foreach ($str as $key => $val) {
-                $array[static::cleanKey($key)] = static::cleanData($val);
+                $array[static::cleanKey((string) $key)] = static::cleanData($val);
             }
 
             return $array;
