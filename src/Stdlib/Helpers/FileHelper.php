@@ -239,7 +239,7 @@ class FileHelper {
         if ($fp = @opendir($sourceDir)) {
             // reset the array and make sure $sourceDir has a trailing slash on the initial call
             if ($recursion === false) {
-                $result     = [];
+                $result    = [];
                 $sourceDir = rtrim(realpath($sourceDir), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
             }
 
@@ -314,13 +314,17 @@ class FileHelper {
     public static function prepFilename(string $filename, bool $normalize = true): string {
         $parts   = explode(DIRECTORY_SEPARATOR, trim($filename, DIRECTORY_SEPARATOR));
         $file    = array_pop($parts);
-        $file    = pathinfo($file, PATHINFO_EXTENSION) ? $file : $file . '.'. self::getFileExtension(__FILE__);
+        $file    = pathinfo($file, PATHINFO_EXTENSION) ? $file : $file . '.' . self::getFileExtension(__FILE__);
         $parts[] = $file;
 
         $file = PathHelper::join(...$parts);
+
         if (function_exists('realpath') && $normalize) {
-            $file = (string)realpath($file);
+            if ($realpath = realpath($file)) {
+                $file = $realpath;
+            }
         }
+
         return $file;
     }
 
@@ -345,7 +349,9 @@ class FileHelper {
      */
     public static function prepPath(string $path, bool $normalize = true): string {
         if (function_exists('realpath') && $normalize) {
-            $path = (string)realpath($path);
+            if ($realpath = realpath($path)) {
+                $path = $realpath;
+            }
         }
         return trim(self::prepLocation($path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     }
