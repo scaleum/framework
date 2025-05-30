@@ -22,23 +22,12 @@
     "psr/http-server-middleware": "^1.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^10.5",
-    "guzzlehttp/guzzle": "*"
+    "phpunit/phpunit": "^10.5"
   },
   "autoload": {
     "files": [],
     "psr-4": {
       "Scaleum\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "Scaleum\\Tests\\": "tests/"
-    }
-  },
-  "extra": {
-    "branch-alias": {
-      "dev-main": "1.0.0"
     }
   },
   "minimum-stability": "dev",
