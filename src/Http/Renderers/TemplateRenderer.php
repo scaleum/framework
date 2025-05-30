@@ -353,7 +353,7 @@ class TemplateRenderer extends Hydrator {
             extract($data);
             $buffer = '';
 
-            if ($template->getFilename()) {
+            if ($template->getFilename() !== null) {
                 ob_start();
                 $filename      = $this->resolveTemplate($template->getFilename());
                 $includeReturn = include $filename;

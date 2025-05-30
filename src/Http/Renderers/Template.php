@@ -17,15 +17,31 @@ namespace Scaleum\Http\Renderers;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Template {
-    protected string $content = '';
-    protected string $filename;
-    protected array $data   = [];
-    protected bool $partial = false;
+    protected string $content   = '';
+    protected ?string $filename = null;
+    protected array $data       = [];
+    protected bool $partial     = false;
 
-    public function __construct(string $filename, array $data = [], bool $partial = false) {
-        $this->filename = $filename;
-        $this->data     = $data;
-        $this->partial  = $partial;
+    public function __construct(string $view, array $data = [], bool $partial = false) {
+        if (self::isTemplateText($view) || self::isTemplateFile($view) === false) {
+            $this->content = $view;
+        } else {
+            $this->filename = $view;
+        }
+        $this->data    = $data;
+        $this->partial = $partial;
+    }
+
+    public static function isTemplateFile(string $view): bool {
+        if (! is_string($view) || ! mb_check_encoding($view, 'UTF-8')) {
+            return false;
+        }
+
+        return preg_match('/^[\w\-\/:.]+$/u', $view) === 1;
+    }
+
+    public static function isTemplateText(string $view): bool {
+        return preg_match('/[\s{}<>]/u', $view) === 1;
     }
 
     public function __toString() {
@@ -35,7 +51,7 @@ class Template {
     /**
      * Get the value of content
      */
-    public function getContent() {
+    public function getContent(): string {
         return $this->content;
     }
 
@@ -53,7 +69,7 @@ class Template {
     /**
      * Get the value of filename
      */
-    public function getFilename(): string {
+    public function getFilename(): ?string {
         return $this->filename;
     }
 
