@@ -47,11 +47,10 @@ class LoaderResolver {
         return $result;
     }
 
-    public function fromFile(string $filename): array {
+    public function fromFile(string $file): array {
         $result   = [];
-        $filename = FileHelper::prepFilename($filename);
-
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $filename = FileHelper::prepFilename($file);
+        $ext      = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         if (isset(static::$extensions[$ext])) {
             $loader = static::$extensions[$ext];
             if (! $loader instanceof LoaderInterface) {
@@ -72,7 +71,7 @@ class LoaderResolver {
             }
         } else {
             throw new ERuntimeError(sprintf(
-                'Unsupported config file extension: .%s',
+                'Unsupported config file extension: `.%s`',
                 $ext
             ));
         }
