@@ -908,6 +908,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         if (count($where) > 0) {
             $sql .= "\nWHERE ";
             $sql .= implode("\n", $where) . ' AND ';
+        } else {
+            $sql .= "\nWHERE ";
         }
 
         $sql .= $whereKey . " IN (" . implode(',', $cases_idx) . ")";
