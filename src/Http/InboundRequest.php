@@ -135,21 +135,21 @@ class InboundRequest extends Message implements ServerRequestInterface {
             unset($_COOKIE['$Domain']);
 
             foreach ($_COOKIE as $key => $val) {
-                $_COOKIE[static::cleanKey($key)] = static::cleanData($val);
+                $_COOKIE[static::cleanKey((string) $key)] = static::cleanData($val);
             }
         }
 
         // Clean $_GET Data
         if (is_array($_GET) and count($_GET) > 0) {
             foreach ($_GET as $key => $val) {
-                $_GET[static::cleanKey($key)] = static::cleanData($val);
+                $_GET[static::cleanKey((string) $key)] = static::cleanData($val);
             }
         }
 
         // Clean $_POST Data
         if (is_array($_POST) and count($_POST) > 0) {
             foreach ($_POST as $key => $val) {
-                $_POST[static::cleanKey($key)] = static::cleanData($val);
+                $_POST[static::cleanKey((string) $key)] = static::cleanData($val);
             }
         }
 
