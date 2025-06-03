@@ -138,38 +138,37 @@ class HttpHelper {
         511 => 'Network Authentication Required',
     ];
 
-    public static function getAllowedMimeTypes():array{
+    public static function getAllowedMimeTypes(): array {
         return array_values(self::ALLOWED_MIME_TYPES);
     }
 
-    public static function getAllowedMimeType(string $format):string{
+    public static function getAllowedMimeType(string $format): string {
         return self::ALLOWED_MIME_TYPES[$format] ?? self::ALLOWED_MIME_TYPES[self::FORMAT_HTML];
     }
-    
-    public static function getAcceptFormat(): string
-    {
+
+    public static function getAcceptFormat(): string {
         // ключ первого доступного формата — запасной вариант
         $defaultFormat = self::FORMAT_HTML;
-    
+
         foreach (['HTTP_ACCEPT', 'HTTP_CONTENT_TYPE', 'CONTENT_TYPE'] as $header) {
             // если заголовок не передан — пропускаем
             if (empty($_SERVER[$header])) {
                 continue;
             }
-    
+
             // забираем только первую часть до запятой и в нижнем регистре
             $mime = strtolower(strtok($_SERVER[$header], ','));
-    
+
             // ищем, есть ли такой MIME в наших форматах
             $found = array_search($mime, self::ALLOWED_MIME_TYPES, true);
             if ($found !== false) {
                 return $found;
             }
         }
-    
+
         return $defaultFormat;
     }
-    
+
     /**
      * Sets an HTTP header.
      *
@@ -273,6 +272,11 @@ class HttpHelper {
         return $result;
     }
 
+    public static function isAjaxRequest(): bool {
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+        strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    }
+    
     public static function isIpAddress($ip) {
         if (filter_var($ip, FILTER_VALIDATE_IP,
             FILTER_FLAG_IPV4 |
