@@ -70,7 +70,7 @@ class RequestHandler implements HandlerInterface {
         } catch (ENotFoundError $exception) {
             throw new EHttpException(404, $exception->getMessage(), $exception);
         } catch (\Throwable $exception) {
-            throw new EHttpException(message: $exception->getMessage(), previous: $exception);
+            throw new EHttpException(code:$exception->getCode(), message: $exception->getMessage(), previous: $exception);
         }
     }
 }
