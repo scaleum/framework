@@ -89,7 +89,7 @@ class TemplateRenderer extends Hydrator {
             $filename = FileHelper::prepFilename($filename, false);
             foreach ($this->locations as $location) {
                 if (is_file($path = PathHelper::join($location, $filename))) {
-                    $this->addView($name, $path);
+                    $this->setView($name, $path);
                     return $path;
                 }
             }
@@ -147,7 +147,7 @@ class TemplateRenderer extends Hydrator {
      */
     public function setViews(array $views) {
         foreach ($views as $alias => $filename) {
-            $this->addView($alias, $filename);
+            $this->setView($alias, $filename);
         }
 
         return $this;
@@ -157,7 +157,7 @@ class TemplateRenderer extends Hydrator {
         return isset($this->views[$name]);
     }
 
-    public function addView(string $name, string $filename) {
+    public function setView(string $name, string $filename) {
         $this->views[$name] = $filename;
         return $this;
     }
