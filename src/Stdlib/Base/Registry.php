@@ -115,5 +115,25 @@ class Registry {
 
         return $this;
     }
+
+    /**
+     * Get the value of items
+     */ 
+    public function getItems():array
+    {
+        return $this->items;
+    }
+
+    /**
+     * Set the value of items
+     *
+     * @return  self
+     */ 
+    public function setItems(array $items):static
+    {
+        $this->items = $items;
+
+        return $this;
+    }
 }
 /** End of Registry **/
