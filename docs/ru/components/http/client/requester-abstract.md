@@ -13,12 +13,12 @@
 
 ## Свойства
 
-| Свойство                       | Тип                | Описание                         |                                                                      |
-| ------------------------------ | ------------------ | -------------------------------- | -------------------------------------------------------------------- |
-| `protected string $protocol`   | `string`           | Протокол (по умолчанию `http`).  |                                                                      |
-| `protected string $host`       | `string`           | Хост (по умолчанию `localhost`). |                                                                      |
-| `protected int $port`          | `int`              | Порт (по умолчанию `80`).        |                                                                      |
-| \`protected TransportInterface | null \$transport\` | `TransportInterface` или `null`  | Транспортный клиент; если `null`, используется `getDefaultClient()`. |
+| Свойство                       | Тип                | Описание                        |
+| ------------------------------ | ------------------ | ------------------------------- |
+| `protected string $protocol`   | `string`           | Протокол (по умолчанию `http`)  |
+| `protected string $host`       | `string`           | Хост (по умолчанию `localhost`) |
+| `protected int $port`          | `int`              | Порт (по умолчанию `80`)        |
+| `protected TransportInterface $transport` | `TransportInterface` или `null`  | Транспортный клиент; если `null`, используется `getDefaultClient()` |
 
 ## Методы
 
