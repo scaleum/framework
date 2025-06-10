@@ -79,8 +79,10 @@ class AttributeContainer implements AttributeContainerInterface {
         return $this;
     }
 
-    public function setAttributes(array $attributes): static {
-        $this->attributes = $attributes;
+    public function setAttributes(array $attributes,bool $overwrite = true): static {
+        foreach($attributes as $key => $value){
+            $this->setAttribute($key,$value,$overwrite);
+        }
         return $this;
     }
 }
