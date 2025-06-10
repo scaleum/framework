@@ -28,7 +28,7 @@ class DatabaseHelper {
             is_int($value) => (string) $value,
             is_float($value) => (string) $value,
             is_bool($value) => self::handleBoolean($value, $pdo),
-            is_string($value) => is_numeric($value) ? $value : self::handleString($value, $pdo),
+            is_string($value) => self::handleString($value, $pdo),
             is_object($value) => self::handleObject($value, $pdo),
             is_resource($value) => throw new EDatabaseError(sprintf('Resource of type `%s` could not be converted to string', get_resource_type($value))),
             is_array($value) => throw new EDatabaseError(sprintf('Array of type `%s` could not be converted to string', gettype($value))),
