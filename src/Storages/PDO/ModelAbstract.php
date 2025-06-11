@@ -14,6 +14,7 @@ namespace Scaleum\Storages\PDO;
 use Closure;
 use Scaleum\Stdlib\Exceptions\EDatabaseError;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
+use Scaleum\Stdlib\Helpers\ArrayHelper;
 
 /**
  * ModelAbstract
@@ -176,6 +177,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
      * @return self Returns the instance of the model.
      */
     public function load(array $input): self {
+        $input     = ArrayHelper::naturalize($input);
         $relations = $this->getRelations();
         if ($this->beforeLoad($input)) {
             foreach ($input as $key => $value) {
