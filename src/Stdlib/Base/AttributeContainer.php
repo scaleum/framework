@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Base;
 
-use SebastianBergmann\CodeUnit\FunctionUnit;
+use Scaleum\Stdlib\Helpers\ArrayHelper;
 
 /**
  * AttributeContainer
@@ -67,7 +67,7 @@ class AttributeContainer implements AttributeContainerInterface {
         if (array_key_exists($key, $this->attributes)) {
             if (is_array($this->attributes[$key])) {
                 $this->attributes[$key] = is_array($value)
-                ? array_merge($this->attributes[$key], $value)
+                ? ArrayHelper::merge($this->attributes[$key], $value)
                 : [ ...$this->attributes[$key], $value];
             } else {
                 $this->attributes[$key] = $value;
