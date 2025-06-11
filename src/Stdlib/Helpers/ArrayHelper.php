@@ -256,14 +256,14 @@ class ArrayHelper {
                     continue;
                 }
 
-                // Целые числа (включая отрицательные)
-                if (preg_match('/^-?\d+$/', $value)) {
+                // Целые числа без ведущих нулей (разрешаем "-0", но не "0001")
+                if (preg_match('/^-?[1-9]\d*$/', $value) || $value === '0' || $value === '-0') {
                     $result[$key] = (int) $value;
                     continue;
                 }
 
-                // Дробные и экспонентные числа
-                if (is_numeric($value)) {
+                // Дробные и экспонентные числа, исключая строки с ведущими нулями
+                if (is_numeric($value) && ! preg_match('/^0\d+$/', $value)) {
                     $result[$key] = (float) $value;
                     continue;
                 }
@@ -282,7 +282,7 @@ class ArrayHelper {
         $result = [];
         foreach ((array) $data as $key => $value) {
             // Remove the service prefixes from the properties
-            $cleanKey = preg_replace('/^\x00.*\x00/', '', (string)$key);
+            $cleanKey = preg_replace('/^\x00.*\x00/', '', (string) $key);
             if (is_object($value) || is_array($value)) {
                 $result[$cleanKey] = self::castToArray($value);
             } else {
