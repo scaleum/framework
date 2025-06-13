@@ -23,11 +23,11 @@ use Scaleum\Stdlib\Helpers\JsonHelper;
 use Scaleum\Stdlib\Helpers\UrlHelper;
 
 /**
- * SocketTrasport
+ * SocketTransport
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class SocketTrasport extends TransportAbstract {
+class SocketTransport extends TransportAbstract {
     protected ?string $authType = null;
     protected ?string $password = null;
     protected ?string $username = null;
@@ -247,4 +247,4 @@ class SocketTrasport extends TransportAbstract {
         return $result;
     }
 }
-/** End of SocketTrasport **/
+/** End of SocketTransport **/
