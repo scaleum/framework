@@ -307,8 +307,7 @@ class TemplateRenderer extends Hydrator {
                 $str = preg_replace(
                     '~' . preg_quote($tag, '~') . '~i',
                     trim((string) $replacement),
-                    $str,
-                    1
+                    $str
                 );
             }
         }
