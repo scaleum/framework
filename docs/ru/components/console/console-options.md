@@ -9,9 +9,9 @@
 - Поддерживать обязательные и необязательные опции, а также флаги без значений.
 - Предоставлять удобный доступ к разобранным опциям через методы `get()` и `getAll()`.
 
-## Связь с CommnadAbstract
+## Связь с CommandAbstract
 
-Команды наследуют `CommnadAbstract`, где метод `getOptions()` возвращает экземпляр `ConsoleOptions`. Команда может настроить допустимые опции через методы `setOpts()` и `setOptsLong()` до вызова `execute()`.
+Команды наследуют `CommandAbstract`, где метод `getOptions()` возвращает экземпляр `ConsoleOptions`. Команда может настроить допустимые опции через методы `setOpts()` и `setOptsLong()` до вызова `execute()`.
 
 ## Свойства
 
@@ -85,7 +85,7 @@ private function sanitizeOptionValue(array|string $val)
 
 ```php
 // В команде:
-class SampleCommand extends CommnadAbstract {
+class SampleCommand extends CommandAbstract {
     public function execute(ConsoleRequestInterface $request): ConsoleResponseInterface {
         // Допустимые опции: -v (флаг), -o: (обязательное), --filter:: (необязательно)
         $this->getOptions()

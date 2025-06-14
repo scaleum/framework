@@ -14,11 +14,11 @@ namespace Scaleum\Console;
 use Scaleum\Console\Contracts\CommandInterface;
 
 /**
- * CommnadAbstract
+ * CommandAbstract
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-abstract class CommnadAbstract implements CommandInterface {
+abstract class CommandAbstract implements CommandInterface {
     protected ?ConsoleOptions $options = null;
 
     /**
@@ -37,4 +37,4 @@ abstract class CommnadAbstract implements CommandInterface {
         fwrite($stream, $message . PHP_EOL);
     }
 }
-/** End of CommnadAbstract **/
+/** End of CommandAbstract **/

@@ -53,7 +53,7 @@
   - [DependencyInjection\Commands](./components/console/commands.md)
   - [CommandHandler](./components/console/command-handler.md)
   - [CommandDispatcher](./components/console/command-dispatcher.md)
-  - [CommnadAbstract](./components/console/command-abstract.md)
+  - [CommandAbstract](./components/console/command-abstract.md)
   - [ConsoleOptions](./components/console/console-options.md)
   - [LockManager](./components/console/lock-manager.md)
   - [LockHandle](./components/console/lock-handle.md)
