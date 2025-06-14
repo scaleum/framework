@@ -28,11 +28,11 @@ interface CommandInterface
 ## Пример реализации
 
 ```php
-use Scaleum\Console\CommnadAbstract;
+use Scaleum\Console\CommandAbstract;
 use Scaleum\Console\Contracts\ConsoleRequestInterface;
 use Scaleum\Console\Contracts\ConsoleResponseInterface;
 
-class HelloCommand extends CommnadAbstract implements CommandInterface {
+class HelloCommand extends CommandAbstract implements CommandInterface {
     public function execute(ConsoleRequestInterface $request): ConsoleResponseInterface {
         $name = $request->getArgument('name') ?? 'World';
         $response = new Response();

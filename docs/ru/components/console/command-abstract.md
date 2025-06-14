@@ -1,7 +1,7 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
-# CommnadAbstract
+# CommandAbstract
 
-`CommnadAbstract` — базовый абстрактный класс для реализации CLI-команд во фреймворке Scaleum. Частично реализует `CommandInterface`, предоставляя удобные методы для работы с опциями, аргументами и выводом сообщений.
+`CommandAbstract` — базовый абстрактный класс для реализации CLI-команд во фреймворке Scaleum. Частично реализует `CommandInterface`, предоставляя удобные методы для работы с опциями, аргументами и выводом сообщений.
 
 ## Назначение
 
@@ -40,11 +40,11 @@ public function printLine(string $message, bool $isError = false): void
 
 ## Пример реализации команды
 ```php
-use Scaleum\Console\CommnadAbstract;
+use Scaleum\Console\CommandAbstract;
 use Scaleum\Console\Contracts\ConsoleRequestInterface;
 use Scaleum\Console\Contracts\ConsoleResponseInterface;
 
-class HelloCommand extends CommnadAbstract
+class HelloCommand extends CommandAbstract
 {
     public function execute(ConsoleRequestInterface $request): ConsoleResponseInterface
     {
@@ -72,6 +72,6 @@ class HelloCommand extends CommnadAbstract
 
 - Используйте `getOptions()` для централизованного управления парсингом флагов и параметров CLI.
 - Для вывода ошибок применяйте `printLine($msg, true)` чтобы сообщение попало в `STDERR`.
-- Наследуйте `CommnadAbstract` во всех классах команд для единообразного поведения.
+- Наследуйте `CommandAbstract` во всех классах команд для единообразного поведения.
 
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)

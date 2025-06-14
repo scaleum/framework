@@ -29,7 +29,7 @@
 | [DependencyInjection\Commands](./commands.md) | Конфигуратор DI: регистрирует сервисы и настройки модуля |
 | [CommandHandler](./command-handler.md) | Загрузка описаний команд, регистрация их в `CommandDispatcher` |
 | [CommandDispatcher](./command-dispatcher.md) | Обработка входящих команд и вызов соответствующих `CommandInterface` |
-| [CommnadAbstract](./command-abstract.md) | Базовый абстрактный класс для реализации CLI-команд |
+| [CommandAbstract](./command-abstract.md) | Базовый абстрактный класс для реализации CLI-команд |
 | [ConsoleOptions](./console-options.md) | Класс для парсинга и управления опциями и аргументами командной строки |
 | [LockManager](./lock-manager.md) | Класс для управления lock-файлами в консольных приложениях |
 | [LockHandle](./lock-handle.md) | Вспомогательный класс для управления блокировками процессов в консольных приложениях |
