@@ -196,7 +196,11 @@ class Container implements ContainerInterface {
      * @return bool True if the service exists, false otherwise.
      */
     public function has(string $id): bool {
-        return isset($this->definitions[$id]);
+        if (isset($this->definitions[$id]) || isset($this->instances[$id])) {
+            return true;
+        }
+
+        return class_exists($id);
     }
 
     /**
