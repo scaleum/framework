@@ -32,7 +32,7 @@
 | Класс | Назначение |
 |:------|:-----------|
 | [InboundRequest](./inbound-request.md) | Представление входящего запроса от клиента |
-| [InboundRespons](./inbound-response.md) | Ответ на запросы к внешним системам |
+| [InboundResponse](./inbound-response.md) | Ответ на запросы к внешним системам |
 | [OutboundRequest](./outbound-request.md) | Исходящий запрос к внешним системам (например, API, CURL) |
 | [OutboundResponse](./outbound-response.md) | Ответ приложения клиенту |
 | [RequestHandler](./request-handler.md) | Обработка запроса, возврат `ResponderInterface` |
