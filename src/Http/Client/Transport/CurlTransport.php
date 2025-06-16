@@ -141,6 +141,7 @@ class CurlTransport extends TransportAbstract {
                     $headers->setHeader('Content-Length', (string) mb_strlen($body));
                 } else {
                     curl_setopt($handle, CURLOPT_URL, sprintf("%s?%s", $url, $body));
+                    $headers->setHeader('Content-Length', "0");
                 }
             }
             break;
