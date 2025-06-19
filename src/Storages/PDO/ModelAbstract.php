@@ -57,6 +57,11 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         $this->data->$name = $value;
     }
 
+    public function __call($name, $args)
+    {
+        return call_user_func_array([$this->data, $name], $args);
+    }
+    
     /**
      * Finds a record by its ID.
      *
