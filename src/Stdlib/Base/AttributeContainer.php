@@ -50,7 +50,7 @@ class AttributeContainer implements AttributeContainerInterface {
     public function getAttributeCount(): int {
         return count($this->attributes);
     }
-    
+
     public function getAttributes(): array {
         return $this->attributes;
     }
@@ -79,9 +79,14 @@ class AttributeContainer implements AttributeContainerInterface {
         return $this;
     }
 
-    public function setAttributes(array $attributes,bool $overwrite = true): static {
-        foreach($attributes as $key => $value){
-            $this->setAttribute($key,$value,$overwrite);
+    public function resetAttribute(string $key, mixed $value = null): static {
+        $this->attributes[$key] = $value;
+        return $this;
+    }
+
+    public function setAttributes(array $attributes, bool $overwrite = true): static {
+        foreach ($attributes as $key => $value) {
+            $this->setAttribute($key, $value, $overwrite);
         }
         return $this;
     }
