@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum\Stdlib.
  *
@@ -10,8 +10,7 @@ declare(strict_types=1);
  */
 namespace Scaleum\Stdlib\Helpers;
 
-class JsonHelper
-{
+class JsonHelper {
     public const DEFAULT_JSON_FLAGS = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR;
 
     /**
@@ -20,8 +19,7 @@ class JsonHelper
      * @param mixed $string The string to check.
      * @return bool Returns true if the string is a valid JSON, false otherwise.
      */
-    public static function isJson(mixed $string)
-    {
+    public static function isJson(mixed $string) {
         return is_string($string) && is_array(json_decode($string, true)) && (json_last_error() == JSON_ERROR_NONE) ? true : false;
     }
 
@@ -32,18 +30,25 @@ class JsonHelper
      * @param int|null $encodeFlags Optional. Bitmask consisting of JSON constants to control the encoding process.
      * @return string The JSON string representation of the data.
      */
-    public static function encode(mixed $data, ?int $encodeFlags = null): string
-    {
+    public static function encode(mixed $data, ?int $encodeFlags = null): string {
         if ($encodeFlags === null) {
             $encodeFlags = self::DEFAULT_JSON_FLAGS;
         }
 
         $json = json_encode($data, $encodeFlags);
-        if ($json === false) {
-            self::throwEncodeError(json_last_error(), $data);
+        if (($err = json_last_error()) != JSON_ERROR_NONE) {
+            self::throwEncodeError($err, $data);
         }
 
         return $json;
+    }
+
+    public function decode(string $json, ?bool $associative = null, int $depth = 512, int $flags = 0): mixed {
+        $result = json_decode($json, $associative, $depth, $flags);
+        if (($err = json_last_error()) != JSON_ERROR_NONE) {
+            self::throwEncodeError($err, $json);
+        }
+        return $result;
     }
 
     /**
@@ -53,8 +58,7 @@ class JsonHelper
      * @param mixed $data The data causing the error.
      * @return never This function never returns a value.
      */
-    private static function throwEncodeError(int $code, mixed $data): never
-    {
+    private static function throwEncodeError(int $code, mixed $data): never {
         $message = match ($code) {
             JSON_ERROR_DEPTH => 'The maximum stack depth has been exceeded',
             JSON_ERROR_STATE_MISMATCH => 'Occurs with underflow or with the modes mismatch',
