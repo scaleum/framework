@@ -18,7 +18,7 @@ use Scaleum\Stdlib\Helpers\ArrayHelper;
 
 /**
  * ModelAbstract
- *
+ * @method static resetAttribute(string $key, mixed $value = null)
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 abstract class ModelAbstract extends DatabaseProvider implements ModelInterface {
@@ -61,7 +61,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
     {
         return call_user_func_array([$this->data, $name], $args);
     }
-    
+
     /**
      * Finds a record by its ID.
      *
