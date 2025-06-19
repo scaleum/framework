@@ -43,7 +43,7 @@ class JsonHelper {
         return $json;
     }
 
-    public function decode(string $json, ?bool $associative = null, int $depth = 512, int $flags = 0): mixed {
+    public static function decode(string $json, ?bool $associative = null, int $depth = 512, int $flags = 0): mixed {
         $result = json_decode($json, $associative, $depth, $flags);
         if (($err = json_last_error()) != JSON_ERROR_NONE) {
             self::throwEncodeError($err, $json);
