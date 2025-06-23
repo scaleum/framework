@@ -65,13 +65,13 @@ trait MessagePayloadTrait {
         // If a string is passed → determine the Content-Type
         elseif (is_string($body)) {
             $headersManager->setHeader('Content-Type', $this->detectMimeTypeFromContent($body));
-            $headersManager->setHeader('Content-Length', (string) mb_strlen($body));
+            $headersManager->setHeader('Content-Length', (string) strlen($body));
         }
         // If an unknown type is passed → convert to string
         elseif (! is_string($body)) {
             $body = (string) $body;
             $headersManager->setHeader('Content-Type', $this->detectMimeTypeFromContent($body));
-            $headersManager->setHeader('Content-Length', (string) mb_strlen($body));
+            $headersManager->setHeader('Content-Length', (string) strlen($body));
         }
 
         $stream->write($body);
