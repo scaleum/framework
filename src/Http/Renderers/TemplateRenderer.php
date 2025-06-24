@@ -225,7 +225,7 @@ class TemplateRenderer extends Hydrator {
 
         // matching {{pluginName:arg1 arg2 arg3}} and {{pluginName:arg1 arg2 arg3}}content{/pluginName} tags
         preg_match_all(
-            '~{{(' . implode('|', array_keys($this->plugins)) . ')(?:[\: ]([^}{]+))?}}(?:([\x00-\xFF]*?){/\\1}})?~i',
+            '~{{(' . implode('|', array_keys($this->plugins)) . ')(?:[\: ]([^}{]+))?}}(?:([\x00-\xFF]*?){{/\\1}})?~i',
             $str,
             $matches
         );
