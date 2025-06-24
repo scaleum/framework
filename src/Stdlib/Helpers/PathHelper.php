@@ -61,7 +61,7 @@ class PathHelper {
 
         foreach ($path as $depth => $dir) {
             // find first non-matching dir
-            if ($dir === $to[$depth]) {
+            if (isset($to[$depth]) && $to[$depth] === $dir) {
                 // ignore this directory
                 array_shift($relPath);
             } else {
@@ -82,9 +82,9 @@ class PathHelper {
     }
 
     public static function join(...$parts): string {
-        $parts  = array_map(fn($part) => trim($part, DIRECTORY_SEPARATOR), $parts);
-        $path   = implode(DIRECTORY_SEPARATOR, $parts);
-        
+        $parts = array_map(fn($part) => trim($part, FileHelper::TRIM_CHARS . DIRECTORY_SEPARATOR), $parts);
+        $path  = implode(DIRECTORY_SEPARATOR, $parts);
+
         $isUnix = ProcessHelper::isUnixOS();
         if ($isUnix && ! str_starts_with($path, DIRECTORY_SEPARATOR)) {
             $path = DIRECTORY_SEPARATOR . $path;
