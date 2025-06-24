@@ -82,8 +82,11 @@ class PathHelper {
     }
 
     public static function join(...$parts): string {
-        $parts = array_map(fn($part) => trim($part, DIRECTORY_SEPARATOR), $parts);
-        return implode(DIRECTORY_SEPARATOR, $parts);
+        $isAbsolute = isset($parts[0]) && str_starts_with($parts[0], DIRECTORY_SEPARATOR);
+        $parts      = array_map(fn($part) => trim($part, DIRECTORY_SEPARATOR), $parts);
+        $path       = implode(DIRECTORY_SEPARATOR, $parts);
+
+        return $isAbsolute ? DIRECTORY_SEPARATOR . $path : $path;
     }
 
     public static function getScriptDir(): string {
