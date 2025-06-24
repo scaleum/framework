@@ -82,11 +82,14 @@ class PathHelper {
     }
 
     public static function join(...$parts): string {
-        $isUnix = ProcessHelper::isUnixOS();
         $parts  = array_map(fn($part) => trim($part, DIRECTORY_SEPARATOR), $parts);
         $path   = implode(DIRECTORY_SEPARATOR, $parts);
-
-        return $isUnix ? DIRECTORY_SEPARATOR . $path : $path;
+        
+        $isUnix = ProcessHelper::isUnixOS();
+        if ($isUnix && ! str_starts_with($path, DIRECTORY_SEPARATOR)) {
+            $path = DIRECTORY_SEPARATOR . $path;
+        }
+        return $path;
     }
 
     public static function getScriptDir(): string {

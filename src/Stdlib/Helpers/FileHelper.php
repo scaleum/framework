@@ -353,7 +353,13 @@ class FileHelper {
                 $path = $realpath;
             }
         }
-        return trim(self::prepLocation($path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+        $path = rtrim(self::prepLocation($path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $isUnix = ProcessHelper::isUnixOS();
+        if ($isUnix && ! str_starts_with($path, DIRECTORY_SEPARATOR)) {
+            $path = DIRECTORY_SEPARATOR . $path;
+        }        
+        return $path;
     }
 
     /**
