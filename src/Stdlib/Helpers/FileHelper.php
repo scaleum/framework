@@ -17,21 +17,21 @@ use RuntimeException;
 
 class FileHelper {
     // File and Directory Modes
-    const FILE_READ_MODE  = 0644;
-    const FILE_WRITE_MODE = 0666;
-    const DIR_READ_MODE   = 0755;
-    const DIR_WRITE_MODE  = 0777;
+    public const FILE_READ_MODE  = 0644;
+    public const FILE_WRITE_MODE = 0666;
+    public const DIR_READ_MODE   = 0755;
+    public const DIR_WRITE_MODE  = 0777;
 
     // File Stream Modes
-    const FOPEN_READ                          = 'rb';
-    const FOPEN_READ_WRITE                    = 'r+b';
-    const FOPEN_WRITE_CREATE_DESTRUCTIVE      = 'wb';  // truncates existing file
-    const FOPEN_READ_WRITE_CREATE_DESTRUCTIVE = 'w+b'; // truncates existing file
-    const FOPEN_WRITE_CREATE                  = 'ab';
-    const FOPEN_READ_WRITE_CREATE             = 'a+b';
-    const FOPEN_WRITE_CREATE_STRICT           = 'xb';
-    const FOPEN_READ_WRITE_CREATE_STRICT      = 'x+b';
-
+    public const FOPEN_READ                          = 'rb';
+    public const FOPEN_READ_WRITE                    = 'r+b';
+    public const FOPEN_WRITE_CREATE_DESTRUCTIVE      = 'wb';  // truncates existing file
+    public const FOPEN_READ_WRITE_CREATE_DESTRUCTIVE = 'w+b'; // truncates existing file
+    public const FOPEN_WRITE_CREATE                  = 'ab';
+    public const FOPEN_READ_WRITE_CREATE             = 'a+b';
+    public const FOPEN_WRITE_CREATE_STRICT           = 'xb';
+    public const FOPEN_READ_WRITE_CREATE_STRICT      = 'x+b';
+    public const TRIM_CHARS                          = " \t\n\r\0\x0B";
     /**
      * Deletes a file.
      *
@@ -58,7 +58,7 @@ class FileHelper {
      */
     public static function deleteFiles(string $path, bool $deleteDir = false, int $level = 0): bool {
         // Trim the trailing slash
-        $path = rtrim($path, DIRECTORY_SEPARATOR);
+        $path = rtrim($path, self::TRIM_CHARS . DIRECTORY_SEPARATOR);
 
         if (! $currentDir = @opendir($path)) {
             return false;
@@ -96,14 +96,14 @@ class FileHelper {
     public static function getDir(string $path, bool $onlyTop = true, bool $recursion = false): mixed {
         static $filedata;
         // Trim the trailing slash
-        $path = rtrim($path, DIRECTORY_SEPARATOR);
+        $path = rtrim($path, self::TRIM_CHARS . DIRECTORY_SEPARATOR);
 
         $relativePath = $path;
 
         if ($fp = @opendir($path)) {
             if ($recursion === false) {
                 $filedata = [];
-                $path     = rtrim(realpath($path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+                $path     = rtrim(realpath($path), self::TRIM_CHARS . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
             }
 
             while (false !== ($filename = readdir($fp))) {
@@ -240,7 +240,7 @@ class FileHelper {
             // reset the array and make sure $sourceDir has a trailing slash on the initial call
             if ($recursion === false) {
                 $result    = [];
-                $sourceDir = rtrim(realpath($sourceDir), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+                $sourceDir = rtrim(realpath($sourceDir), self::TRIM_CHARS . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
             }
 
             while (false !== ($file = readdir($fp))) {
@@ -275,7 +275,7 @@ class FileHelper {
         // For windows servers and safe_mode "on" installations we'll actually
         // write a file then read it.  Bah...
         if (is_dir($file)) {
-            $file = rtrim($file, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . md5(mt_rand(1, 100) . mt_rand(1, 100));
+            $file = rtrim($file, self::TRIM_CHARS . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . md5(mt_rand(1, 100) . mt_rand(1, 100));
 
             if (($fp = @fopen($file, self::FOPEN_WRITE_CREATE)) === false) {
                 return false;
@@ -354,11 +354,12 @@ class FileHelper {
             }
         }
 
-        $path = rtrim(self::prepLocation($path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $path = trim(self::prepLocation($path), self::TRIM_CHARS . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
         $isUnix = ProcessHelper::isUnixOS();
         if ($isUnix && ! str_starts_with($path, DIRECTORY_SEPARATOR)) {
             $path = DIRECTORY_SEPARATOR . $path;
-        }        
+        }
         return $path;
     }
 
