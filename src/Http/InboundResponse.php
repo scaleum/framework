@@ -14,6 +14,7 @@ namespace Scaleum\Http;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Scaleum\Stdlib\Helpers\HttpHelper;
+use Scaleum\Stdlib\Helpers\JsonHelper;
 
 /**
  * InboundResponse - Incoming response from external server
@@ -53,7 +54,7 @@ class InboundResponse extends Message implements ResponseInterface {
         // Разбираем данные в зависимости от Content-Type
         switch (true) {
         case str_contains($contentType, 'application/json'):
-            return json_decode($data, true) ?? [];
+            return JsonHelper::decode($data, true) ?? [];
 
         case str_contains($contentType, 'application/x-www-form-urlencoded'):
             parse_str($data, $parsedData);
