@@ -157,10 +157,6 @@ abstract class KernelAbstract implements KernelInterface {
         return $this->getRegistry()->get('config_dir', realpath(PathHelper::join($this->getApplicationDir(), 'config')));
     }
 
-    public function getRouteDir(): string {
-        return $this->getRegistry()->get('route_dir', realpath(PathHelper::join($this->getApplicationDir(), 'routes')));
-    }
-
     public function getConfig(string $filename): array {
         # May be $filename is basename & need to be prepended with config_dir ?
         if (! file_exists($filename)) {
@@ -210,7 +206,6 @@ abstract class KernelAbstract implements KernelInterface {
                 'environment'            => $this->getEnvironment(),
                 'kernel.application_dir' => $this->getApplicationDir(),
                 'kernel.config_dir'      => $this->getConfigDir(),
-                'kernel.route_dir'       => $this->getRouteDir(),
                 'kernel'                 => $this,
             ]);
 
