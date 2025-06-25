@@ -117,11 +117,11 @@ abstract class KernelAbstract implements KernelInterface {
             $response->send();
         }
         $this->getEventManager()->dispatch(KernelEvents::FINISH);
-        
+
         $this->halt(0);
     }
 
-    public function halt(int $code = 0): void{
+    public function halt(int $code = 0): void {
         $this->getEventManager()->dispatch(KernelEvents::HALT, [
             'code' => $code,
         ]);
@@ -155,6 +155,10 @@ abstract class KernelAbstract implements KernelInterface {
 
     public function getConfigDir(): string {
         return $this->getRegistry()->get('config_dir', realpath(PathHelper::join($this->getApplicationDir(), 'config')));
+    }
+
+    public function getRouteDir(): string {
+        return $this->getRegistry()->get('route_dir', realpath(PathHelper::join($this->getApplicationDir(), 'routes')));
     }
 
     public function getConfig(string $filename): array {
@@ -206,6 +210,7 @@ abstract class KernelAbstract implements KernelInterface {
                 'environment'            => $this->getEnvironment(),
                 'kernel.application_dir' => $this->getApplicationDir(),
                 'kernel.config_dir'      => $this->getConfigDir(),
+                'kernel.route_dir'       => $this->getRouteDir(),
                 'kernel'                 => $this,
             ]);
 

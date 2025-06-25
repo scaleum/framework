@@ -11,7 +11,7 @@ declare (strict_types = 1);
 
 namespace Scaleum\Routing;
 
-use Scaleum\Stdlib\Exceptions\EHttpException;
+use Scaleum\Config\LoaderResolver;
 use Scaleum\Stdlib\Exceptions\ENotFoundError;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\HttpHelper;
@@ -23,16 +23,35 @@ use Scaleum\Stdlib\Helpers\StringHelper;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 class Router {
-    /**
-     * @var RouteInterface[] An array to store the defined routes.
-     */
-    protected array $routes = [];
+    protected array $files = [];
+    /** @var RouteInterface[]  An array to store the defined routes */
+    protected array $routes             = [];
+    protected ?LoaderResolver $resolver = null;
+
+    public function __construct(?LoaderResolver $resolver = null) {
+        if ($resolver !== null) {
+            $this->setResolver($resolver);
+        }
+    }
+
+    public function loadFromFile(string $filename) {
+        $this->addRoutes($this->getResolver()->fromFile($filename));
+    }
+
+    public function loadFromDir(string $dir) {
+        $this->addRoutes($this->getResolver()->fromDir($dir,$this->files));
+    }
 
     public function addRoutes(array $routes): void {
         foreach ($routes as $alias => $route) {
             if (! $route instanceof RouteInterface) {
-                throw new ERuntimeError('Route must be instance of RouteInterface');
+                if (! is_array($route)) {
+                    throw new ERuntimeError('Route must be instance of `RouteInterface` or array');
+                }
+
+                $route = new Route($route);
             }
+
             $this->addRoute($alias, $route);
         }
     }
@@ -79,7 +98,7 @@ class Router {
                         'Route must be an instance of `RouteInterface` given `%s`',
                         is_object($route) ? StringHelper::className($route, true) : gettype($route)
                     )
-                );                
+                );
             }
 
             if ($method && ! in_array($method, $route->getMethods())) {
@@ -126,6 +145,27 @@ class Router {
             }
         }
         throw new ENotFoundError(sprintf('Requested URL "%s" is not found on server', $uri));
+    }
+
+    /**
+     * Get the value of resolver
+     */
+    public function getResolver() {
+        if (! $this->resolver instanceof LoaderResolver) {
+            $this->resolver = new LoaderResolver();
+        }
+        return $this->resolver;
+    }
+
+    /**
+     * Set the value of resolver
+     *
+     * @return  self
+     */
+    public function setResolver(LoaderResolver $resolver) {
+        $this->resolver = $resolver;
+
+        return $this;
     }
 }
 /** End of Router **/

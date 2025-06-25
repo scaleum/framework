@@ -34,6 +34,14 @@ interface KernelInterface extends ContainerProviderInterface {
      * @return string The path to the configuration directory.
      */
     public function getConfigDir(): string;    
+
+    /**
+     * Returns the directory path where route definitions are stored.
+     *
+     * @return string The absolute or relative path to the routes directory.
+     */
+    public function getRouteDir():string;
+    
     /**
      * Retrieves the current environment of the application.
      *
