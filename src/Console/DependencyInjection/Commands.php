@@ -1,4 +1,5 @@
 <?php
+
 declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
@@ -16,7 +17,6 @@ use Scaleum\Console\CommandDispatcher;
 use Scaleum\DependencyInjection\Container;
 use Scaleum\DependencyInjection\Contracts\ConfiguratorInterface;
 use Scaleum\DependencyInjection\Helpers\Autowire;
-use Scaleum\DependencyInjection\Helpers\Factory;
 
 /**
  * Commands
@@ -28,12 +28,8 @@ class Commands implements ConfiguratorInterface {
         $container
             ->addDefinitions([
                 CommandDispatcher::class => Autowire::create(),
-                'commands.file'          => Factory::create(function (ContainerInterface $c) {
-                    return $c->get('kernel.config_dir') . '/commands.php';
-                }),
-                'commands.directory'     => Factory::create(function (ContainerInterface $c) {
-                    return $c->get('kernel.config_dir') . '/commands';
-                }),
+                'commands.file'          => fn(ContainerInterface $c)          => $c->get('kernel.application_dir') . '/commands/default.php',
+                'commands.directory'     => fn(ContainerInterface $c)     => $c->get('kernel.application_dir') . '/commands',
                 'commands.dispatcher'    => CommandDispatcher::class,
             ]);
     }
