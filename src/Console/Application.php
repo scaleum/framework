@@ -24,6 +24,7 @@ class Application extends KernelAbstract {
 
     public function bootstrap(array $config = []): self {
         $this->getRegistry()->set('kernel.configurators', [
+            new DependencyInjection\Appendix(),
             new DependencyInjection\Commands(),
         ]);
 
@@ -33,7 +34,7 @@ class Application extends KernelAbstract {
 
     public function getHandler(): HandlerInterface {
         if ($this->handler === null) {
-            $this->handler = new CommandHandler($this->getContainer());
+            $this->handler = $this->getContainer()->get('app.handler');
         }
         return $this->handler;
     }
