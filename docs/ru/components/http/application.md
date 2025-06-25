@@ -36,6 +36,7 @@
 | [OutboundRequest](./outbound-request.md) | Исходящий запрос к внешним системам (например, API, CURL) |
 | [OutboundResponse](./outbound-response.md) | Ответ приложения клиенту |
 | [RequestHandler](./request-handler.md) | Обработка запроса, возврат `ResponderInterface` |
+| [DependencyInjection\Appendix](#)   | Конфигуратор DI: регистрирует сервисы и настройки модуля |
 | [DependencyInjection\Routing](./routing.md)   | Конфигуратор DI: регистрирует сервисы и настройки модуля |
 | [ControllerResolver](./controller-resolver.md) | Поиск контроллера по маршруту |
 | [ControllerInvoker](./controller-invoker.md) | Вызов контроллера с передачей аргументов |
@@ -46,9 +47,10 @@
 
 ## Процесс обработки запроса
 1. Инициализация: `Application::bootstrap()`
+   - Установка конфигуратора `DependencyInjection\Appendix()` приложения в системный реестр.
    - Установка конфигуратора `DependencyInjection\Routing` маршрутизации в системный реестр.
    - Запуск стандартного процесса ядра: загрузка конфигов, регистрация сервисов, события (`KernelEvents::BOOTSTRAP`).
-2. Получение обработчика: `getHandler()` — создаётся `RequestHandler`.
+2. Получение обработчика: `getHandler()` — создаётся `HandlerInterface(RequestHandler)`.
 3. Обработка запроса `getHandler()->handle()`:
    - Загрузка настроек маршрутизации.
    - Инициализация объекта `InboundRequest::fromGlobals()` на основе суперглобальных переменных (`$_GET`, `$_POST`, `$_SERVER`)

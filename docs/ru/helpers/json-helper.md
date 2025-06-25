@@ -15,6 +15,7 @@
 |:------|:-----------|
 | `isJson(mixed $string)` | Проверка, является ли строка валидным JSON |
 | `encode(mixed $data, ?int $encodeFlags = null)` | Кодирование данных в JSON строку |
+| `decode(string $json, ?bool $associative = null, int $depth = 512, int $flags = 0)` | Декодирование данных из JSON строки |
 
 ## Примеры использования
 

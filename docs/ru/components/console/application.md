@@ -26,6 +26,7 @@
 | [Contracts\CommandInterface](./contracts/command-interface.md) | Интерфейс для CLI-команд |
 | [Contracts\ConsoleRequestInterface](./contracts/console-request-interface.md) | Интерфейс для объекта запроса в консольном режиме |
 | [Contracts\ConsoleResponseInterface](./contracts/console-response-interface.md) | Интерфейс для ответа в консольном режиме |
+| [DependencyInjection\Appendix](#) | Конфигуратор DI: регистрирует сервисы и настройки модуля |
 | [DependencyInjection\Commands](./commands.md) | Конфигуратор DI: регистрирует сервисы и настройки модуля |
 | [CommandHandler](./command-handler.md) | Загрузка описаний команд, регистрация их в `CommandDispatcher` |
 | [CommandDispatcher](./command-dispatcher.md) | Обработка входящих команд и вызов соответствующих `CommandInterface` |
@@ -41,9 +42,10 @@
 ## Процесс обработки CLI-запроса
 
 1. Инициализация: `Application::bootstrap()`
-   - Установка конфигуратора `DependencyInjection\Commands` в системный реестр.
+   - Установка конфигуратора `DependencyInjection\Appendix` приложения в системный реестр.
+   - Установка конфигуратора `DependencyInjection\Commands` приложения в системный реестр.
    - Запуск стандартного процесса ядра: загрузка конфигов, регистрация сервисов, события (`KernelEvents::BOOTSTRAP`).
-2. Получение обработчика: `getHandler()` — создаётся `CommandHandler`.
+2. Получение обработчика: `getHandler()` — создаётся `HandlerInterface(CommandHandler)`.
 3. Обработка команды `getHandler()->handle()`:
    - Парсинг аргументов из `$argv` через `Request`.
    - Поиск и вызов нужной команды через `CommandDispatcher`.
