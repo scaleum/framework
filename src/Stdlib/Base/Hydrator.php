@@ -27,7 +27,10 @@ class Hydrator implements HydratorInterface {
     use InitTrait;
     public function __construct(array $config = []) {
         $this->init($config, $this);
+        $this->ready();
     }
+
+    public function ready(): void {}
 
     public static function createInstance(mixed $input): mixed {
         $invokable = null;
@@ -47,19 +50,19 @@ class Hydrator implements HydratorInterface {
         $reflection = new ReflectionClass($invokable);
         if (empty($config)) {
             return $reflection->newInstance();
-        }        
+        }
 
         $constructor = $reflection->getConstructor();
         if ($constructor === null) {
             return $reflection->newInstance();
         }
 
-        if($reflection->implementsInterface(HydratorInterface::class)) {
+        if ($reflection->implementsInterface(HydratorInterface::class)) {
             return $reflection->newInstance($config);
         }
 
         $parameters = $constructor->getParameters();
-        $args = [];
+        $args       = [];
         foreach ($parameters as $parameter) {
             $name = $parameter->getName();
             if (array_key_exists($name, $config)) {
