@@ -16,7 +16,7 @@ use Scaleum\DependencyInjection\Contracts\ConfiguratorInterface;
 use Scaleum\Http\RequestHandler;
 
 /**
- * Usage
+ * Appendix
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
@@ -29,4 +29,4 @@ class Appendix implements ConfiguratorInterface {
             ]);
     }
 }
-/** End of Usage **/
+/** End of Appendix **/

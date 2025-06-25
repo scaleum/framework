@@ -16,7 +16,7 @@ use Scaleum\DependencyInjection\Container;
 use Scaleum\DependencyInjection\Contracts\ConfiguratorInterface;
 
 /**
- * Usage
+ * Appendix
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
