@@ -38,11 +38,11 @@ class Routing implements ConfiguratorInterface {
                     if (is_dir($dir = $c->get('routes.directory'))) {
                         $router->loadFromDir($dir);
                     }
-                    
+
                     return $router;
                 }),
-                'routes.file'      => fn(ContainerInterface $c)      => $c->get('kernel.route_dir') . '/routes.php',
-                'routes.directory' => fn(ContainerInterface $c) => $c->get('kernel.route_dir'),
+                'routes.file'      => fn(ContainerInterface $c)      => $c->get('kernel.application_dir') . '/routes/default.php',
+                'routes.directory' => fn(ContainerInterface $c) => $c->get('kernel.application_dir') . '/routes',
                 'router'           => Router::class,
             ]);
     }
