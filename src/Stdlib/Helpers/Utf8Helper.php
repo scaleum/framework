@@ -22,16 +22,10 @@ class Utf8Helper {
      * @return  string Clean UTF-8 encoded string
      */
     public static function clean(string $str, string $replacement = '?') {
-        $regEx = '/(
-            [\xC0-\xC1]                             # недопустимые стартовые байты
-            |[\xF5-\xFF]                            # вне допустимого диапазона UTF-8
-            |[\x80-\xBF](?![\xC2-\xF4])             # висячие continuation-байты
-            |[\xC2-\xDF](?![\x80-\xBF])             # неполные 2-байтовые
-            |[\xE0-\xEF](?![\x80-\xBF]{2})          # неполные 3-байтовые
-            |[\xF0-\xF4](?![\x80-\xBF]{3})          # неполные 4-байтовые
-        )/sx';
-
-        return preg_replace($regEx, $replacement, $str);
+        if (mb_check_encoding($str, 'UTF-8')) {
+            return $str;
+        }
+        return mb_convert_encoding($str, 'UTF-8', 'UTF-8') ?: $replacement;
     }
 
     /**
