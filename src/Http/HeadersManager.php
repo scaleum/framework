@@ -50,7 +50,11 @@ class HeadersManager {
     /**
      * Устанавливает заголовок (перезаписывает существующий)
      */
-    public function setHeader(string $name, string $value): void {
+    public function setHeader(string $name, string $value, bool $override = true): void {
+        if(!$override && $this->hasHeader($name)) {
+            return; // Если не нужно перезаписывать, выходим
+        }
+
         $value                = array_map('trim', explode(',', $value));
         $this->headers[$name] = $value;
     }
