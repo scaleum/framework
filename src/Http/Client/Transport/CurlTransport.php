@@ -156,7 +156,7 @@ class CurlTransport extends TransportAbstract {
                     $headers->setHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
                 }
             }
-            $headers->setHeader('Content-Length', (string) mb_strlen($body));
+            $headers->setHeader('Content-Length', (string) strlen($body));
             break;
         case HttpHelper::METHOD_HEAD:
             curl_setopt($handle, CURLOPT_CUSTOMREQUEST, $method);
@@ -176,7 +176,7 @@ class CurlTransport extends TransportAbstract {
                     $headers->setHeader('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
                 }
             }
-            $headers->setHeader('Content-Length', (string) mb_strlen($body));
+            $headers->setHeader('Content-Length', (string) strlen($body));
         }
 
         // $headers->setHeader('User-Agent', 'Scaleum Framework');
