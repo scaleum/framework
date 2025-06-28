@@ -36,7 +36,7 @@ class CookieManager extends Hydrator {
             $name,
             $preparedValue,
             [
-                'expires'  => $expire ?? $this->getExpire(),
+                'expires'  => $expire ?? $this->getExpireTimestamp(),
                 'path'     => $this->getPath(),
                 'domain'   => $this->getDomain(),
                 'secure'   => $this->isSecure(),
@@ -90,7 +90,7 @@ class CookieManager extends Hydrator {
     }
 
     protected function prepareForStorage(mixed $value): string {
-        $value = !is_scalar($value)? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES): $value;
+        $value = ! is_scalar($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : $value;
 
         if ($value === false) {
             throw new EInvalidArgumentException('Failed to encode value for cookie storage: ' . json_last_error_msg());
@@ -105,7 +105,7 @@ class CookieManager extends Hydrator {
     }
 
     protected function restoreFromStorage(string $value): mixed {
-        if($this->encode) {
+        if ($this->encode) {
             $value = base64_decode(str_pad(strtr($value, '-_', '+/'), strlen($value) % 4, '=', STR_PAD_RIGHT));
             if ($value === false) {
                 return null; // Invalid base64 string
@@ -120,7 +120,7 @@ class CookieManager extends Hydrator {
             }
         }
 
-        return JsonHelper::isJson($value)? json_decode($value, true):$value;
+        return JsonHelper::isJson($value) ? json_decode($value, true) : $value;
     }
 
     public function setEncode(bool $encode): static {
@@ -139,6 +139,10 @@ class CookieManager extends Hydrator {
 
     public function getExpire(): int {
         return $this->expire;
+    }
+
+    public function getExpireTimestamp(): int {
+        return time() + $this->getExpire();
     }
 
     public function setPath(string $path): static {
