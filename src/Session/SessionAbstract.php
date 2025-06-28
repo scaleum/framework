@@ -14,6 +14,7 @@ namespace Scaleum\Session;
 use Scaleum\Core\DependencyInjection\Framework;
 use Scaleum\Core\KernelEvents;
 use Scaleum\Events\EventManagerInterface;
+use Scaleum\Http\CookieManager;
 use Scaleum\Logger\LoggerChannelTrait;
 use Scaleum\Services\ServiceLocator;
 use Scaleum\Stdlib\Base\Hydrator;
@@ -30,47 +31,17 @@ use Scaleum\Stdlib\SAPI\SapiMode;
  */
 abstract class SessionAbstract extends Hydrator implements SessionInterface {
     use LoggerChannelTrait;
-    protected const EXPIRATION_DEFAULT = 3600;
-    protected const MAX_ANCHOR_LEN     = 32;
-    protected array $data              = [];
-    /**
-     * Lifetime session(in seconds)
-     * @var int
-     */
-    protected int $expiration = self::EXPIRATION_DEFAULT;
-    /**
-     * Destroy session cookie on close
-     * @var bool
-     */
-    protected bool $destroyOnClose = false;
-    /**
-     * Session ID
-     * @var string
-     */
-    protected string $id;
-    /**
-     * Session cookie anchor
-     * @var string
-     */
-    protected string $name = 'SESSION_ID';
-    /**
-     * Salt for encoding cookie var
-     * @var string
-     */
-    protected string $salt = 'f6cc260e-17df-4b78-a54a-64d02766adf9';
-    /**
-     * Time format
-     * @var string ['time'|'gmt']
-     */
-    protected string $timeReference = 'time';
-    protected string $cookieDomain  = '';
-    protected bool $cookieEncode    = false;
-    protected bool $cookieHttpOnly  = false;
-    protected string $cookiePath    = '/';
-    protected bool $cookieSecure    = false;
-    protected bool $logging         = true;
-    protected ?EventManagerInterface $events;
 
+    protected const EXPIRATION_DEFAULT       = 3600;
+    protected array $data                    = [];
+    protected int $expiration                = self::EXPIRATION_DEFAULT;
+    protected bool $destroyOnClose           = false;
+    protected string $name                   = 'SESSION_ID';
+    protected string $timeReference          = 'time';
+    protected bool $logging                  = true;
+    protected ?EventManagerInterface $events = null;
+    protected ?CookieManager $cookies        = null;
+    protected string $id;
     ///////////////////////////////////////////////////////////////////////////
     abstract protected function read(): array;
     abstract protected function write(array $data): void;
@@ -122,50 +93,12 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
     }
 
     private function getAnchor(string $key, mixed $default = null): mixed {
-        if (! isset($_COOKIE[$key])) {
-            return $default;
-        }
-
-        $value = $_COOKIE[$key];
-
-        // decode
-        if ($this->cookieEncode == true) {
-            $value = base64_decode(str_pad(strtr($value, '-_', '+/'), strlen($value) % 4, '=', STR_PAD_RIGHT));
-            $hash  = substr($value, strlen($value) - self::MAX_ANCHOR_LEN); // get last 32 chars
-            $value = substr($value, 0, strlen($value) - self::MAX_ANCHOR_LEN);
-
-            // Does the md5 hash match?  This is to prevent manipulation of session data in user space
-            if ($hash !== md5("$value{$this->salt}")) {
-                return $default;
-            }
-        }
-
-        // check length
-        if (strlen($value) > self::MAX_ANCHOR_LEN) {
-            $value = substr($value, 0, self::MAX_ANCHOR_LEN);
-        }
-
-        return $value;
+        return $this->getCookies()?->get($key, $default);
     }
 
     private function setAnchor(string $key, mixed $value = null): mixed {
-        if (! headers_sent()) {
-            if (is_array($value) || is_object($value)) {
-                $value = json_encode($value);
-            }
-
-            if ($this->cookieEncode == true) {
-                $value = (string) $value . md5("$value{$this->salt}");
-                $value = rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
-            }
-
-            $cookieExpire = $this->getTimestamp($this->expiration);
-            setcookie($key, $value, $cookieExpire, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHttpOnly);
-
-            // Hack: only for current session
-            $_COOKIE[$key] = $value;
-
-            return $value;
+        if ($this->getCookies()?->setExpire(0)->set($key, $value) === true) {
+            return true;
         }
 
         return false;
@@ -223,8 +156,9 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
     }
 
     public function close() {
-        setcookie($this->name, '', $this->getTimestamp() - $this->expiration, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHttpOnly);
-        unset($_COOKIE[$this->name]);
+        $this->getCookies()?->delete($this->name);
+        // setcookie($this->name, '', $this->getTimestamp() - $this->expiration, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHttpOnly);
+        // unset($_COOKIE[$this->name]);
     }
 
     protected function update(bool $flush = false) {
@@ -288,10 +222,9 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
             }
             return $result;
         }
-    
+
         return $this->data;
     }
-    
 
     public function set(int | string $var, mixed $value = null, bool $updateImmediately = false): static {
         if (! is_array($var)) {
@@ -341,7 +274,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this;
     }
 
-    public function clear(bool $updateImmediately = false): static{
+    public function clear(bool $updateImmediately = false): static {
         $this->data = [];
 
         if ($updateImmediately == true) {
@@ -356,6 +289,31 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
 
     public function setExpiration(int $expiration) {
         $this->expiration = $expiration > 0 ? $expiration : self::EXPIRATION_DEFAULT;
+        return $this;
+    }
+
+    /**
+     * Get the value of cookies
+     */
+    public function getCookies(): ?CookieManager {
+        if ($this->cookies === null) {
+            $this->cookies = new CookieManager();
+        }
+
+        return $this->cookies;
+    }
+
+    /**
+     * Set the value of cookies
+     *
+     * @return  self
+     */
+    public function setCookies(array | CookieManager $cookies): static
+    {
+        if (is_array($cookies)) {
+            $cookies = self::createInstance([ ...$cookies, 'class' => CookieManager::class]);
+        }
+        $this->cookies = $cookies;
         return $this;
     }
 }
