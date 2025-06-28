@@ -12,6 +12,7 @@ namespace Scaleum\Http;
 
 use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
+use Scaleum\Stdlib\Helpers\JsonHelper;
 
 class CookieManager extends Hydrator {
     private const HASH_LEN = 32; // length of md5 hash
@@ -89,7 +90,7 @@ class CookieManager extends Hydrator {
     }
 
     protected function prepareForStorage(mixed $value): string {
-        $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $value = !is_scalar($value)? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES): $value;
 
         if ($value === false) {
             throw new EInvalidArgumentException('Failed to encode value for cookie storage: ' . json_last_error_msg());
@@ -119,7 +120,7 @@ class CookieManager extends Hydrator {
             }
         }
 
-        return json_decode($value, true);
+        return JsonHelper::isJson($value)? json_decode($value, true):$value;
     }
 
     public function setEncode(bool $encode): static {
