@@ -14,6 +14,7 @@ namespace Scaleum\Http;
 use Psr\Http\Message\StreamInterface;
 use Scaleum\Stdlib\Helpers\ArrayHelper;
 use Scaleum\Stdlib\Helpers\HttpHelper;
+use Scaleum\Stdlib\Helpers\XmlHelper;
 
 /**
  * MessagePayloadTrait
@@ -85,11 +86,7 @@ trait MessagePayloadTrait {
             return 'application/json';
         }
 
-        if (preg_match('/^\s*</', $content)) {
-            return 'text/html';
-        }
-
-        if (stripos($content, '<?xml') !== false) {
+        if (stripos($content, '<?xml') !== false || XmlHelper::isXml($content)) {
             return 'application/xml';
         }
 
@@ -100,6 +97,10 @@ trait MessagePayloadTrait {
         if (preg_match('/^(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|TRUNCATE|REPLACE|WITH)\s/i', $content)) {
             return 'text/sql';
         }
+
+        if (preg_match('/^\s*</', $content)) {
+            return 'text/html';
+        }        
 
         return 'text/plain';
     }
