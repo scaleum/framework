@@ -17,11 +17,11 @@ class CookieManager extends Hydrator {
     private const HASH_LEN = 32; // length of md5 hash
 
     protected bool $encode     = false;
-    protected int $expire      = 0;
+    protected int $expire      = 3600;
     protected string $path     = '/';
     protected string $domain   = '';
-    protected bool $secure     = true;
-    protected bool $httpOnly   = true;
+    protected bool $secure     = false;
+    protected bool $httpOnly   = false;
     protected string $sameSite = 'Lax';
     protected string $salt     = '7987a1d4c9cd4076b6d855f2d7c5fdb4';
     public function set(string $name, mixed $value, ?int $expire = null): bool {
