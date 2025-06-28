@@ -97,7 +97,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
     }
 
     private function setAnchor(string $key, mixed $value = null): mixed {
-        if ($this->getCookies()?->setExpire(0)->set($key, $value) === true) {
+        if ($this->getCookies()?->setExpire($this->getTimestamp($this->expiration))->set($key, $value) === true) {
             return true;
         }
 
@@ -157,8 +157,6 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
 
     public function close() {
         $this->getCookies()?->delete($this->name);
-        // setcookie($this->name, '', $this->getTimestamp() - $this->expiration, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHttpOnly);
-        // unset($_COOKIE[$this->name]);
     }
 
     protected function update(bool $flush = false) {
