@@ -91,9 +91,11 @@ class ServiceManager implements ServiceProviderInterface {
             $this->invokableClasses[$_name] = $className;
             
             // Automatic initialization, only for array based definitions
-            if(isset($this->configs[$_name]['eager']) && $this->configs[$_name]['eager'] === true) {
-                unset($this->configs[$_name]['eager']);
-                $this->getService($_name);
+            if(isset($this->configs[$_name]['eager'])) {
+                if($this->configs[$_name]['eager'] === true){
+                    $this->getService($_name);
+                }
+                unset($this->configs[$_name]['eager']);                
             }
             return true;
         }
