@@ -91,11 +91,8 @@ class ServiceManager implements ServiceProviderInterface {
             $this->invokableClasses[$_name] = $className;
             
             // Automatic initialization, only for array based definitions
-            if(isset($this->configs[$_name]['eager'])) {
-                if($this->configs[$_name]['eager'] === true){
-                    $this->getService($_name);
-                }
-                unset($this->configs[$_name]['eager']);                
+            if(isset($this->configs[$_name]['eager']) && $this->configs[$_name]['eager'] === true) {
+                $this->getService($_name);             
             }
             return true;
         }
@@ -122,6 +119,7 @@ class ServiceManager implements ServiceProviderInterface {
             $config = array_merge($config, $this->configs[$normalizeName]);
         }
 
+        // If config is empty, we can return a new instance directly
         if (isset($config['dependencies']) && is_array($config['dependencies'])) {
             foreach ($config['dependencies'] as $key => $dependencyName) {
                 if (($dependency = $this->getService($dependencyName)) !== null) {
@@ -131,6 +129,11 @@ class ServiceManager implements ServiceProviderInterface {
                 }
             }
             unset($config['dependencies']);
+        }
+
+        // Remove eager loading flag if exists
+        if (isset($config['eager'])) {
+            unset($config['eager']);
         }
 
         $reflection = new ReflectionClass($invokable);
