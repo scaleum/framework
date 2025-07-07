@@ -66,10 +66,26 @@
 - [EventManager](./components/events.md)
 - [ServiceManager](./components/service-locator.md)
 - [Routing](./components/routing.md)
-- [i18n](./components/i18n.md)
+- i18n
+  - Contracts
+    - [LocaleIdentityInterface](./components/i18n/contracts/LocaleIdentityInterface.md)
+    - [TranslationLoaderInterface](./components/i18n/contracts/TranslationLoaderInterface.md)
+  - Loaders
+    - [Gettext](./components/i18n/loaders/Gettext.md)
+    - [Ini](./components/i18n/loaders/Ini.md)
+    - [PhpArray](./components/i18n/loaders/PhpArray.md)
+    - [TranslationLoaderAbstract](./components/i18n/loaders/TranslationLoaderAbstract.md)
+  - [LoaderDispatcher](./components/i18n/LoaderDispatcher.md)
+  - [LocaleDetector](./components/i18n/LocaleDetector.md)
+  - [LocaleIdentityAbstract](./components/i18n/LocaleIdentityAbstract.md)
+  - [Translator](./components/i18n/Translator.md)
+  - [TranslatorTrait](./components/i18n/TranslatorTrait.md)
 - [Logger](./components/logger.md)
 - [Security](./components/security.md)
 - [Session](./components/session.md)
+- Storages
+  - PDO
+    - [DatabaseProviderInterface](./components/storages/pdo/DatabaseProviderInterface.md)
 
 ### 7. Базовые классы (Stdlib\Base)
 - [AttributeContainer](./classes/attribute-container.md)
