@@ -4,7 +4,7 @@
 - [Введение](./introduction.md)
 
 ### 2. Концепция использования
-- [Концепция использования**](./concept.md)
+- [Концепция использования](./concept.md)
 
 ### 3. Установка
 - [Установка](./installation.md)
@@ -14,8 +14,8 @@
 
 ### 5. Работа с ядром
 - [KernelAbstract](./kernel-abstract.md)
-  - [HandlerInterface**](./handler-interface.md)
-  - [ResponderInterface**](./responder-interface.md)
+  - [HandlerInterface]() *(в разработке)*
+  - [ResponderInterface]() *(в разработке)*
 - [Http\Application](./components/http/application.md)
     - Client
       - [RequesterAbstract](./components/http/client/requester-abstract.md)
@@ -87,7 +87,7 @@
   - PDO
     - [DatabaseProviderInterface](./components/storages/pdo/DatabaseProviderInterface.md)
 
-### 7. Базовые классы (Stdlib\Base)
+### 7. Базовые классы
 - [AttributeContainer](./classes/attribute-container.md)
 - [Benchmark](./classes/benchmark.md)
 - [CallbackInstance](./classes/callback-instance.md)
@@ -98,7 +98,7 @@
 - [Registry](./classes/registry.md)
 - [SAPI Explorer](./classes/sapi.md)
 
-### 8. Помощники (Stdlib\Helpers)
+### 8. Помощники
 - [ArrayHelper](./helpers/array-helper.md)
 - [BytesHelper](./helpers/bytes-helper.md)
 - [EnvHelper](./helpers/env-helper.md)

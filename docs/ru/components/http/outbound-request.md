@@ -31,10 +31,11 @@ public function __construct(
 - `$protocol` — версия HTTP-протокола.
 - `$async` — `true` для асинхронного запроса.
 
-При конструировании заголовки и тело обрабатываются трейтом `StreamTrait`:
-```php\[$this->headers, $this->body] = $this->prepareHeadersAndStream($headers, $body);
+При конструировании заголовки и тело обрабатываются трейтом `MessagePayloadTrait`:
+```php
+$payload = $this->getMessagePayload($headers, $body);
 ```  
-После чего вызывается `parent::__construct()`.
+После чего вызывается `parent::__construct($this->headers, $this->body, $protocol)`.
 
 ## Методы
 
