@@ -48,15 +48,43 @@ class OutboundResponse extends Message implements ResponseInterface, ResponderIn
 
     // Send HTTP response to client
     public function send(): void {
+        $encoding        = HttpHelper::getAcceptEncoding();
+        $enabledCompress = defined('SCALEUM_ENABLE_HTTP_COMPRESSION') && constant('SCALEUM_ENABLE_HTTP_COMPRESSION');
+        $canCompress     = $encoding === 'gzip' && $enabledCompress;
+
+        if ($canCompress && ini_get('zlib.output_compression')) {
+            ini_set('zlib.output_compression', '0');
+        }
+
         header(sprintf('HTTP/%s %d %s', $this->protocol, $this->statusCode, $this->getReasonPhrase()), true, $this->statusCode);
 
         foreach ($this->headers as $name => $values) {
+            $header = strtolower($name);
+
+            if ($canCompress && $header === 'content-encoding') {
+                $canCompress = false;
+            }
+
+            if ($canCompress && $header === 'content-length') {
+                continue;
+            }
+
             foreach ($values as $value) {
                 header(sprintf('%s: %s', $name, $value), false);
             }
         }
 
-        fpassthru($this->body->detach());
+        $stream = $this->body->detach();
+
+        if ($canCompress) {
+            header('Content-Encoding: gzip');
+            while (! feof($stream)) {
+                $chunk = fread($stream, 8192);
+                echo gzencode($chunk, 9);
+            }
+        } else {
+            fpassthru($stream);
+        }
     }
 }
 /** End of OutboundResponse **/

@@ -169,6 +169,21 @@ class HttpHelper {
         return $defaultFormat;
     }
 
+    public static function getAcceptEncoding(): string {
+        // ключ первого доступного формата — запасной вариант
+        $defaultFormat = 'identity';
+
+        if (empty($_SERVER['HTTP_ACCEPT_ENCODING'])) {
+            return $defaultFormat;
+        }
+
+        // забираем только первую часть до запятой и в нижнем регистре
+        $encoding = strtolower(strtok($_SERVER['HTTP_ACCEPT_ENCODING'], ','));
+
+        // если это gzip, то возвращаем его, иначе возвращаем запасной вариант
+        return ($encoding === 'gzip') ? 'gzip' : $defaultFormat;
+    }
+
     /**
      * Sets an HTTP header.
      *
