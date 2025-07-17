@@ -190,7 +190,7 @@ class TemplateRenderer extends Hydrator {
     public function setPlugins(array $plugins): self {
         foreach ($plugins as $plugin) {
             $instance = $plugin;
-            if (is_string($plugin) && class_exists($plugin)) {
+            if (is_string($plugin) || is_array($plugin)) {
                 $instance = static::createInstance($plugin);
             }
 
