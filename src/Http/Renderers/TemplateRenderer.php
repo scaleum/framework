@@ -217,7 +217,7 @@ class TemplateRenderer extends Hydrator {
             preg_match_all($pattern, $str, $matches);
             for ($i = 0, $cnt = count($matches[0]); $i < $cnt; $i++) {
                 if (! empty($matches[1][$i])) {
-                    $safe = str_replace(['{', '}'], ['<insul>', '</insul>'], $matches[1][$i]);
+                    $safe = str_replace(['{{', '}}'], ['<insul>', '</insul>'], $matches[1][$i]);
                     $str  = str_replace($matches[0][$i], str_replace($matches[1][$i], $safe, $matches[0][$i]), $str);
                 }
             }
@@ -313,7 +313,7 @@ class TemplateRenderer extends Hydrator {
         }
 
         // recovery of literal brackets
-        return str_replace(['<insul>', '</insul>'], ['{', '}'], trim($str));
+        return str_replace(['<insul>', '</insul>'], ['{{', '}}'], trim($str));
     }
 
     protected function parseStr(string $str, array $data = []) {
