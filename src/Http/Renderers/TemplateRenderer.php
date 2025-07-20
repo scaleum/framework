@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -29,13 +29,15 @@ use Scaleum\Stdlib\Helpers\PathHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class TemplateRenderer extends Hydrator {
+class TemplateRenderer extends Hydrator
+{
     protected array $locations = [];
     protected array $views     = [];
     protected array $plugins   = [];
     protected string $layout   = 'layout';
 
-    public function __construct(array $config = []) {
+    public function __construct(array $config = [])
+    {
         parent::__construct($config);
         /**
          * Лимит обратных ссылок PCRE
@@ -58,7 +60,8 @@ class TemplateRenderer extends Hydrator {
         ]);
     }
 
-    public function __call($method, $args) {
+    public function __call($method, $args)
+    {
         if ($this->hasPlugin($method)) {
             $plugin = $this->getPlugin($method);
             if (is_callable($plugin)) {
@@ -68,7 +71,8 @@ class TemplateRenderer extends Hydrator {
         return null;
     }
 
-    public function __get($name) {
+    public function __get($name)
+    {
         if ($this->hasPlugin($name)) {
             return $this->getPlugin($name);
         }
@@ -76,7 +80,8 @@ class TemplateRenderer extends Hydrator {
         return null;
     }
 
-    protected function resolveTemplate(string $name): string {
+    protected function resolveTemplate(string $name): string
+    {
         $filename = $name;
 
         // has view?
@@ -103,7 +108,8 @@ class TemplateRenderer extends Hydrator {
     /**
      * Get the value of locations
      */
-    public function getLocations() {
+    public function getLocations()
+    {
         return $this->locations;
     }
 
@@ -112,7 +118,8 @@ class TemplateRenderer extends Hydrator {
      *
      * @return  self
      */
-    public function setLocations(array $locations, bool $primary = true) {
+    public function setLocations(array $locations, bool $primary = true)
+    {
         foreach ($locations as $location) {
             $this->addLocation($location, $primary);
         }
@@ -120,7 +127,8 @@ class TemplateRenderer extends Hydrator {
         return $this;
     }
 
-    public function addLocation(string $location, bool $primary = true) {
+    public function addLocation(string $location, bool $primary = true)
+    {
         $location = FileHelper::prepPath($location);
         if (($location != '/') && ! in_array($location, $this->locations)) {
             if ($primary) {
@@ -136,7 +144,8 @@ class TemplateRenderer extends Hydrator {
     /**
      * Get the value of views
      */
-    public function getViews(): array {
+    public function getViews(): array
+    {
         return $this->views;
     }
 
@@ -145,7 +154,8 @@ class TemplateRenderer extends Hydrator {
      *
      * @return  self
      */
-    public function setViews(array $views) {
+    public function setViews(array $views)
+    {
         foreach ($views as $alias => $filename) {
             $this->setView($alias, $filename);
         }
@@ -153,29 +163,35 @@ class TemplateRenderer extends Hydrator {
         return $this;
     }
 
-    public function hasView(string $name): bool {
+    public function hasView(string $name): bool
+    {
         return isset($this->views[$name]);
     }
 
-    public function setView(string $name, string $filename) {
+    public function setView(string $name, string $filename)
+    {
         $this->views[$name] = $filename;
         return $this;
     }
 
-    public function getView(string $name): string | null {
+    public function getView(string $name): string | null
+    {
         return $this->views[$name] ?? null;
     }
 
-    public function registerPlugin(RendererPluginInterface $plugin): void {
+    public function registerPlugin(RendererPluginInterface $plugin): void
+    {
         $this->plugins[$plugin->getName()] = $plugin;
         $plugin->register($this);
     }
 
-    public function getPlugins(): array {
+    public function getPlugins(): array
+    {
         return $this->plugins;
     }
 
-    public function getPlugin(string $name): RendererPluginInterface {
+    public function getPlugin(string $name): RendererPluginInterface
+    {
         if (isset($this->plugins[$name])) {
             return $this->plugins[$name];
         }
@@ -183,11 +199,13 @@ class TemplateRenderer extends Hydrator {
         throw new ENotFoundError(sprintf('Plugin "%s" is not found', $name));
     }
 
-    public function hasPlugin(string $name): bool {
+    public function hasPlugin(string $name): bool
+    {
         return isset($this->plugins[$name]);
     }
 
-    public function setPlugins(array $plugins): self {
+    public function setPlugins(array $plugins): self
+    {
         foreach ($plugins as $plugin) {
             $instance = $plugin;
             if (is_string($plugin) || is_array($plugin)) {
@@ -207,7 +225,9 @@ class TemplateRenderer extends Hydrator {
 
         return $this;
     }
-    protected function parsePlugins(string $str): string {
+
+    protected function parsePlugins(string $str): string
+    {
         // isolation of {{}} syntax in <input> and <textarea>
         $patterns = [
             '~<textarea.*?>(.*?)</textarea>~isu',
@@ -280,6 +300,11 @@ class TemplateRenderer extends Hydrator {
                 }
             }
 
+            // convert to array values if they are formated as braced strings
+            if(is_array($params)){
+                $params = self::parseBracedRecursive($params);
+            }
+
             // call plugin: named parameters through reflection
             if (is_array($params) && ArrayHelper::isAssociative($params)) {
                 $refMethod = new \ReflectionMethod($plugin, '__invoke');
@@ -316,7 +341,8 @@ class TemplateRenderer extends Hydrator {
         return str_replace(['<insul>', '</insul>'], ['{{', '}}'], trim($str));
     }
 
-    protected function parseStr(string $str, array $data = []) {
+    protected function parseInlineString(string $str, array $data = [])
+    {
         foreach ($data as $key => $value) {
             if (is_string($value)) {
                 $str = str_replace("{{{$key}}}", $value, $str);
@@ -328,7 +354,8 @@ class TemplateRenderer extends Hydrator {
         return $str;
     }
 
-    public function renderTemplate(Template $template): string {
+    public function renderTemplate(Template $template): string
+    {
         try {
             $raw = $template->getData();
             if (array_key_exists('this', $raw)) {
@@ -369,7 +396,7 @@ class TemplateRenderer extends Hydrator {
             throw new ERuntimeError(sprintf('%s: %s', __METHOD__, $exception->getMessage()), $exception->getCode(), previous: $exception);
         }
 
-        $buffer = $this->parseStr($buffer, $data);
+        $buffer = $this->parseInlineString($buffer, $data);
         $buffer = $this->parsePlugins($buffer);
 
         $template->setContent($buffer);
@@ -382,7 +409,8 @@ class TemplateRenderer extends Hydrator {
         return $this->renderTemplate($layout);
     }
 
-    public function render(string $view, array $data = [], $partial = false): string {
+    public function render(string $view, array $data = [], $partial = false): string
+    {
         if ($view instanceof Template) {
             return $this->renderTemplate($view);
         } elseif (is_string($view)) {
@@ -391,14 +419,16 @@ class TemplateRenderer extends Hydrator {
         throw new ERuntimeError(sprintf('View must be a string or instance of `Template`, given "%s"', gettype($view)));
     }
 
-    public function renderPartial(string $view, array $data = []): string {
+    public function renderPartial(string $view, array $data = []): string
+    {
         return $this->render($view, $data, true);
     }
 
     /**
      * Get the value of layout
      */
-    public function getLayout(): string {
+    public function getLayout(): string
+    {
         return $this->layout;
     }
 
@@ -408,10 +438,108 @@ class TemplateRenderer extends Hydrator {
      *
      * @return  self
      */
-    public function setLayout(string $layout) {
+    public function setLayout(string $layout)
+    {
         $this->layout = $layout;
 
         return $this;
+    }
+
+    /**
+     * Determines if the given string is wrapped with braces.
+     *
+     * @param string $str The string to check.
+     * @return bool True if the string starts and ends with braces, false otherwise.
+     */
+    protected static function isWrappedBraces(string $str): bool
+    {
+        return str_starts_with($str, '[') && str_ends_with($str, ']');
+    }
+
+    /**
+     * Recursively parses an array with braced values.
+     *
+     * This method processes the given input array, handling any values
+     * that are enclosed in braces, and returns the parsed result as an array.
+     *
+     * @param array $input The input array to be parsed.
+     * @return array The resulting array after parsing braced values recursively.
+     */
+    protected static function parseBracedRecursive(array $input): array
+    {
+        foreach ($input as $key => $value) {
+            if (is_string($value) && self::isWrappedBraces($value)) {
+                $input[$key] = self::parseBracedString($value);
+            } elseif (is_array($value)) {
+                $input[$key] = self::parseBracedRecursive($value);
+            }
+        }
+
+        return $input;
+    }
+
+    /**
+     * Parses a string containing braced expressions and returns an array of the parsed components.
+     *
+     * This method processes the input string, extracting segments enclosed in braces `{}` and
+     * returns them as an array. It can be used for template parsing or similar purposes where
+     * braced placeholders need to be identified and handled.
+     *
+     * @param string $str The input string containing braced expressions to parse.
+     * @return array An array of parsed components extracted from the braced string.
+     */
+    protected static function parseBracedString(string $str): array
+    {
+        $result = [];
+        $str    = trim($str, '[]');
+
+        $key        = '';
+        $value      = '';
+        $depth      = 0;
+        $buffer     = '';
+        $parsingKey = true;
+
+        $len = strlen($str);
+        for ($i = 0; $i <= $len; $i++) {
+            $char = $str[$i] ?? null;
+
+            if ($char === '[') {
+                $depth++;
+                $buffer .= $char;
+                continue;
+            }
+
+            if ($char === ']') {
+                $depth--;
+                $buffer .= $char;
+                continue;
+            }
+
+            if ($char === ':' && $depth === 0 && $parsingKey) {
+                $key        = trim($buffer);
+                $buffer     = '';
+                $parsingKey = false;
+                continue;
+            }
+
+            if (($char === ',' && $depth === 0) || $i === $len) {
+                $value = trim($buffer);
+                if (self::isWrappedBraces($value)) {
+                    $value = self::parseBracedString($value);
+                } else {
+                    $value = trim($value, " \t\n\r\0\x0B'\"");
+                }
+                $result[$key] = $value;
+
+                $buffer     = '';
+                $parsingKey = true;
+                continue;
+            }
+
+            $buffer .= $char;
+        }
+
+        return $result;
     }
 }
 /** End of TemplateRenderer **/
