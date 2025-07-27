@@ -216,18 +216,21 @@ class Database extends Hydrator {
      * @return string The prepared SQL query string.
      */
     public function getQuery(?string $sql = null, array $params = []): string {
+        $paramsPrepared = false;
+
         if (empty($sql)) {
             $sql = $this->queryStr;
         }
 
         if (empty($params)) {
-            $params = $this->queryParams;
+            $params         = $this->queryParams;
+            $paramsPrepared = true;
         }
 
         if (count($params) > 0) {
             foreach ($params as $key => $value) {
                 $pattern = '/:' . preg_quote(trim(is_integer($key) ? $key + 1 : $key, " \n\r\t\v\x00\:"), '/') . '\b/';
-                $sql     = preg_replace($pattern, DatabaseHelper::quote($this->getPDO(), $value), $sql);
+                $sql     = preg_replace($pattern, ! $paramsPrepared ? DatabaseHelper::quote($this->getPDO(), $value) : $value, $sql);
             }
         }
 
