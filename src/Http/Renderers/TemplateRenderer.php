@@ -488,62 +488,74 @@ class TemplateRenderer extends Hydrator
      * @param string $str The input string containing braced expressions to parse.
      * @return array An array of parsed components extracted from the braced string.
      */
-    protected static function parseBracedString(string $str): array
+    protected static function parseBracedString(string $str): array | string
+    {
+        $str = trim($str);
+
+        if (str_starts_with($str, '[[') && str_ends_with($str, ']]')) {
+            $inner = substr($str, 2, -2);
+            return self::parseArrayString($inner);
+        }
+
+        return trim($str, "[] \t\n\r\0\x0B'\"");
+    }
+
+    /**
+     * Parses a string representation of an array.
+     *
+     * This method converts a string expected to represent an array into its actual array form.
+     *
+     * @param string $str The string representing the array.
+     * @return array The converted array.
+     */
+    protected static function parseArrayString(string $str): array
     {
         $result = [];
-        $str    = trim($str, '[]');
+        $buffer = '';
+        $depth  = 0;
+        $len    = strlen($str);
 
-        $buffer     = '';
-        $depth      = 0;
-        $parsingKey = true;
-        $key        = '';
-        $isAssoc    = null;
-
-        $len = strlen($str);
         for ($i = 0; $i <= $len; $i++) {
             $char = $str[$i] ?? null;
 
-            if ($char === '[') {
+            if ($char === '[' && $str[$i + 1] === '[') {
                 $depth++;
-                $buffer .= $char;
+                $buffer .= '[[';
+                $i++; // skip the second [
                 continue;
             }
 
-            if ($char === ']') {
+            if ($char === ']' && $str[$i + 1] === ']') {
                 $depth--;
-                $buffer .= $char;
-                continue;
-            }
-
-            if ($depth === 0 && $char === ':' && $isAssoc !== false && $parsingKey) {
-                $key        = trim($buffer);
-                $buffer     = '';
-                $parsingKey = false;
-                $isAssoc    = true;
+                $buffer .= ']]';
+                $i++; // skip the second ]
                 continue;
             }
 
             if (($char === ',' && $depth === 0) || $i === $len) {
-                $item = trim($buffer);
+                $item   = trim($buffer);
+                $buffer = '';
 
-                if (self::isWrappedBraces($item)) {
-                    $item = self::parseBracedString($item);
+                $colonPos = self::findColon($item);
+
+                if ($colonPos !== false) {
+                    $key = trim(substr($item, 0, $colonPos));
+                    $val = trim(substr($item, $colonPos + 1));
+
+                    if (str_starts_with($val, '[[') && str_ends_with($val, ']]')) {
+                        $val = self::parseBracedString($val);
+                    } else {
+                        $val = trim($val, " \t\n\r\0\x0B'\"");
+                    }
+
+                    $result[$key] = $val;
                 } else {
-                    $item = trim($item, " \t\n\r\0\x0B'\"");
+                    $val = str_starts_with($item, '[[') && str_ends_with($item, ']]')
+                        ? self::parseBracedString($item)
+                        : trim($item, " \t\n\r\0\x0B'\"");
+                    $result[] = $val;
                 }
 
-                if ($isAssoc === null) {
-                    $isAssoc = false;
-                }
-
-                if ($isAssoc) {
-                    $result[$key] = $item;
-                } else {
-                    $result[] = $parsingKey ? $item : $key . ':' . $item;
-                }
-
-                $buffer     = '';
-                $parsingKey = true;
                 continue;
             }
 
@@ -551,6 +563,35 @@ class TemplateRenderer extends Hydrator
         }
 
         return $result;
+    }
+
+    /**
+     * Searches for the position of the first colon in the provided string.
+     *
+     * This method scans the input string for the first occurrence of a colon (":").
+     * It returns the zero-based index of the colon if found; otherwise, it returns false.
+     *
+     * @param string $str The string to search for a colon.
+     * @return int|false The index of the colon if found, or false if no colon is present.
+     */
+    protected static function findColon(string $str): int | false
+    {
+        $depth = 0;
+        $len   = strlen($str);
+
+        for ($i = 0; $i < $len; $i++) {
+            if ($str[$i] === '[' && $str[$i + 1] === '[') {
+                $depth++;
+                $i++;
+            } elseif ($str[$i] === ']' && $str[$i + 1] === ']') {
+                $depth--;
+                $i++;
+            } elseif ($str[$i] === ':' && $depth === 0) {
+                return $i;
+            }
+        }
+
+        return false;
     }
 }
 /** End of TemplateRenderer **/
