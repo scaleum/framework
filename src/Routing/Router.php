@@ -57,34 +57,34 @@ class Router {
             $this->addRoute($alias, $route);
         }
     }
-    public function addRoute(string $alias, RouteInterface $route): void {
+    public function addRoute(string $alias, RouteInterface $route): static {
         $this->routes[$alias] = $route;
+        return $this;
     }
 
     public function getRoutes(): array {
         return $this->routes;
     }
 
-    public function getRoute(string $alias): RouteInterface {
+    public function getRoute(string $alias): ?RouteInterface {
         if (isset($this->routes[$alias])) {
             return $this->routes[$alias];
         }
-
-        throw new ERuntimeError('Route not found');
+        return null;
     }
 
     /**
      * Generates a URL based on the given route name and parameters.
      *
-     * @param string $name The name of the route.
-     * @param array $parameters An associative array of parameters to include in the URL.
+     * @param string $alias The name of the route.
+     * @param array $params An associative array of parameters to include in the URL.
      * @return string The generated URL.
      */
-    public function getUrl(string $name, array $parameters = []): string {
-        if ($route = $this->getRoute($name)) {
-            return $route->getUrl($parameters);
+    public function getUrl(string $alias, array $params = []): string {
+        if ($route = $this->getRoute($alias)) {
+            return $route->getUrl($params);
         }
-        return "#{$name}";
+        return "#{$alias}";
     }
 
     /**
