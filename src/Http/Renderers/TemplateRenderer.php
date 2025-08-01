@@ -301,7 +301,7 @@ class TemplateRenderer extends Hydrator
             }
 
             // convert to array values if they are formated as braced strings
-            if(is_array($params)){
+            if (is_array($params)) {
                 $params = self::parseBracedRecursive($params);
             }
 
@@ -493,11 +493,11 @@ class TemplateRenderer extends Hydrator
         $result = [];
         $str    = trim($str, '[]');
 
-        $key        = '';
-        $value      = '';
-        $depth      = 0;
         $buffer     = '';
+        $depth      = 0;
         $parsingKey = true;
+        $key        = '';
+        $isAssoc    = null;
 
         $len = strlen($str);
         for ($i = 0; $i <= $len; $i++) {
@@ -515,21 +515,32 @@ class TemplateRenderer extends Hydrator
                 continue;
             }
 
-            if ($char === ':' && $depth === 0 && $parsingKey) {
+            if ($depth === 0 && $char === ':' && $isAssoc !== false && $parsingKey) {
                 $key        = trim($buffer);
                 $buffer     = '';
                 $parsingKey = false;
+                $isAssoc    = true;
                 continue;
             }
 
             if (($char === ',' && $depth === 0) || $i === $len) {
-                $value = trim($buffer);
-                if (self::isWrappedBraces($value)) {
-                    $value = self::parseBracedString($value);
+                $item = trim($buffer);
+
+                if (self::isWrappedBraces($item)) {
+                    $item = self::parseBracedString($item);
                 } else {
-                    $value = trim($value, " \t\n\r\0\x0B'\"");
+                    $item = trim($item, " \t\n\r\0\x0B'\"");
                 }
-                $result[$key] = $value;
+
+                if ($isAssoc === null) {
+                    $isAssoc = false;
+                }
+
+                if ($isAssoc) {
+                    $result[$key] = $item;
+                } else {
+                    $result[] = $parsingKey ? $item : $key . ':' . $item;
+                }
 
                 $buffer     = '';
                 $parsingKey = true;
