@@ -24,8 +24,10 @@ use Scaleum\Stdlib\Helpers\StringHelper;
  */
 class Router {
     protected array $files = [];
+
     /** @var RouteInterface[]  An array to store the defined routes */
-    protected array $routes             = [];
+    protected array $routes = [];
+
     protected ?LoaderResolver $resolver = null;
 
     public function __construct(?LoaderResolver $resolver = null) {
@@ -39,7 +41,7 @@ class Router {
     }
 
     public function loadFromDir(string $dir) {
-        $this->addRoutes($this->getResolver()->fromDir($dir,$this->files));
+        $this->addRoutes($this->getResolver()->fromDir($dir, $this->files));
     }
 
     public function addRoutes(array $routes): void {
@@ -79,8 +81,10 @@ class Router {
      * @return string The generated URL.
      */
     public function getUrl(string $name, array $parameters = []): string {
-        $route = $this->getRoute($name);
-        return $route->getUrl($parameters);
+        if ($route = $this->getRoute($name)) {
+            return $route->getUrl($parameters);
+        }
+        return "#{$name}";
     }
 
     /**

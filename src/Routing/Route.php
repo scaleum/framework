@@ -51,6 +51,7 @@ class Route extends Hydrator implements RouteInterface {
     ];
 
     protected ?string $path    = null;
+    private ?string $pathRaw   = null;
     protected mixed $methods   = null;
     protected ?array $callback = null;
 
@@ -95,7 +96,8 @@ class Route extends Hydrator implements RouteInterface {
      * @return self Returns the instance of the route for method chaining.
      */
     public function setPath(string $path): self {
-        $this->path = $this->decode($path);
+        $this->pathRaw = $path;
+        $this->path    = $this->decode($path);
         return $this;
     }
 
@@ -126,38 +128,43 @@ class Route extends Hydrator implements RouteInterface {
      * @return string The generated URL as a string.
      */
     public function getUrl(array $params): string {
-        $url = $this->encode($this->getPath());
-        if ($params && preg_match_all(self::REGVAL_REV, $url, $matches)) {
-            $matches = array_slice($matches[1], 0, count($params));
-            $total   = count($matches);
-            for ($i = 0; $i < $total; $i++) {
-                $url = str_replace($matches[$i], $params[$i] ?? '', $url);
+        $template = $this->pathRaw ?? $this->path ?? '';
+        $url      = $template;
+
+        // Remove leading and trailing slashes
+        $url = preg_replace_callback('#\(\?:/(\({[^}]+}\))\)\?#', function ($m) use (&$params) {
+            // If there is no value for the nested placeholder, remove the entire group
+            $key = null;
+            if (preg_match('#{:(\w+)}#', $m[1], $km)) {
+                $key = $km[1];
             }
+
+            if (is_numeric(array_key_first($params))) {
+                return isset($params[0]) ? "/$params[0]" : '';
+            } elseif ($key && isset($params[$key])) {
+                return '/' . $params[$key];
+            }
+
+            return '';
+        }, $url);
+
+        // Replace remaining placeholders
+        $url = preg_replace_callback(self::REGVAL, function ($m) use (&$params) {
+            $token = trim($m[0], '{}');
+            if (str_starts_with($token, ':')) {
+                $value = is_numeric(array_key_first($params)) ? array_shift($params) : '';
+                return $value;
+            }
+            return '';
+        }, $url);
+
+        // Build query string from named parameters
+        $query = http_build_query(array_filter($params, 'is_string', ARRAY_FILTER_USE_KEY));
+        if ($query) {
+            $url .= "?$query";
         }
 
         return $url;
-    }
-
-    /**
-     * Encodes the given path.
-     *
-     * @param string $path The path to encode.
-     * @return string The encoded path.
-     */
-    protected function encode($path) {
-        $result = preg_replace_callback(static::REGVAL_REV, function ($matches) {
-            $patterns   = array_flip(static::WILDCARDS);
-            $matches[0] = str_replace(['(', ')', '/^', '$/'], '', $matches[0]);
-            if (in_array($matches[0], array_keys($patterns))) {
-                return '({' . $patterns[$matches[0]] . '})';
-            } else {
-                return "($matches[0])";
-            }
-
-        }, $path
-        );
-
-        return str_replace('\/', '/', trim($result, '/^$'));
     }
 
     /**
@@ -166,7 +173,7 @@ class Route extends Hydrator implements RouteInterface {
      * @param string $path The path to decode.
      * @return string The decoded path.
      */
-    protected function decode($path) {
+    private function decode($path) {
         $result = preg_replace_callback(static::REGVAL, function ($matches) {
             $patterns   = static::WILDCARDS;
             $matches[0] = str_replace(['{', '}'], '', $matches[0]);
