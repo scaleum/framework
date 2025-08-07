@@ -24,5 +24,6 @@ interface SessionInterface {
     public function remove(string $key, bool $updateImmediately = false): static;
     public function removeByPrefix(string $prefix, bool $updateImmediately = false): static;
     public function clear(bool $updateImmediately = false): static;
+    public function close(): static;
 }
 /** End of SessionInterface **/
