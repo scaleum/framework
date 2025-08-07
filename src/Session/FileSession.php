@@ -19,9 +19,9 @@ namespace Scaleum\Session;
 class FileSession extends SessionAbstract {
     protected string $path;
 
-    public function close() {
-        parent::close();
+    public function close():static {        
         $this->cleanup();
+        return parent::close();
     }
 
     protected function read(): array {

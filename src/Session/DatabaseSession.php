@@ -79,9 +79,9 @@ class DatabaseSession extends SessionAbstract {
             $query->where("last_activity < ", $this->getTimestamp() - $this->getExpiration(), false)->delete($this->table);
         }
     }
-    public function close() {
-        parent::close();
+    public function close():static {        
         $this->cleanup();
+        return parent::close();
     }
 
     public function getDatabase() {
