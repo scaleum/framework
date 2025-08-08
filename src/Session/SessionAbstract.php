@@ -1,4 +1,5 @@
 <?php
+
 declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
@@ -35,13 +36,13 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
     protected const EXPIRATION_DEFAULT       = 3600;
     protected array $data                    = [];
     protected int $expiration                = self::EXPIRATION_DEFAULT;
-    protected bool $destroyOnClose           = false;
     protected string $name                   = 'SESSION_ID';
     protected string $timeReference          = 'time';
     protected bool $logging                  = true;
     protected ?EventManagerInterface $events = null;
     protected ?CookieManager $cookies        = null;
     protected string $id;
+    private bool $isOpened = false;
     ///////////////////////////////////////////////////////////////////////////
     abstract protected function read(): array;
     abstract protected function write(array $data): void;
@@ -87,7 +88,8 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this->events;
     }
 
-    public function setEvents(EventManagerInterface $events): static {
+    public function setEvents(EventManagerInterface $events): static
+    {
         $this->events = $events;
         return $this;
     }
@@ -119,7 +121,6 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
     }
 
     public function open($name): bool {
-
         if (($name == $this->name) && ! empty($this->data)) {
             $this->debug('Session is already opened...synchronization');
 
@@ -128,6 +129,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         }
 
         ! $this->logging || $this->debug('Session opening...');
+        $this->isOpened = true;
 
         // if session_id not found - open new
         if ($sessionNotExists = ($id = $this->getAnchor($this->name, false)) === false) {
@@ -155,13 +157,23 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return true;
     }
 
-    public function close(): static {
+    public function close(): static
+    {
         $this->getCookies()?->delete($this->name);
         $this->delete();
+
+        $this->isOpened = false;
+        ! $this->logging || $this->debug('Session has been closed');
+
         return $this;
     }
 
     protected function update(bool $flush = false) {
+        // if session is not opened - do nothing
+        if (! $this->isOpened) {
+            return;
+        }
+
         // flush all data
         if ($flush === true) {
             ! $this->logging || $this->debug('Session was flushed');
@@ -226,7 +238,8 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this->data;
     }
 
-    public function set(int | string $var, mixed $value = null, bool $updateImmediately = false): static {
+    public function set(int | string $var, mixed $value = null, bool $updateImmediately = false): static
+    {
         if (! is_array($var)) {
             $var = [$var => $value];
         }
@@ -251,7 +264,8 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this;
     }
 
-    public function remove(string $key, bool $updateImmediately = true): static {
+    public function remove(string $key, bool $updateImmediately = true): static
+    {
         unset($this->data[$key]);
         if ($updateImmediately == true) {
             $this->update();
@@ -259,7 +273,8 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this;
     }
 
-    public function removeByPrefix(string $prefix, bool $updateImmediately = false): static {
+    public function removeByPrefix(string $prefix, bool $updateImmediately = false): static
+    {
         if ($prefix !== null && $prefix !== '') {
             foreach ($this->data as $key => $value) {
                 if (str_starts_with($key, $prefix)) {
@@ -274,7 +289,8 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this;
     }
 
-    public function clear(bool $updateImmediately = false): static {
+    public function clear(bool $updateImmediately = false): static
+    {
         $this->data = [];
 
         if ($updateImmediately == true) {
