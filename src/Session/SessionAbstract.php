@@ -157,6 +157,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
 
     public function close(): static {
         $this->getCookies()?->delete($this->name);
+        $this->delete();
         return $this;
     }
 
