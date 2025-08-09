@@ -43,6 +43,14 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
      */
     protected array $relationFactories = [];
 
+    
+    /**
+     * Indicates whether relations should be included in the query.
+     *
+     * @var bool
+     */
+    protected bool $relationsIncluded = true;
+
     public function __construct(?Database $database = null, ?self $parent = null) {
         parent::__construct($database);
         $this->parent = $parent;
@@ -60,6 +68,31 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
     public function __call($name, $args)
     {
         return call_user_func_array([$this->data, $name], $args);
+    }
+
+    /**
+     * Retrieves the relationships associated with the current model.
+     *
+     * This method checks and returns the status of relationships for the model.
+     *
+     * @return bool True if relationships are present and valid, false otherwise.
+     */
+    public function getRelationships():bool {
+        return $this->relationsIncluded;
+    }
+    
+    /**
+     * Sets the relationships inclusion flag.
+     *
+     * This method determines whether relationships should be included in the current context.
+     * Depending on the flag passed, subsequent operations might include or exclude related data.
+     *
+     * @param bool $include True to include relationships, false to exclude.
+     * @return static Returns the current instance for method chaining.
+     */
+    public function setRelationships(bool $include): static {
+        $this->relationsIncluded = $include;
+        return $this;
     }
 
     /**
@@ -672,6 +705,12 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
      * @return void
      */
     private function loadRelations(): void {
+        // If relations are not included, skip loading them
+        if (! $this->relationsIncluded) {
+            return;
+        }
+
+        // Load & recreate relations based on the defined relations in the model
         foreach ($this->getRelations() as $relation => $config) {
             $model           = $this->createModelInstance($config['model']);
             $method          = $config['method'];
