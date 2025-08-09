@@ -332,5 +332,13 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         $this->cookies = $cookies;
         return $this;
     }
+
+    /**
+     * Get the value of id
+     */ 
+    public function getId():string
+    {
+        return $this->id;
+    }
 }
 /** End of SessionAbstract **/

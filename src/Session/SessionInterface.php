@@ -17,6 +17,7 @@ namespace Scaleum\Session;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
 interface SessionInterface {
+    public function getId(): string;
     public function get(int | string $var, mixed $default = false): mixed;
     public function getByPrefix(?string $prefix = null): array;
     public function has(int | string $var): bool;
