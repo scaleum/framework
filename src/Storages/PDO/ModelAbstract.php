@@ -70,6 +70,31 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         return call_user_func_array([$this->data, $name], $args);
     }
 
+    public static function __callStatic(string $name, array $arguments): mixed
+    {
+        // (Опционально) ограничим только find*-методы, чтобы статикой не дергать всё подряд
+        if (!str_starts_with($name, 'find')) {
+            throw new \BadMethodCallException(static::class . "::{$name}() is not available.");
+        }
+
+        $instance = static::getInstance();
+
+        // Если в потомке метод реально есть — вызовем напрямую
+        if (method_exists($instance, $name)) {
+            return $instance->$name(...$arguments);
+        }
+
+        // Иначе — в текущую динамику (__call -> $this->data->$name(...))
+        return $instance->__call($name, $arguments);
+    }
+        
+    protected static function getInstance(): static
+    {
+        /** @var static $instance */
+        $instance = new static();
+        return $instance;
+    }
+
     /**
      * Retrieves the relationships associated with the current model.
      *
