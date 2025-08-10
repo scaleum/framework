@@ -69,24 +69,6 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
     {
         return call_user_func_array([$this->data, $name], $args);
     }
-
-    public static function __callStatic(string $name, array $arguments): mixed
-    {
-        // (Опционально) ограничим только find*-методы, чтобы статикой не дергать всё подряд
-        if (!str_starts_with($name, 'find')) {
-            throw new \BadMethodCallException(static::class . "::{$name}() is not available.");
-        }
-
-        $instance = static::getInstance();
-
-        // Если в потомке метод реально есть — вызовем напрямую
-        if (method_exists($instance, $name)) {
-            return $instance->$name(...$arguments);
-        }
-
-        // Иначе — в текущую динамику (__call -> $this->data->$name(...))
-        return $instance->__call($name, $arguments);
-    }
         
     protected static function getInstance(): static
     {
@@ -140,6 +122,10 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         return $this;
     }
 
+    public static function fetch(mixed $id): ?self{
+        return static::getInstance()->find($id);
+    }
+
     /**
      * Finds a single record in the database that matches the given conditions.
      *
@@ -171,6 +157,10 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         return $this;
     }
 
+    public static function fetchOneBy(array | Closure $conditions, string $operator = 'AND'): ?self{
+        return static::getInstance()->findOneBy($conditions, $operator);
+    }
+
     /**
      * Retrieves all records from the database.
      *
@@ -195,6 +185,10 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         }
 
         return $results;
+    }
+
+    public static function fetchAll(): array{
+        return static::getInstance()->findAll();
     }
 
     /**
@@ -231,6 +225,10 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         }
 
         return $results;
+    }
+
+    public static function fetchAllBy(array | Closure $conditions, string $operator = 'AND'): array{
+        return static::getInstance()->findAllBy($conditions, $operator);
     }
 
     /**
