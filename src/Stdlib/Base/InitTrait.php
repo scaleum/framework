@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum\Stdlib.
  *
@@ -12,11 +12,9 @@ declare(strict_types=1);
 
 namespace Scaleum\Stdlib\Base;
 
-use Scaleum\Stdlib\Exceptions\EPropertyError;
 use Scaleum\Stdlib\Helpers\StringHelper;
 
-trait InitTrait
-{
+trait InitTrait {
     /**
      * Initializes the object with the given configuration and context.
      *
@@ -24,10 +22,9 @@ trait InitTrait
      * @param mixed $context The context for initialization.
      * @return void
      */
-    public function init(array $config = [], mixed $context = null)
-    {
-        if ($context == null || !is_object($context)) {
-            $context = &$this;
+    public function init(array $config = [], mixed $context = null) {
+        if ($context === null || ! is_object($context)) {
+            $context = $this;
         }
 
         if (count($config)) {
@@ -36,14 +33,20 @@ trait InitTrait
                     continue;
                 }
 
-                if (method_exists($context, $method = 'set' . StringHelper::normalizeName($key))) {
+                $normalizedKey = StringHelper::normalizeName($key);
+                $method = "set$normalizedKey";
+                if (method_exists($context, $method)) {
                     call_user_func([$context, $method], $val);
                 } else {
-                    if (!property_exists($context, $key) && (!$context instanceof \stdClass)) {
-                        throw new EPropertyError(sprintf('Class  "%s" does not have the "%s" property, dynamic creation of properties is not supported', StringHelper::className($context, false), $key));
+                    if (property_exists($context, $key)) {
+                        $reflection = new \ReflectionObject($context);
+                        if ($reflection->hasProperty($key)) {
+                            $property = $reflection->getProperty($key);
+                            if ($property->isPublic()) {
+                                $context->{$key} = $val;
+                            }
+                        }
                     }
-
-                    $context->{$key} = $val;
                 }
             }
         }
