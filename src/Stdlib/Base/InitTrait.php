@@ -34,7 +34,7 @@ trait InitTrait {
                 }
 
                 $normalizedKey = StringHelper::normalizeName($key);
-                $method = "set$normalizedKey";
+                $method        = "set$normalizedKey";
                 if (method_exists($context, $method)) {
                     call_user_func([$context, $method], $val);
                 } else {
@@ -42,8 +42,12 @@ trait InitTrait {
                         $reflection = new \ReflectionObject($context);
                         if ($reflection->hasProperty($key)) {
                             $property = $reflection->getProperty($key);
-                            if ($property->isPublic()) {
+                            if ($property->isPublic() || $property->isProtected()) {
                                 $context->{$key} = $val;
+                            } elseif ($property->isPrivate()) {
+                                $property->setAccessible(true);
+                                $property->setValue($context, $val);
+
                             }
                         }
                     }
@@ -51,4 +55,3 @@ trait InitTrait {
             }
         }
     }
-}
