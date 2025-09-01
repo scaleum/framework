@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare(strict_types=1);
 /**
  * This file is part of Scaleum\Stdlib.
  *
@@ -14,7 +14,8 @@ namespace Scaleum\Stdlib\Base;
 
 use Scaleum\Stdlib\Helpers\StringHelper;
 
-trait InitTrait {
+trait InitTrait
+{
     /**
      * Initializes the object with the given configuration and context.
      *
@@ -22,7 +23,8 @@ trait InitTrait {
      * @param mixed $context The context for initialization.
      * @return void
      */
-    public function init(array $config = [], mixed $context = null) {
+    public function init(array $config = [], mixed $context = null)
+    {
         if ($context === null || ! is_object($context)) {
             $context = $this;
         }
@@ -47,7 +49,6 @@ trait InitTrait {
                             } elseif ($property->isPrivate()) {
                                 $property->setAccessible(true);
                                 $property->setValue($context, $val);
-
                             }
                         }
                     }
@@ -55,3 +56,4 @@ trait InitTrait {
             }
         }
     }
+}
