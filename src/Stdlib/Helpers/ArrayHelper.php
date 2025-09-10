@@ -14,6 +14,8 @@ namespace Scaleum\Stdlib\Helpers;
  * This class provides helper methods for working with arrays.
  */
 class ArrayHelper {
+    private const FLOAT_SAFE_MAX = 9007199254740991; // 2^53 - 1
+
     /**
      * Retrieves the value of a specified key from an array.
      *
@@ -236,6 +238,7 @@ class ArrayHelper {
     /**
      * Приводит значения входного ассоциативного массива к «нативным» типам PHP:
      *  - строка из цифр (в том числе с минусом) → int
+     *  - строка из цифр начинается с '+' (телефон) → string
      *  - числовая строка с точкой или экспонентой → float
      *  - 'true'/'false' → bool
      *  - всё остальное остаётся без изменений
@@ -245,37 +248,119 @@ class ArrayHelper {
      */
     public static function naturalize(array $items): array {
         $result = [];
-
         foreach ($items as $key => $value) {
-            if (is_string($value)) {
-                $lower = strtolower($value);
-
-                // Булевы литералы
-                if ($lower === 'true' || $lower === 'false') {
-                    $result[$key] = $lower === 'true';
-                    continue;
-                }
-
-                // Целые числа без ведущих нулей (разрешаем "-0", но не "0001")
-                if (preg_match('/^-?[1-9]\d*$/', $value) || $value === '0' || $value === '-0') {
-                    $result[$key] = (int) $value;
-                    continue;
-                }
-
-                // Дробные и экспонентные числа, исключая строки с ведущими нулями
-                if (is_numeric($value) && ! preg_match('/^0\d+$/', $value)) {
-                    $result[$key] = (float) $value;
-                    continue;
-                }
-            } elseif (is_array($value)) {
+            if (is_array($value)) {
                 $result[$key] = self::naturalize($value);
                 continue;
             }
-            // Остальные типы оставляем как есть
-            $result[$key] = $value;
+            $result[$key] = self::naturalizeValue($value);
+        }
+        return $result;
+    }
+
+    private static function naturalizeValue(mixed $value): mixed {
+        if (! is_string($value)) {
+            return $value;
         }
 
-        return $result;
+        $raw   = $value;
+        $lower = strtolower($raw);
+
+        // 1) Булевы литералы
+        if ($lower === 'true' || $lower === 'false') {
+            return $lower === 'true';
+        }
+
+        // 2) Телефоны: начинаются с '+', допускаем пробелы/дефисы/скобки
+        if (self::isPhoneLike($raw)) {
+            return $raw; // всегда строкой
+        }
+
+        // 3) Целые без ведущих нулей (разрешаем "0" и "-0")
+        if (preg_match('/^-?[1-9]\d*$/', $raw) || $raw === '0' || $raw === '-0') {
+            return self::isSafeIntString($raw) ? (int) $raw : $raw;
+        }
+
+        // 4) Десятичные/экспонентные числа без ведущих нулей
+        if (is_numeric($raw) && ! preg_match('/^0\d+$/', $raw)) {
+            return self::isUnsafeFloatString($raw) ? $raw : (float) $raw;
+        }
+
+        // 5) Иное — строкой
+        return $raw;
+    }
+
+    private static function isPhoneLike(string $s): bool {
+        // Должно начинаться с '+'
+        if (! str_starts_with($s, '+')) {
+            return false;
+        }
+        // Разрешённые символы: +, цифры, пробел, дефис, круглые скобки
+        if (! preg_match('/^\+[\d\s\-\(\)]+$/', $s)) {
+            return false;
+        }
+        // Нормализуем: оставим только цифры и проверим длину (E.164: 7..15)
+        $digits = preg_replace('/\D+/', '', $s);
+        $len    = strlen($digits);
+        return $len >= 7 && $len <= 15;
+    }
+
+    private static function isSafeIntString(string $s): bool {
+        if (! preg_match('/^-?\d+$/', $s)) {
+            return false;
+        }
+
+        $digits = ltrim($s, '-');
+
+        if (strlen($digits) >= 16) {
+            return false;
+        }
+
+        // длиннее 15 цифр — строкой
+        if (PHP_INT_SIZE === 8) {
+            $phpIntMax = '9223372036854775807';
+            if (strlen($digits) > strlen($phpIntMax)) {
+                return false;
+            }
+
+            if (strlen($digits) === strlen($phpIntMax) && strcmp($digits, $phpIntMax) > 0) {
+                return false;
+            }
+
+        }
+
+        if (PHP_INT_SIZE === 4 && strlen($digits) > 9) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static function isUnsafeFloatString(string $s): bool {
+        $normalized = str_replace(',', '.', $s);
+
+        if (stripos($normalized, 'e') !== false) {
+            if (preg_match('/e([+-]?\d+)/i', $normalized, $m) && abs((int) $m[1]) >= 16) {
+                return true;
+            }
+        }
+
+        if (preg_match('/^-?(\d+)(?:\.\d+)?/i', $normalized, $m)) {
+            $intPart = ltrim($m[1], '0');
+            if ($intPart === '') {
+                $intPart = '0';
+            }
+
+            if (strlen($intPart) > 15) {
+                return true;
+            }
+
+            if (strlen($intPart) === 15) {
+                return strcmp($intPart, (string) self::FLOAT_SAFE_MAX) > 0;
+            }
+        }
+
+        return false;
     }
 
     public static function castToArray(object | array $data): array {
