@@ -102,7 +102,8 @@ class Queue extends Client
         if ($this->exists("$node:value:$key")) {
             if ($override == true) {
                 $this->set("$node:value:$key", $value);
-                $this->set("$node:fetched:$key", "0");
+                // Do not reset fetched time on override as it may lead to message being visible again for a while in the current queue
+                // $this->set("$node:fetched:$key", "0");
             }
 
             return $key;
