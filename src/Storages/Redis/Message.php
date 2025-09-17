@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum\Storages\Redis.
  *
@@ -14,29 +14,26 @@ namespace Scaleum\Storages\Redis;
 
 use Scaleum\Stdlib\Base\Hydrator;
 
-class Message extends Hydrator
-{
+class Message extends Hydrator {
     protected $attributes = [];
 
-    public function __get($name)
-    {
+    public function __get($name) {
         return $this->getAttribute($name);
     }
 
-    public function __set($name, $value)
-    {
+    public function __set($name, $value) {
         $this->setAttribute($name, $value);
     }
 
-    public function deleteAttribute($key)
+    public function deleteAttribute(string $key): static
     {
         if ($this->hasAttribute($key)) {
             unset($this->attributes[$key]);
         }
+        return $this;
     }
 
-    public function getAttribute($key, $default = null)
-    {
+    public function getAttribute(string $key, mixed $default = null): mixed {
         if ($this->hasAttribute($key)) {
             return $this->attributes[$key];
         }
@@ -44,24 +41,24 @@ class Message extends Hydrator
         return $default;
     }
 
-    public function getAttributes()
-    {
+    public function getAttributes(): array {
         return $this->attributes;
     }
 
-    public function hasAttribute($key)
-    {
+    public function hasAttribute(string $key): bool {
         return array_key_exists($key, $this->attributes);
     }
 
-    public function setAttribute($key, $value = null)
+    public function setAttribute(string $key, mixed $value = null): static
     {
-        return $this->attributes[$key] = $value;
+        $this->attributes[$key] = $value;
+        return $this;
     }
 
-    public function setAttributes(array $value)
+    public function setAttributes(array $attributes): static
     {
-        $this->attributes = $value;
+        $this->attributes = $attributes;
+        return $this;
     }
 }
 
