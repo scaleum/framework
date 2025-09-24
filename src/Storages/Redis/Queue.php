@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum\Storages\Redis.
  *
@@ -12,12 +12,11 @@ declare(strict_types=1);
 
 namespace Scaleum\Storages\Redis;
 
-class Queue extends Client
-{
+class Queue extends Client {
     protected string $node = 'queue';
+    protected bool $encode = true;
 
-    public function deleteAll(): int
-    {
+    public function deleteAll(): int {
         $node = $this->getNode();
 
         // Do the primary first, to try to avoid issues if someone uses/recreates the queue while we're nuking it.
@@ -31,8 +30,7 @@ class Queue extends Client
         return count($keys);
     }
 
-    public function deleteMessage($key): bool
-    {
+    public function deleteMessage($key): bool {
         $node = $this->getNode();
         if ($this->lrem("$node:primary", 0, $key)) {
             $this->del("$node:fetched:$key");
@@ -44,8 +42,7 @@ class Queue extends Client
         return false;
     }
 
-    public function fetch($ttl = 60): mixed
-    {
+    public function fetch($ttl = 60): mixed {
         $result    = null;
         $node      = $this->getNode();
         $threshold = time() - $ttl;
@@ -57,7 +54,7 @@ class Queue extends Client
             }
 
             $now     = time();
-            $fetched = $this->getset("$node:fetched:$id", (string)$now);
+            $fetched = $this->getset("$node:fetched:$id", (string) $now);
 
             if ($fetched < $threshold) {
                 $result = $this->getMessage($id);
@@ -72,32 +69,26 @@ class Queue extends Client
         return $result;
     }
 
-    public function getMessage($key): mixed
-    {
+    public function getMessage($key): mixed {
         $node = $this->getNode();
         if ($this->exists("$node:value:$key")) {
-            return unserialize(base64_decode($this->get("$node:value:$key")));
+            $result = $this->get("$node:value:$key");
+            if ($this->getEncode()) {
+                $result = base64_decode($result);
+            }
+            return unserialize($result);
         }
         return null;
     }
 
-    public function getMessageCount(): int
-    {
+    public function setMessage($message, $override = false): string {
         $node = $this->getNode();
+        $key  = ($message instanceof QueueMessage) ? $message->getId() : QueueMessage::createId();
 
-        return $this->llen("$node:primary");
-    }
-
-    public function getNode(): string
-    {
-        return $this->node;
-    }
-
-    public function setMessage($message, $override = false): string
-    {
-        $node  = $this->getNode();
-        $key   = ($message instanceof QueueMessage) ? $message->getId() : QueueMessage::createId();
-        $value = base64_encode(serialize($message));
+        $value = serialize($message);
+        if ($this->getEncode()) {
+            $value = base64_encode($value);
+        }
 
         if ($this->exists("$node:value:$key")) {
             if ($override == true) {
@@ -116,9 +107,37 @@ class Queue extends Client
         return $key;
     }
 
-    public function setNode($node): self
-    {
+    public function getMessageCount(): int {
+        $node = $this->getNode();
+
+        return $this->llen("$node:primary");
+    }
+
+    public function getNode(): string {
+        return $this->node;
+    }
+
+    public function setNode($node): self {
         $this->node = $node;
+        return $this;
+    }
+
+    /**
+     * Get the value of encode
+     */
+    public function getEncode(): bool {
+        return $this->encode;
+    }
+
+    /**
+     * Set the value of encode
+     *
+     * @return  self
+     */
+    public function setEncode(bool $encode): static
+    {
+        $this->encode = $encode;
+
         return $this;
     }
 }
