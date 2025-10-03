@@ -50,11 +50,12 @@ jobs:
           fi
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
+
         with:
           tag_name: ${{ steps.calc.outputs.TAG }}
           name: ${{ steps.calc.outputs.TAG }}
-          generate_release_notes: true   # автосводка по коммитам
+          generate_release_notes: true # автоматически сгенерировать заметки к релизу
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
