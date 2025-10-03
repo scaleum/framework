@@ -1,12 +1,14 @@
 name: Date Tag Release
-
 on:
   push:
-    branches: [ master ]   # измени, если у тебя другая ветка
-  workflow_dispatch:      # позволит запускать вручную из UI
+    branches: [ master ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
 
 env:
-  MAJOR: "1"              # поменяешь при необходимости
+  MAJOR: "1"
   MINOR: "0"
 
 jobs:
@@ -14,44 +16,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }  # нужен полный список тегов
-
-      # (опционально) задать MAJOR/MINOR из ручного запуска
-      - name: Override MAJOR/MINOR from inputs
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: |
-          echo "MAJOR=${{ github.event.inputs.major || env.MAJOR }}" >> $GITHUB_ENV
-          echo "MINOR=${{ github.event.inputs.minor  || env.MINOR }}" >> $GITHUB_ENV
+        with: { fetch-depth: 0 }
 
       - name: Calculate next date tag
         id: calc
         shell: bash
         run: |
           set -e
-          DATE=$(date -u '+%Y%m%d')             # один сегмент даты
+          DATE=$(date -u '+%Y%m%d')
           PREFIX="${MAJOR}.${MINOR}.${DATE}"
-
           git fetch --tags --force
-          LAST=$(
-            git tag -l "${PREFIX}.*" \
-            | awk -F. '{print $NF}' \
-            | grep -E '^[0-9]+$' || true
-          )
-          if [ -z "$LAST" ]; then
-            NEXT=0
-          else
-            NEXT=$(printf "%s\n" "$LAST" | sort -n | tail -1)
-            NEXT=$((NEXT + 1))
-          fi
+          LAST=$(git tag -l "${PREFIX}.*" | awk -F. '{print $NF}' | grep -E '^[0-9]+$' || true)
+          if [ -z "$LAST" ]; then NEXT=0; else NEXT=$(printf "%s\n" "$LAST" | sort -n | tail -1); NEXT=$((NEXT+1)); fi
           echo "TAG=${PREFIX}.${NEXT}" >> $GITHUB_OUTPUT
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Create and push tag
         shell: bash
         run: |
           TAG="${{ steps.calc.outputs.TAG }}"
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-            echo "Tag ${TAG} уже существует — пропускаю"
+            echo "Tag ${TAG} уже существует"
           else
+            # вариант 1: аннотированный
             git tag -a "${TAG}" -m "Release ${TAG}"
+            # вариант 2: легковесный (если убрать аннотированный)
+            # git tag "${TAG}"
             git push origin "${TAG}"
           fi
