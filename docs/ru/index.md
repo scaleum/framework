@@ -11,6 +11,7 @@
 
 ### 4. Структура исходников
 - [Структура проекта](./architecture.md)
+- [Версионирование](./version.md)
 
 ### 5. Работа с ядром
 - [KernelAbstract](./kernel-abstract.md)
