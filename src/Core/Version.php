@@ -19,7 +19,7 @@ namespace Scaleum\Core;
  */
 final class Version
 {
-    public const VERSION = '0.0.0';
+    public const VERSION = '1.0.1';
 
     public static function get(): string
     {
