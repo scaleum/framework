@@ -40,24 +40,21 @@ jobs:
           release_branches: master
           default_bump: patch
           tag_prefix: ""
-          initial_version: 1.0.0   # работает только если вообще нет тегов
+          fetch_all_tags: true
 
       # 2) (опционально) прошить версию в PHP-код
-      - name: Patch Version::VERSION
+      - name: Patch Core\Version::VERSION
         if: ${{ steps.bump.outputs.new_tag != '' }}
         run: |
-          TAG="${{ steps.bump.outputs.new_tag }}"
-          php -r '
-            $f = "src/Core/Version.php";
-            if (!file_exists($f)) { exit(0); }
-            $c = file_get_contents($f);
-            $c = preg_replace("/const VERSION = \x27[^\\x27]*\x27;/", "const VERSION = \x27'.$TAG."\x27;", $c, 1);
-            file_put_contents($f, $c);
-          '
-          git config user.name  "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git commit -am "chore: set version ${{ steps.bump.outputs.new_tag }}" || echo "no changes"
-          git push || true
+            TAG="${{ steps.bump.outputs.new_tag }}"
+            FILE="src/Core/Version.php"
+            [ -f "$FILE" ] || exit 0
+            sed -i -E "s|const VERSION = '[^']*';|const VERSION = '${TAG}';|" "$FILE"
+
+            git config user.name  "${{ github.actor }}"
+            git config user.email "${{ github.actor }}@users.noreply.github.com"
+            git commit -am "chore: set version ${TAG}" || echo "no changes"
+            git push || true
 
       # 3) Релиз под новый тег
       - name: Create GitHub Release
