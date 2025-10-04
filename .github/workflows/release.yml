@@ -1,7 +1,10 @@
+# Deprecated — replaced by release-semver.yml
+# keep only for reference
 name: Date Tag Release
+
 on:
   push:
-    branches: [ master ]
+    branches: [ unknown ]
   workflow_dispatch: {}
 
 permissions:
