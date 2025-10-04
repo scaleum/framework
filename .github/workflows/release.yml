@@ -1,6 +1,6 @@
 # Deprecated — replaced by release-semver.yml
 # keep only for reference
-name: Date Tag Release
+name: Release (Hybrid / Build-metadata)
 
 on:
   push:
