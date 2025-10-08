@@ -60,23 +60,20 @@ class ProcessHelper {
 
     public static function isPhpProcess(int $pid): bool {
         if (! self::isStarted($pid)) {
-            return false; // Процесс уже не существует
+            return false;
         }
 
         if (self::isWinOS()) {
-            $psCmd     = 'powershell -Command "try { (Get-Process -Id ' . (int) $pid . ').Path } catch {}"';
-            $outputRaw = shell_exec($psCmd);
-            $output    = $outputRaw !== null ? trim($outputRaw) : '';
-
-            $lines       = explode(PHP_EOL, $output);
-            $processPath = trim($lines[1] ?? '');
+            $psCmd       = 'powershell -Command "try { (Get-Process -Id ' . (int) $pid . ').ProcessName } catch {}"';
+            $outputRaw   = shell_exec($psCmd);
+            $processName = $outputRaw !== null ? trim($outputRaw) : '';
+            return stripos($processName, 'php') !== false;
         } else {
-            $pidSafe     = escapeshellarg((string) $pid); // Защищаем аргумент
+            $pidSafe     = escapeshellarg((string) $pid);
             $output      = trim(`ps -p $pidSafe -o comm= 2>/dev/null`);
-            $processPath = trim($output);
+            $processName = basename($output);
+            return stripos($processName, 'php') !== false;
         }
-
-        return ! empty($processPath) && stripos($processPath, 'php') !== false;
     }
 
     /**
