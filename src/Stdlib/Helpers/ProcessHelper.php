@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum\Stdlib.
  *
@@ -11,16 +11,14 @@ declare(strict_types=1);
 
 namespace Scaleum\Stdlib\Helpers;
 
-class ProcessHelper
-{
+class ProcessHelper {
     /**
      * Executes a command.
      *
      * @param string $command The command to execute.
      * @return void
      */
-    public static function execute(string $command)
-    {
+    public static function execute(string $command) {
         if (self::isWinOS()) {
             pclose(popen('start "Run command..." /MIN cmd.exe /C "' . $command . '"', FileHelper::FOPEN_READ));
         } else {
@@ -28,8 +26,7 @@ class ProcessHelper
         }
     }
 
-    public static function getInterpreter()
-    {
+    public static function getInterpreter() {
         $result = 'php.exe';
         if (self::isUnixOS()) {
             $result = '/usr/bin/env php';
@@ -38,8 +35,7 @@ class ProcessHelper
         return $result;
     }
 
-    public static function getStarted(): array
-    {
+    public static function getStarted(): array {
         $result = [];
 
         if (self::isWinOS()) {
@@ -54,8 +50,7 @@ class ProcessHelper
         return $result;
     }
 
-    public static function isStarted(int $pid = null): bool
-    {
+    public static function isStarted(int $pid = null): bool {
         if ($pid === null) {
             $pid = getmypid();
         }
@@ -63,32 +58,32 @@ class ProcessHelper
         return in_array((int) $pid, self::getStarted(), true);
     }
 
-    public static function isPhpProcess(int $pid): bool
-    {
-        if (!self::isStarted($pid)) {
+    public static function isPhpProcess(int $pid): bool {
+        if (! self::isStarted($pid)) {
             return false; // Процесс уже не существует
         }
 
-        $pidSafe = escapeshellarg((string)$pid); // Защищаем аргумент
-
         if (self::isWinOS()) {
-            $output = trim(`wmic process where ProcessId=$pidSafe get ExecutablePath 2>NUL`);
-            $lines = explode(PHP_EOL, $output);
+            $psCmd     = 'powershell -Command "try { (Get-Process -Id ' . (int) $pid . ').Path } catch {}"';
+            $outputRaw = shell_exec($psCmd);
+            $output    = $outputRaw !== null ? trim($outputRaw) : '';
+
+            $lines       = explode(PHP_EOL, $output);
             $processPath = trim($lines[1] ?? '');
         } else {
-            $output = trim(`ps -p $pidSafe -o comm= 2>/dev/null`);
+            $pidSafe     = escapeshellarg((string) $pid); // Защищаем аргумент
+            $output      = trim(`ps -p $pidSafe -o comm= 2>/dev/null`);
             $processPath = trim($output);
         }
 
-        return !empty($processPath) && stripos($processPath, 'php') !== false;
+        return ! empty($processPath) && stripos($processPath, 'php') !== false;
     }
 
     /**
      * Return TRUE if OS is *nix
      * @return bool
      */
-    public static function isUnixOS()
-    {
+    public static function isUnixOS() {
         return self::isWinOS() === false;
     }
 
@@ -96,8 +91,7 @@ class ProcessHelper
      * Return TRUE if OS is Windows
      * @return bool
      */
-    public static function isWinOS()
-    {
+    public static function isWinOS() {
         return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
     }
 }
