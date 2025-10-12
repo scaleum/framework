@@ -194,4 +194,27 @@ class CookieManager extends Hydrator {
     public function getSameSite(): string {
         return $this->sameSite;
     }
+
+    public function getSalt(): string {
+        return $this->salt;
+    }
+
+    public function setSalt($salt): static
+    {
+        $this->salt = $salt;
+        return $this;
+    }
+
+    public function toArray(): array {
+        return [
+            'encode'   => $this->isEncode(),
+            'expire'   => $this->getExpire(),
+            'path'     => $this->getPath(),
+            'domain'   => $this->getDomain(),
+            'secure'   => $this->isSecure(),
+            'httpOnly' => $this->isHttpOnly(),
+            'sameSite' => $this->getSameSite(),
+            'salt'     => $this->getSalt(),
+        ];
+    }
 }
