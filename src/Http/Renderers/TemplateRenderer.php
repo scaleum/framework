@@ -269,11 +269,10 @@ class TemplateRenderer extends Hydrator
             }
 
             // parse named parameters: --var=val, --var val, --var "val with spaces"
-            // simple mask: '~--?(?<key>[^=\s]+)[=\s](?:"(?<quoted>[^"]*)"|(?<simple>[^\s"]+))~x' does not support escaped characters inside quotes (\\.) and does not preserve a readable group structure
             $params = $args;
             $parsed = [];
             if (preg_match_all(
-                '~--?(?<key>[^=\s]+)[=\s]+(?:"(?<quoted>(?:\\\\.|[^"\\\\])*)"|(?<simple>[^\s"]+))~x',
+                '~(?<!\S)--?(?<key>[A-Za-z0-9_-]+)[=\s]+(?:"(?<quoted>(?:\\\\.|[^"\\\\])*)"|(?<simple>[^\s"]+))~x',
                 $args,
                 $mkv
             )) {
