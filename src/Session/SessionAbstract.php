@@ -49,18 +49,10 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
     abstract protected function delete(): void;
     abstract public function cleanup(): void;
     ///////////////////////////////////////////////////////////////////////////
-
-    public function __construct(array $config = []) {
-        parent::__construct($config);
-
-        $this->getEvents()->on(KernelEvents::FINISH, function () {
-            // FIXME - переделать, т.к. ссылка на SESSION_UPDATED подразумевает совместную работу с SSE
-            if (! defined('SESSION_UPDATED')) {
-                $this->cleanup();
-                $this->update();
-
-                define('SESSION_UPDATED', true);
-            }
+    public function ready(): void {
+        $this->getEvents()->on(KernelEvents::FINISH, function () {            
+            $this->update();
+            $this->cleanup();
         }, 0);
 
         $this->open($this->name);
@@ -177,7 +169,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         // flush all data
         if ($flush === true) {
             ! $this->logging || $this->debug('Session was flushed');
-            $this->data = [];
+            $this->flush();
         }
 
         // Update system information
@@ -289,7 +281,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this;
     }
 
-    public function clear(bool $updateImmediately = false): static
+    public function flush(bool $updateImmediately = false): static
     {
         $this->data = [];
 
@@ -335,9 +327,8 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
 
     /**
      * Get the value of id
-     */ 
-    public function getId():string
-    {
+     */
+    public function getId(): string {
         return $this->id;
     }
 }
