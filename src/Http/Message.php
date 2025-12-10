@@ -45,16 +45,21 @@ class Message implements MessageInterface {
         return $this->headers;
     }
 
-    public function hasHeader($name): bool {
-        return isset($this->headers[$name]);
-    }
-
     public function getHeader($name): array {
         return $this->headers[$name] ?? [];
     }
-
+    
     public function getHeaderLine($name): string {
         return implode(', ', $this->getHeader($name));
+    }
+
+    public function hasHeader($name): bool {
+        return isset($this->headers[$name]);
+    }
+    public function setHeader($name, $value): static
+    {
+        $this->headers[$name] = is_array($value) ? $value : [$value];
+        return $this;
     }
 
     public function withHeader($name, $value): static
