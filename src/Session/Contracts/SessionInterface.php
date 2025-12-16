@@ -9,7 +9,7 @@ declare (strict_types = 1);
  * file that was distributed with this source code.
  */
 
-namespace Scaleum\Session;
+namespace Scaleum\Session\Contracts;
 
 /**
  * SessionInterface
@@ -26,5 +26,7 @@ interface SessionInterface {
     public function removeByPrefix(string $prefix, bool $updateImmediately = false): static;
     public function flush(bool $updateImmediately = false): static;
     public function close(): static;
+    public function isEnable(): bool;
+    public function setEnable(bool $enable): static;
 }
 /** End of SessionInterface **/

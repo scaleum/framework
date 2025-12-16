@@ -40,14 +40,17 @@ class RequestHandler implements HandlerInterface {
     public function handle(): ResponderInterface {
         try {
             /** @var Router $router */
-            $router    = $this->container->get('router');
             $request   = InboundRequest::fromGlobals();
+
+            $router    = $this->container->get('router');            
             $routeInfo = $router->match($request->getUri()->getPath(), $request->getMethod());
 
             $controller = (new ControllerResolver($this->container))->resolve($routeInfo);
+            
             $this->events->dispatch(HandlerInterface::EVENT_GET_REQUEST, $this, ['request' => $request]);
             $response = (new ControllerInvoker())->invoke($controller, $routeInfo);
             $this->events->dispatch(HandlerInterface::EVENT_GET_RESPONSE, $this, ['response' => $response]);
+            
             return $response;
         } catch (ENotFoundError $exception) {
             throw new EHttpException(404, $exception->getMessage(), $exception);

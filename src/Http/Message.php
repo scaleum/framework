@@ -61,7 +61,12 @@ class Message implements MessageInterface {
         $this->headers[$name] = is_array($value) ? $value : [$value];
         return $this;
     }
-
+    public function addHeader($name, $value): static
+    {
+        $this->headers[$name] = array_merge($this->headers[$name] ?? [], is_array($value) ? $value : [$value]);
+        return $this;
+    }
+    
     public function withHeader($name, $value): static
     {
         $clone                 = clone $this;

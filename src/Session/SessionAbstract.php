@@ -12,12 +12,18 @@ declare (strict_types = 1);
 
 namespace Scaleum\Session;
 
+use Scaleum\Core\Contracts\HandlerInterface;
 use Scaleum\Core\DependencyInjection\Framework;
 use Scaleum\Core\KernelEvents;
+use Scaleum\Events\Event;
 use Scaleum\Events\EventManagerInterface;
-use Scaleum\Http\CookieManager;
+use Scaleum\Http\InboundRequest;
+use Scaleum\Http\OutboundResponse;
 use Scaleum\Logger\LoggerChannelTrait;
 use Scaleum\Services\ServiceLocator;
+use Scaleum\Session\Channels\CookieChannel;
+use Scaleum\Session\Contracts\SessionChannelInterface;
+use Scaleum\Session\Contracts\SessionInterface;
 use Scaleum\Stdlib\Base\Hydrator;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Stdlib\Helpers\HttpHelper;
@@ -33,16 +39,16 @@ use Scaleum\Stdlib\SAPI\SapiMode;
 abstract class SessionAbstract extends Hydrator implements SessionInterface {
     use LoggerChannelTrait;
 
-    protected const EXPIRATION_DEFAULT       = 3600;
-    protected array $data                    = [];
-    protected int $expiration                = self::EXPIRATION_DEFAULT;
-    protected string $name                   = 'SESSION_ID';
-    protected string $timeReference          = 'time';
-    protected bool $logging                  = true;
-    protected ?EventManagerInterface $events = null;
-    protected ?CookieManager $cookies        = null;
-    protected string $id;
-    private bool $isOpened = false;
+    protected const EXPIRATION_DEFAULT          = 3600;
+    protected array $data                       = [];
+    protected int $ttl                          = self::EXPIRATION_DEFAULT;
+    protected string $timeReference             = 'time';
+    protected bool $logging                     = true;
+    protected ?EventManagerInterface $events    = null;
+    protected ?SessionChannelInterface $channel = null;
+    protected ?string $id                       = null;
+    private bool $isOpen                        = false;
+    private bool $enable                        = true;
     ///////////////////////////////////////////////////////////////////////////
     abstract protected function read(): array;
     abstract protected function write(array $data): void;
@@ -50,12 +56,28 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
     abstract public function cleanup(): void;
     ///////////////////////////////////////////////////////////////////////////
     public function ready(): void {
-        $this->getEvents()->on(KernelEvents::FINISH, function () {            
+
+        $this->getEvents()->on(HandlerInterface::EVENT_GET_REQUEST, function (Event $event) {
+            if (($request = $event->getParam('request')) && $request instanceof InboundRequest) {
+                $this->id = $this->getChannel()?->fetchFromRequest($request) ?? null;
+            }
+            $this->open();
+        }, -1);
+
+        $this->getEvents()->on(HandlerInterface::EVENT_GET_RESPONSE, function (Event $event) {
+            if (($response = $event->getParam('response')) && $response instanceof OutboundResponse) {
+                if ($this->isOpen) {
+                    $this->getChannel()?->writeToResponse($response, $this->id, $this->ttl);
+                } else {
+                    $this->getChannel()?->clearInResponse($response);
+                }
+            }
+        }, -1);
+
+        $this->getEvents()->on(KernelEvents::FINISH, function () {
             $this->update();
             $this->cleanup();
         }, 0);
-
-        $this->open($this->name);
     }
 
     public function getLoggerChannel(): string {
@@ -86,18 +108,6 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return $this;
     }
 
-    private function getAnchor(string $key, mixed $default = null): mixed {
-        return $this->getCookies()?->get($key, $default);
-    }
-
-    private function setAnchor(string $key, mixed $value = null): mixed {
-        if ($this->getCookies()?->setExpire($this->getTimestamp($this->expiration))->set($key, $value) === true) {
-            return true;
-        }
-
-        return false;
-    }
-
     public function isValid(): bool {
         if ((int) $this->get('last_activity', 0) < $this->getTimestamp() - $this->getExpiration()) {
             ! $this->logging || $this->debug('Session has expired');
@@ -112,24 +122,20 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         return true;
     }
 
-    public function open($name): bool {
-        if (($name == $this->name) && ! empty($this->data)) {
-            $this->debug('Session is already opened...synchronization');
-
-            // FIXME - if session is already opened, synchronize for correct work of SSE
-            // return true;
+    public function open(): bool {
+        if (! $this->enable) {
+            $this->debug('Session is disabled.');
+            return false;
         }
 
         ! $this->logging || $this->debug('Session opening...');
-        $this->isOpened = true;
+        $this->isOpen = true;
 
-        // if session_id not found - open new
-        if ($sessionNotExists = ($id = $this->getAnchor($this->name, false)) === false) {
-            ! $this->logging || $this->debug('Session not found, open new');
+        if ($isNotExists = ($id = $this->id) === null) {
+            ! $this->logging || $this->debug('Session not found, opening a new one...');
             $id = UniqueHelper::getUniqueID(UniqueHelper::getUniquePrefix() . HttpHelper::getUserIP());
         }
 
-        $this->name = $name;
         $this->id   = $id;
         $this->data = $this->read();
 
@@ -142,7 +148,7 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
         ! $this->logging || $this->debug('Session has successfully loaded');
 
         // update if session is new
-        if ($sessionNotExists === true) {
+        if ($isNotExists === true) {
             $this->update();
         }
 
@@ -151,19 +157,24 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
 
     public function close(): static
     {
-        $this->getCookies()?->delete($this->name);
+        if (! $this->enable) {
+            $this->debug('Session is disabled.');
+            return $this;
+        }
+
         $this->delete();
 
-        $this->isOpened = false;
+        $this->isOpen = false;
         ! $this->logging || $this->debug('Session has been closed');
 
         return $this;
     }
 
-    protected function update(bool $flush = false) {
-        // if session is not opened - do nothing
-        if (! $this->isOpened) {
-            return;
+    protected function update(bool $flush = false): static {
+        // if session is not opened or disabled - do nothing
+        if (! $this->isOpen || ! $this->enable) {
+            $this->debug('Session is not opened or disabled, update skipped.');
+            return $this;
         }
 
         // flush all data
@@ -187,22 +198,17 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
             $this->write($this->data); // Update session data
         }
 
-        $this->setAnchor($this->name, $this->id); // Refresh cookie info
         ! $this->logging || $this->debug('Session has successfully updated');
+
+        return $this;
     }
 
     protected function getTimestamp(int $shift = 0): int {
-        switch (strtolower($this->timeReference)) {
-        case 'gmt':
-            $now    = time() + $shift;
-            $result = (int) mktime((int) gmdate("H", $now), (int) gmdate("i", $now), (int) gmdate("s", $now), (int) gmdate("m", $now), (int) gmdate("d", $now), (int) gmdate("Y", $now));
-            break;
-        default:
-            $result = time() + $shift;
-            break;
+        $ref = strtolower($this->timeReference);
+        if ($ref === 'gmt' || $ref === 'utc') {
+            return (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->getTimestamp() + $shift;
         }
-
-        return $result;
+        return time() + $shift;
     }
 
     public function has(int | string $var): bool {
@@ -292,36 +298,11 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
     }
 
     public function getExpiration() {
-        return $this->expiration;
+        return $this->ttl;
     }
 
     public function setExpiration(int $expiration) {
-        $this->expiration = $expiration > 0 ? $expiration : self::EXPIRATION_DEFAULT;
-        return $this;
-    }
-
-    /**
-     * Get the value of cookies
-     */
-    public function getCookies(): ?CookieManager {
-        if ($this->cookies === null) {
-            $this->cookies = new CookieManager();
-        }
-
-        return $this->cookies;
-    }
-
-    /**
-     * Set the value of cookies
-     *
-     * @return  self
-     */
-    public function setCookies(array | CookieManager $cookies): static
-    {
-        if (is_array($cookies)) {
-            $cookies = self::createInstance([ ...$cookies, 'class' => CookieManager::class]);
-        }
-        $this->cookies = $cookies;
+        $this->ttl = $expiration > 0 ? $expiration : self::EXPIRATION_DEFAULT;
         return $this;
     }
 
@@ -330,6 +311,29 @@ abstract class SessionAbstract extends Hydrator implements SessionInterface {
      */
     public function getId(): string {
         return $this->id;
+    }
+
+    public function getChannel(): ?SessionChannelInterface {
+        return $this->channel;
+    }
+
+    public function setChannel(array | SessionChannelInterface $channel): static
+    {
+        if (is_array($channel)) {
+            $channel = self::createInstance(['class' => CookieChannel::class, ...$channel]);
+        }
+        $this->channel = $channel;
+        return $this;
+    }
+
+    public function isEnable(): bool {
+        return $this->enable;
+    }
+
+    public function setEnable(bool $enable): static
+    {
+        $this->enable = $enable;
+        return $this;
     }
 }
 /** End of SessionAbstract **/
