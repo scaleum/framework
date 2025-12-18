@@ -14,6 +14,7 @@ namespace Scaleum\Security\Services;
 
 use Scaleum\Security\Supports\JwtTokenPayload;
 use Scaleum\Stdlib\Base\Hydrator;
+use Scaleum\Stdlib\Helpers\ArrayHelper;
 use Scaleum\Stdlib\Helpers\HttpHelper;
 
 /**
@@ -70,7 +71,7 @@ class JwtManager extends Hydrator {
     /**
      * Генерация JWT (HS256) с iss/aud/jti.
      */
-    public function generate(int $user_id, ?int $expiry = null, ?string $ip_address = null, ?string $issuer = null, ?string $audience = null): string {
+    public function generate(array $payload, ?int $expiry = null, ?string $issuer = null, ?string $audience = null): string {
         $now = time();
         $expiry ??= $now + $this->offset;
 
@@ -84,18 +85,18 @@ class JwtManager extends Hydrator {
             'alg' => self::ALG_HS256,
         ];
 
-        $payload = [
-            'user_id'    => $user_id,
-            'exp'        => $expiry,
-            'iat'        => $now,
-            'jti'        => $jti,
-            'iss'        => (string) $issuer,
-            'aud'        => (string) $audience,
-            'ip_address' => $ip_address ?? '',
+        $data = [
+            'exp' => $expiry,
+            'iat' => $now,
+            'jti' => $jti,
+            'iss' => (string) $issuer,
+            'aud' => (string) $audience,
         ];
 
+        $data = ArrayHelper::merge($data, $payload);
+
         $headerB64  = $this->base64UrlEncode((string) json_encode($header, JSON_UNESCAPED_SLASHES));
-        $payloadB64 = $this->base64UrlEncode((string) json_encode($payload, JSON_UNESCAPED_SLASHES));
+        $payloadB64 = $this->base64UrlEncode((string) json_encode($data, JSON_UNESCAPED_SLASHES));
 
         $signingInput = $headerB64 . '.' . $payloadB64;
         $signatureB64 = $this->signHs256($signingInput);
@@ -103,7 +104,7 @@ class JwtManager extends Hydrator {
         $token = $signingInput . '.' . $signatureB64;
 
         if (is_callable($this->onTokenIssuedCallback)) {
-            ($this->onTokenIssuedCallback)($jti, $payload);
+            ($this->onTokenIssuedCallback)($jti, $data);
         }
 
         return $token;
@@ -156,7 +157,7 @@ class JwtManager extends Hydrator {
         }
 
         $payload = json_decode($payloadJson, true);
-        if (! is_array($payload) || ! isset($payload['user_id'], $payload['exp'], $payload['jti'])) {
+        if (! is_array($payload) || ! isset($payload['exp'], $payload['jti'])) {
             $this->last_error = 'Token payload is invalid';
             return null;
         }
@@ -187,12 +188,6 @@ class JwtManager extends Hydrator {
             return null;
         }
 
-        // IP binding
-        if (! empty($payload['ip_address']) && $payload['ip_address'] !== HttpHelper::getUserIP()) {
-            $this->last_error = 'Token has invalid IP-address';
-            return null;
-        }
-
         // jti revoke check (опционально)
         $jti = (string) $payload['jti'];
         if ($jti === '') {
@@ -211,7 +206,7 @@ class JwtManager extends Hydrator {
         return new JwtTokenPayload($payload);
     }
 
-    public function setIssuer(?string $issuer): self {
+    public function setIssuer(?string $issuer): static {
         $this->issuer = $issuer;
         return $this;
     }
@@ -220,7 +215,7 @@ class JwtManager extends Hydrator {
         return $this->issuer ?? '';
     }
 
-    public function setAudience(?string $audience): self {
+    public function setAudience(?string $audience): static {
         $this->audience = $audience;
         return $this;
     }
@@ -229,12 +224,12 @@ class JwtManager extends Hydrator {
         return $this->audience ?? '';
     }
 
-    public function setIsJtiRevokedCallback( ? callable $callback) : self {
+    public function setIsJtiRevokedCallback( ? callable $callback) : static {
         $this->isJtiRevokedCallback = $callback;
         return $this;
     }
 
-    public function setOnTokenIssuedCallback( ? callable $callback) : self {
+    public function setOnTokenIssuedCallback( ? callable $callback) : static {
         $this->onTokenIssuedCallback = $callback;
         return $this;
     }
@@ -250,7 +245,7 @@ class JwtManager extends Hydrator {
         return $this->secret;
     }
 
-    public function setSecret(string $secret): self {
+    public function setSecret(string $secret): static {
         $this->secret = $secret;
         return $this;
     }
@@ -259,7 +254,7 @@ class JwtManager extends Hydrator {
         return $this->offset;
     }
 
-    public function setOffset(int $offset): self {
+    public function setOffset(int $offset): static {
         $this->offset = $offset;
         return $this;
     }
