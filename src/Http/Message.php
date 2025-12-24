@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -20,25 +20,24 @@ use Psr\Http\Message\StreamInterface;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class Message implements MessageInterface
-{
+class Message implements MessageInterface {
     protected array $headers = [];
     protected StreamInterface $body;
     protected string $protocol;
-    private function normalize(string $name): string
-    {
+    private function normalize(string $name): string {
         return strtolower($name);
     }
 
-    public function __construct(array $headers = [], ?StreamInterface $body = null, string $protocol = '1.1')
-    {
-        $this->headers  = $headers;
+    public function __construct(array $headers = [], ?StreamInterface $body = null, string $protocol = '1.1') {
+        foreach ($headers as $name => $value) {
+            $this->setHeader($name, $value);
+        }
+
         $this->body     = $body ?? new Stream(fopen('php://temp', 'r+'));
         $this->protocol = $protocol;
     }
 
-    public function getProtocolVersion(): string
-    {
+    public function getProtocolVersion(): string {
         return $this->protocol;
     }
 
@@ -49,36 +48,32 @@ class Message implements MessageInterface
         return $clone;
     }
 
-    public function getHeaders(): array
-    {
+    public function getHeaders(): array {
         return $this->headers;
     }
 
-    public function getHeader($name): array
-    {
+    public function getHeader($name): array {
         $name = $this->normalize($name);
         return $this->headers[$name] ?? [];
     }
 
-    public function getHeaderLine($name): string
-    {
+    public function getHeaderLine($name): string {
         return implode(', ', $this->getHeader($name));
     }
 
-    public function hasHeader($name): bool
-    {
+    public function hasHeader($name): bool {
         $name = $this->normalize($name);
         return isset($this->headers[$name]);
     }
     public function setHeader($name, $value): static
     {
-        $name = $this->normalize($name);
+        $name                 = $this->normalize($name);
         $this->headers[$name] = is_array($value) ? $value : [$value];
         return $this;
     }
     public function addHeader($name, $value): static
     {
-        $name = $this->normalize($name);
+        $name                 = $this->normalize($name);
         $this->headers[$name] = array_merge($this->headers[$name] ?? [], is_array($value) ? $value : [$value]);
         return $this;
     }
@@ -110,8 +105,7 @@ class Message implements MessageInterface
         return $clone;
     }
 
-    public function getBody(): StreamInterface
-    {
+    public function getBody(): StreamInterface {
         return $this->body;
     }
 
