@@ -284,14 +284,14 @@ class ArrayHelper {
         // 4) Decimal/exponential numbers without leading zeros
         if (is_numeric($raw)) {
             // We store leading zeros (for example: "0001.11", "01e3", "-012") as a string.
-            if (preg_match('/^-?0\d/', $raw)) {
+            if (preg_match('/^-?0\d/', $raw) || self::isUnsafeFloatString($raw)) {
                 return $raw;
             }
 
-            return self::isUnsafeFloatString($raw) ? $raw : (float) $raw;
+            return (float) $raw;
         }
 
-        // 5) Иное — строкой
+        // 5) Other values remain unchanged
         return $raw;
     }
 
