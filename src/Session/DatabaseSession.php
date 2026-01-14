@@ -25,7 +25,7 @@ class DatabaseSession extends SessionAbstract {
     protected string $table        = 'sessions';
     protected bool $autoDeployment = false;
 
-    public function open($name): bool {
+    public function open(): bool {
         if ($this->autoDeployment) {
             // Create table if not exists
             $schema = $this->getDatabase()->getSchemaBuilder();
@@ -41,7 +41,7 @@ class DatabaseSession extends SessionAbstract {
                 ->createTable($this->table, true);
         }
 
-        return parent::open($name);
+        return parent::open();
     }
 
     protected function read(): array {

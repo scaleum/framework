@@ -1,4 +1,5 @@
 <?php
+
 declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
@@ -23,9 +24,15 @@ class Message implements MessageInterface {
     protected array $headers = [];
     protected StreamInterface $body;
     protected string $protocol;
+    private function normalize(string $name): string {
+        return strtolower($name);
+    }
 
     public function __construct(array $headers = [], ?StreamInterface $body = null, string $protocol = '1.1') {
-        $this->headers  = $headers;
+        foreach ($headers as $name => $value) {
+            $this->setHeader($name, $value);
+        }
+
         $this->body     = $body ?? new Stream(fopen('php://temp', 'r+'));
         $this->protocol = $protocol;
     }
@@ -45,11 +52,8 @@ class Message implements MessageInterface {
         return $this->headers;
     }
 
-    public function hasHeader($name): bool {
-        return isset($this->headers[$name]);
-    }
-
     public function getHeader($name): array {
+        $name = $this->normalize($name);
         return $this->headers[$name] ?? [];
     }
 
@@ -57,8 +61,27 @@ class Message implements MessageInterface {
         return implode(', ', $this->getHeader($name));
     }
 
+    public function hasHeader($name): bool {
+        $name = $this->normalize($name);
+        return isset($this->headers[$name]);
+    }
+    public function setHeader($name, $value): static
+    {
+        $name                 = $this->normalize($name);
+        $this->headers[$name] = is_array($value) ? $value : [$value];
+        return $this;
+    }
+    public function addHeader($name, $value): static
+    {
+        $name                 = $this->normalize($name);
+        $this->headers[$name] = array_merge($this->headers[$name] ?? [], is_array($value) ? $value : [$value]);
+        return $this;
+    }
+
     public function withHeader($name, $value): static
     {
+        $name = $this->normalize($name);
+
         $clone                 = clone $this;
         $clone->headers[$name] = is_array($value) ? $value : [$value];
         return $clone;
@@ -66,6 +89,8 @@ class Message implements MessageInterface {
 
     public function withAddedHeader($name, $value): static
     {
+        $name = $this->normalize($name);
+
         $clone                 = clone $this;
         $clone->headers[$name] = array_merge($this->headers[$name] ?? [], (array) $value);
         return $clone;
@@ -73,6 +98,8 @@ class Message implements MessageInterface {
 
     public function withoutHeader($name): static
     {
+        $name = $this->normalize($name);
+
         $clone = clone $this;
         unset($clone->headers[$name]);
         return $clone;

@@ -40,7 +40,7 @@
 | `has(string\|int $var): bool` | Проверить наличие переменной |
 | `remove(string $key, bool $updateImmediately = true): static` | Удалить переменную |
 | `removeByPrefix(string $prefix, bool $updateImmediately = true): static` | Удалить переменные по префиксу |
-| `clear(bool $updateImmediately = true): static` | Очистить сессию |
+| `flush(bool $updateImmediately = true): static` | Очистить/сбросить сессию |
 | `getByPrefix(?string $prefix = null): array` | Получить все переменные по префиксу |
 
 ## Примеры использования
@@ -76,13 +76,13 @@ $userId = $session->get('user_id');
 $session->remove('user_id');
 
 // Очистить всю сессию
-$session->clear();
+$session->flush();
 ```
 
 ### Проверка активности сессии
 ```php
 if (! $session->isValid()) {
-    $session->clear();
+    $session->flush();
     // пользователь должен авторизоваться заново
 }
 ```

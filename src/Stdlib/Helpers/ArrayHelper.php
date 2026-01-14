@@ -236,12 +236,12 @@ class ArrayHelper {
     }
 
     /**
-     * Приводит значения входного ассоциативного массива к «нативным» типам PHP:
-     *  - строка из цифр (в том числе с минусом) → int
-     *  - строка из цифр начинается с '+' (телефон) → string
-     *  - числовая строка с точкой или экспонентой → float
+     * Converts values of the input associative array to PHP “native” types:
+     *  - digit-only string (including a leading '-') → int
+     *  - digit-only string starting with '+' (phone) → string
+     *  - numeric string with a decimal point or exponent → float
      *  - 'true'/'false' → bool
-     *  - всё остальное остаётся без изменений
+     *  - everything else remains unchanged
      *
      * @param  array<string, mixed> $items
      * @return array<string, array|int|float|bool|string>
@@ -266,40 +266,45 @@ class ArrayHelper {
         $raw   = $value;
         $lower = strtolower($raw);
 
-        // 1) Булевы литералы
+        // 1) Booleans
         if ($lower === 'true' || $lower === 'false') {
             return $lower === 'true';
         }
 
-        // 2) Телефоны: начинаются с '+', допускаем пробелы/дефисы/скобки
+        // 2) Phone-like strings: start with '+', allow spaces/dashes/parentheses
         if (self::isPhoneLike($raw)) {
             return $raw; // всегда строкой
         }
 
-        // 3) Целые без ведущих нулей (разрешаем "0" и "-0")
+        // 3) Integers without leading zeros (allow "0" and "-0")
         if (preg_match('/^-?[1-9]\d*$/', $raw) || $raw === '0' || $raw === '-0') {
             return self::isSafeIntString($raw) ? (int) $raw : $raw;
         }
 
-        // 4) Десятичные/экспонентные числа без ведущих нулей
-        if (is_numeric($raw) && ! preg_match('/^0\d+$/', $raw)) {
-            return self::isUnsafeFloatString($raw) ? $raw : (float) $raw;
+        // 4) Decimal/exponential numbers without leading zeros
+        if (is_numeric($raw)) {
+            // We store leading zeros (for example: "0001.11", "01e3", "-012") as a string.
+            if (preg_match('/^-?0\d/', $raw) || self::isUnsafeFloatString($raw)) {
+                return $raw;
+            }
+
+            return (float) $raw;
         }
 
-        // 5) Иное — строкой
+        // 5) Other values remain unchanged
         return $raw;
     }
 
     private static function isPhoneLike(string $s): bool {
-        // Должно начинаться с '+'
+        // Must start with '+'
         if (! str_starts_with($s, '+')) {
             return false;
         }
-        // Разрешённые символы: +, цифры, пробел, дефис, круглые скобки
+        // Allowed characters: +, numbers, spaces, hyphens, parentheses
         if (! preg_match('/^\+[\d\s\-\(\)]+$/', $s)) {
             return false;
         }
-        // Нормализуем: оставим только цифры и проверим длину (E.164: 7..15)
+        // Let's normalize: leave only numbers and check the length (E.164: 7..15)
         $digits = preg_replace('/\D+/', '', $s);
         $len    = strlen($digits);
         return $len >= 7 && $len <= 15;
@@ -316,7 +321,7 @@ class ArrayHelper {
             return false;
         }
 
-        // длиннее 15 цифр — строкой
+        // longer than 15 digits - as a string
         if (PHP_INT_SIZE === 8) {
             $phpIntMax = '9223372036854775807';
             if (strlen($digits) > strlen($phpIntMax)) {
