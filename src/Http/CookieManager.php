@@ -97,11 +97,13 @@ class CookieManager extends Hydrator
         $value = ! is_scalar($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : $value;
 
         if ($value === false) {
-            throw new EInvalidArgumentException('Failed to encode value for cookie storage: ' . json_last_error_msg());
+            $error = json_last_error_msg();
+            throw new EInvalidArgumentException("Failed to encode value for cookie storage: {$error}");
         }
 
         if ($this->encode) {
-            $value = (string) $value . md5("$value{$this->salt}");
+            $hash  = md5("{$value}{$this->salt}");
+            $value = "{$value}{$hash}";
             $value = rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
         }
 
@@ -159,11 +161,11 @@ class CookieManager extends Hydrator
         header_remove('Set-Cookie');
 
         foreach ($unparsed as $cookieHeader) {
-            header('Set-Cookie: ' . $cookieHeader, false);
+            header("Set-Cookie: {$cookieHeader}", false);
         }
 
         foreach ($deduplicated as $cookieHeader) {
-            header('Set-Cookie: ' . $cookieHeader, false);
+            header("Set-Cookie: {$cookieHeader}", false);
         }
 
         return true;
@@ -206,22 +208,28 @@ class CookieManager extends Hydrator
 
     protected function buildCookieKey(string $name, string $path, string $domain): string
     {
-        return strtolower(trim($name)) . '|' . strtolower(trim($path)) . '|' . strtolower(trim($domain));
+        $normalizedName   = strtolower(trim($name));
+        $normalizedPath   = strtolower(trim($path));
+        $normalizedDomain = strtolower(trim($domain));
+
+        return "{$normalizedName}|{$normalizedPath}|{$normalizedDomain}";
     }
 
     protected function buildCookieHeader(string $name,string $value,int $expires,string $path,string $domain,bool $secure,bool $httpOnly,string $sameSite): string {
-        $segments = [sprintf('%s=%s', $name, rawurlencode($value))];
+        $encodedValue = rawurlencode($value);
+        $segments     = ["{$name}={$encodedValue}"];
 
         if ($expires > 0) {
-            $segments[] = 'Expires=' . gmdate('D, d M Y H:i:s', $expires) . ' GMT';
+            $expireDate = gmdate('D, d M Y H:i:s', $expires);
+            $segments[] = "Expires={$expireDate} GMT";
         }
 
         if ($path !== '') {
-            $segments[] = 'Path=' . $path;
+            $segments[] = "Path={$path}";
         }
 
         if ($domain !== '') {
-            $segments[] = 'Domain=' . $domain;
+            $segments[] = "Domain={$domain}";
         }
 
         if ($secure) {
@@ -233,7 +241,7 @@ class CookieManager extends Hydrator
         }
 
         if ($sameSite !== '') {
-            $segments[] = 'SameSite=' . $sameSite;
+            $segments[] = "SameSite={$sameSite}";
         }
 
         return implode('; ', $segments);
