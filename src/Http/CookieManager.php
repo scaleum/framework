@@ -25,27 +25,29 @@ class CookieManager extends Hydrator {
     protected bool $httpOnly   = false;
     protected string $sameSite = 'Lax';
     protected string $salt     = '7987a1d4c9cd4076b6d855f2d7c5fdb4';
+    protected array $cookieSignatures = [];
+
     public function set(string $name, mixed $value, ?int $expire = null): bool {
         if (headers_sent()) {
             return false;
         }
 
         $preparedValue = $this->prepareForStorage($value);
+        $options       = $this->buildCookieOptions($expire ?? $this->getExpireTimestamp());
+
+        if ($this->isDuplicateCookie($name, $preparedValue, $options)) {
+            $_COOKIE[$name] = $preparedValue;
+            return true;
+        }
 
         $success = setcookie(
             $name,
             $preparedValue,
-            [
-                'expires'  => $expire ?? $this->getExpireTimestamp(),
-                'path'     => $this->getPath(),
-                'domain'   => $this->getDomain(),
-                'secure'   => $this->isSecure(),
-                'httponly' => $this->isHttpOnly(),
-                'samesite' => $this->getSameSite(),
-            ]
+            $options
         );
 
         if ($success) {
+            $this->rememberCookieSignature($name, $preparedValue, $options);
             $_COOKIE[$name] = $preparedValue;
         }
 
@@ -69,20 +71,21 @@ class CookieManager extends Hydrator {
             return false;
         }
 
+        $options = $this->buildCookieOptions(time() - 3600);
+
+        if ($this->isDuplicateCookie($name, '', $options)) {
+            unset($_COOKIE[$name]);
+            return true;
+        }
+
         $success = setcookie(
             $name,
             '',
-            [
-                'expires'  => time() - 3600,
-                'path'     => $this->getPath(),
-                'domain'   => $this->getDomain(),
-                'secure'   => $this->isSecure(),
-                'httponly' => $this->isHttpOnly(),
-                'samesite' => $this->getSameSite(),
-            ]
+            $options
         );
 
         if ($success) {
+            $this->rememberCookieSignature($name, '', $options);
             unset($_COOKIE[$name]);
         }
 
@@ -121,6 +124,29 @@ class CookieManager extends Hydrator {
         }
 
         return JsonHelper::isJson($value) ? json_decode($value, true) : $value;
+    }
+
+    protected function buildCookieOptions(int $expire): array {
+        return [
+            'expires'  => $expire,
+            'path'     => $this->getPath(),
+            'domain'   => $this->getDomain(),
+            'secure'   => $this->isSecure(),
+            'httponly' => $this->isHttpOnly(),
+            'samesite' => $this->getSameSite(),
+        ];
+    }
+
+    protected function rememberCookieSignature(string $name, string $value, array $options): void {
+        $this->cookieSignatures[$this->buildCookieSignature($name, $value, $options)] = true;
+    }
+
+    protected function isDuplicateCookie(string $name, string $value, array $options): bool {
+        return isset($this->cookieSignatures[$this->buildCookieSignature($name, $value, $options)]);
+    }
+
+    protected function buildCookieSignature(string $name, string $value, array $options): string {
+        return md5($name . "\n" . $value . "\n" . serialize($options));
     }
 
     public function setEncode(bool $encode): static {
