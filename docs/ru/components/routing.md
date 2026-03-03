@@ -94,10 +94,10 @@ $url = $router->getUrl('user.view', ['id' => 42]);
     'callback' => [
         'controller' => [
             'class' => UserController::class,
-            'args'  => [],
+            'args'  => [], // аргументы конструктора
         ],
         'method' => 'view',
-        'args'   => ['42'],
+        'args'   => ['42'], // аргументы метода
     ],
 ]
 ```
@@ -121,6 +121,35 @@ $matched = $router->match('/post/15', 'GET');
 $controller = new $matched['callback']['controller']['class'](...$matched['callback']['controller']['args']);
 $response = call_user_func([$controller, $matched['callback']['method']], ...$matched['callback']['args']);
 ```
+
+### Пример подстановки параметров в `callback['method']`
+Если в имени метода указаны плейсхолдеры вида `{:name}`, роутер подставит в них значения
+из именованных параметров регулярного выражения. Параметры, которые были использованы
+для формирования имени метода, удаляются из `$params`, а остальные остаются аргументами метода.
+
+```php
+$route = new Route(
+    path: '/post/(?P<id>[0-9]+)/(?P<action>[a-z]+)/(?P<slug>[a-z0-9\-]+)',
+    methods: ['GET'],
+    callback: [
+        'controller' => PostController::class,
+        'method'     => 'action{:action}By{:id}',
+    ]
+);
+
+$router = new Router();
+$router->addRoute('post.dynamic-method', $route);
+
+$matched = $router->match('/post/42/edit/my-first-post', 'GET');
+
+$matched['callback']['method']; // actioneditBy42
+$matched['callback']['args'];   // ['my-first-post', ...]
+```
+
+В этом примере `action` и `id` используются для сборки имени метода контроллера,
+поэтому после подстановки они не участвуют в формировании аргументов метода.
+Параметр `slug` не используется в шаблоне `method`, поэтому остаётся в данных
+сопоставления и попадает в `callback['args']`.
 
 
 ## Ключевые методы `Router`
