@@ -212,12 +212,17 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this->makeHaving($field, $value, 'AND ', $quoting);
     }
 
-    public function havingBrackets(): self
+    public function havingWrap(): self
     {
         return $this->brackets($this->having);
     }
 
-    public function havingBracketsEnd(): self
+    public function havingWrapOr(): self
+    {
+        return $this->brackets($this->having, 'OR ');
+    }    
+
+    public function havingWrapEnd(): self
     {
         return $this->bracketsEnd($this->having);
     }
@@ -571,30 +576,18 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this->makeWhere($field, $value, 'AND ', $quoting);
     }
 
-    public function whereBrackets(): self
+    public function whereWrap(): self
     {
-        return $this->wrap();
-    }
-
-    public function orWhereBrackets(): self
-    {
-        return $this->wrapOr();
-    }
-
-    public function whereBracketsEnd(): self
-    {
-        return $this->wrapEnd();
-    }
-
-    public function wrap(): self{
         return $this->brackets($this->where);
     }
 
-    public function wrapOr(): self{
+    public function whereWrapOr(): self
+    {
         return $this->brackets($this->where, 'OR ');
     }
 
-    public function wrapEnd(): self{
+    public function whereWrapEnd(): self
+    {
         return $this->bracketsEnd($this->where);
     }
 

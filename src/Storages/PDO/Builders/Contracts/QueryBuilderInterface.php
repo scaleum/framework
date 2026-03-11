@@ -23,6 +23,9 @@ interface QueryBuilderInterface {
     public function from(array | string $from): self;
     public function groupBy(array | string $field): self;
     public function having(array | string $field, mixed $value = null, bool $quoting = true): self;
+    public function havingWrap(): self;
+    public function havingWrapEnd(): self;
+    public function havingWrapOr(): self;
     public function insert(?string $table = null, array $set = [], bool $replaceIfExists = false): mixed;
     public function join(string $table, string $rule, ?string $type = null): self;
     public function joinInner(string $table, string $rule): self;
@@ -41,7 +44,6 @@ interface QueryBuilderInterface {
     public function orNotLike(string $field, ?string $match = null, string $side = 'both'): self;
     public function orWhere(array | string $field, mixed $value = null, bool $quoting = true): self;
     public function orWhereBetween(string $field, array $range): self;
-    public function orWhereBrackets(): self;
     public function orWhereIn(string $field, array $values): self;
     public function orWhereNotBetween(string $field, array $range): self;
     public function orWhereNotIn(string $field, array $values): self;
@@ -60,18 +62,16 @@ interface QueryBuilderInterface {
     public function update(?string $table = null, array $set = [], array | string $where = null, ?string $whereKey = null, ?int $limit = null): mixed;
     public function where(array | string $field, mixed $value = null, bool $quoting = true): self;
     public function whereBetween(string $field, array $range): self;
-    public function whereBrackets(): self;
-    public function whereBracketsEnd(): self;
     public function whereIn(string $field, array $values): self;
     public function whereKey(string $key): self;
     public function whereNotBetween(string $field, array $range): self;
     public function whereNotIn(string $field, array $values): self;
     public function whereNotNull(string $field): self;
     public function whereNull(string $field): self;
+    public function whereWrap(): self;
+    public function whereWrapEnd(): self;
+    public function whereWrapOr(): self;
     public function with(string $alias, string $sql,array $columns = []): self;
     public function withRecursive(string $alias, string $sql,array $columns = []): self;
-    public function wrap(): self;
-    public function wrapEnd(): self;
-    public function wrapOr(): self;
 }
 /** End of QueryBuilderInterface **/
