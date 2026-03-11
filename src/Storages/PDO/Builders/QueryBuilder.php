@@ -573,16 +573,28 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
     public function whereBrackets(): self
     {
-        return $this->brackets($this->where);
+        return $this->wrap();
     }
 
     public function orWhereBrackets(): self
     {
-        return $this->brackets($this->where, 'OR ');
+        return $this->wrapOr();
     }
 
     public function whereBracketsEnd(): self
     {
+        return $this->wrapEnd();
+    }
+
+    public function wrap(): self{
+        return $this->brackets($this->where);
+    }
+
+    public function wrapOr(): self{
+        return $this->brackets($this->where, 'OR ');
+    }
+
+    public function wrapEnd(): self{
         return $this->bracketsEnd($this->where);
     }
 
