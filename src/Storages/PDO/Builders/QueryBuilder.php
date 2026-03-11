@@ -603,9 +603,17 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this->makeWhereIn($field, $values, true);
     }
 
-    protected function brackets(array &$source, string $prefix = ''): self
+    protected function brackets(array &$source, string $type = 'AND '): self
     {
-        $source[] = $prefix . self::BRACKET_START;
+        if ($this->hasBrackets()) {
+            if (end($this->bracketsSource) === static::BRACKET_START) {
+                $this->bracketsAccept(static::BRACKET_START);
+            } else {
+                $this->bracketsAccept($type . static::BRACKET_START);
+            }
+        } else {
+            $source[] = count($source) ? $type . static::BRACKET_START : static::BRACKET_START;
+        }
 
         $this->bracketsPrev[] = $this->bracketsSource;
         $this->bracketsSource = &$source;
@@ -668,17 +676,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
             switch ($this->hasBrackets()) {
                 case true:
-                    $prefix = $type;
                     if ($this->isBracketStartToken(end($this->bracketsSource))) {
-                    // if (end($this->bracketsSource) == static::BRACKET_START) {
-                        $prefix = "";
-                        while (end($this->bracketsSource) == static::BRACKET_START) {
+                        $prefix = '';
+                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
                             $prefix .= array_pop($this->bracketsSource);
                         }
-
-                        if (count($this->bracketsSource)) {
-                            $prefix = "$type $prefix";
-                        }
+                    } else {
+                        $prefix = $type;
                     }
                     break;
                 default:
@@ -757,17 +761,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         foreach ($field as $key => $value) {
             switch ($this->hasBrackets()) {
                 case true:
-                    $prefix = $type;
                     if ($this->isBracketStartToken(end($this->bracketsSource))) {
-                    // if (end($this->bracketsSource) == static::BRACKET_START) {
-                        $prefix = "";
-                        while (end($this->bracketsSource) == static::BRACKET_START) {
+                        $prefix = '';
+                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
                             $prefix .= array_pop($this->bracketsSource);
                         }
-
-                        if (count($this->bracketsSource)) {
-                            $prefix = "$type $prefix";
-                        }
+                    } else {
+                        $prefix = $type;
                     }
                     break;
                 default:
@@ -1005,17 +1005,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         foreach ($field as $key => $value) {
             switch ($this->hasBrackets()) {
                 case true:
-                    $prefix = $type;
                     if ($this->isBracketStartToken(end($this->bracketsSource))) {
-                    // if (end($this->bracketsSource) == static::BRACKET_START) {
-                        $prefix = "";
-                        while (end($this->bracketsSource) == static::BRACKET_START) {
+                        $prefix = '';
+                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
                             $prefix .= array_pop($this->bracketsSource);
                         }
-
-                        if (count($this->bracketsSource)) {
-                            $prefix = "$type $prefix";
-                        }
+                    } else {
+                        $prefix = $type;
                     }
                     break;
                 default:
@@ -1068,17 +1064,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         if (! empty($whereIn)) {
             switch ($this->hasBrackets()) {
                 case true:
-                    $prefix = $type;
                     if ($this->isBracketStartToken(end($this->bracketsSource))) {
-                    // if (end($this->bracketsSource) == static::BRACKET_START) {
-                        $prefix = "";
-                        while (end($this->bracketsSource) == static::BRACKET_START) {
+                        $prefix = '';
+                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
                             $prefix .= array_pop($this->bracketsSource);
                         }
-
-                        if (count($this->bracketsSource)) {
-                            $prefix = "$type $prefix";
-                        }
+                    } else {
+                        $prefix = $type;
                     }
                     break;
                 default:
@@ -1171,16 +1163,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         $notSql        = $not ? ' NOT' : '';
 
         if ($this->hasBrackets()) {
-            $prefix = $type;
             if ($this->isBracketStartToken(end($this->bracketsSource))) {
-            // if (end($this->bracketsSource) === static::BRACKET_START) {
                 $prefix = '';
-                while (end($this->bracketsSource) === static::BRACKET_START) {
+                while ($this->isBracketStartToken(end($this->bracketsSource))) {
                     $prefix .= array_pop($this->bracketsSource);
                 }
-                if (count($this->bracketsSource)) {
-                    $prefix = "$type $prefix";
-                }
+            } else {
+                $prefix = $type;
             }
         } else {
             $prefix = count($this->where) > 0 ? $type : '';
@@ -1308,16 +1297,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected function makeWhereNull(string $field, bool $not, string $type = 'AND '): self
     {
         if ($this->hasBrackets()) {
-            $prefix = $type;
             if ($this->isBracketStartToken(end($this->bracketsSource))) {
-            // if (end($this->bracketsSource) === static::BRACKET_START) {
                 $prefix = '';
-                while (end($this->bracketsSource) === static::BRACKET_START) {
+                while ($this->isBracketStartToken(end($this->bracketsSource))) {
                     $prefix .= array_pop($this->bracketsSource);
                 }
-                if (count($this->bracketsSource)) {
-                    $prefix = "$type$prefix";
-                }
+            } else {
+                $prefix = $type;
             }
         } else {
             $prefix = count($this->where) > 0 ? $type : '';
@@ -1338,13 +1324,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    protected function isBracketStartToken(mixed $value): bool
+    protected function isBracketStartToken(mixed $token): bool
     {
-        if (!is_string($value)) {
-            return false;
-        }
-
-        return str_ends_with(trim($value), self::BRACKET_START);
+        return in_array($token, [
+            static::BRACKET_START,
+            'AND ' . static::BRACKET_START,
+            'OR ' . static::BRACKET_START,
+        ], true);
     }
 }
 /** End of QueryBuilder **/
