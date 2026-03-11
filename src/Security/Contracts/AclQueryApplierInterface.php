@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -11,12 +11,13 @@ declare(strict_types=1);
 namespace Scaleum\Security\Contracts;
 
 use Scaleum\Security\Subject;
+use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
 
-interface AclQueryApplierInterface
-{
+interface AclQueryApplierInterface {
     public function apply(
-        object $query,
+        QueryBuilderInterface $query,
         AclResourceInterface $resource,
+        string $recordField,
         Subject $subject,
         int $permission
     ): void;
