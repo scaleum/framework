@@ -63,25 +63,25 @@ final class AclAccessQueryApplier implements AclQueryApplierInterface
             "{$alias}.record_id = {$recordField}"
         );
 
-        $query->wrap()
+        $query->whereWrap()
 
-            ->wrap()
+            ->whereWrap()
             ->where("{$alias}.owner_id", $subjectUserId)
             ->where($this->buildPermissionCondition("{$alias}.owner_perms", $permission, $requireAllPermissions), null, false)
-            ->wrapEnd();
+            ->whereWrapEnd();
 
         if (! empty($groupIds)) {
-            $query->wrapOr()
+            $query->whereWrapOr()
                 ->whereIn("{$alias}.group_id", $groupIds)
                 ->where($this->buildPermissionCondition("{$alias}.group_perms", $permission, $requireAllPermissions), null, false)
-                ->wrapEnd();
+                ->whereWrapEnd();
         }
 
-        $query->wrapOr()
+        $query->whereWrapOr()
             ->where($this->buildPermissionCondition("{$alias}.other_perms", $permission, $requireAllPermissions), null, false)
-            ->wrapEnd()
+            ->whereWrapEnd()
 
-            ->wrapEnd();
+            ->whereWrapEnd();
     }
 
     private function buildPermissionCondition(string $field, int $permission, bool $requireAllPermissions = true): string
