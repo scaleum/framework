@@ -1,5 +1,6 @@
 <?php
-declare (strict_types = 1);
+
+declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -21,7 +22,8 @@ use Scaleum\Storages\PDO\Exceptions\ESQLError;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInterface {
+class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInterface
+{
     protected static array $adapters = [
         'mysql'  => Adapters\MySQL\Query::class,
         'pgsql'  => Adapters\PostgreSQL\Query::class,
@@ -53,14 +55,16 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected bool $cteRecursive    = false;
     protected array $unions         = [];
 
-    protected function cache(): self {
+    protected function cache(): self
+    {
         $this->cachedState = get_object_vars($this);
         unset($this->cachedState['cachedState']); // Prevent recursion
 
         return $this;
     }
 
-    protected function restore(): self {
+    protected function restore(): self
+    {
         foreach ($this->cachedState as $property => $value) {
             $this->$property = $value;
         }
@@ -68,7 +72,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function delete(array | string $table = null, array | string $where = null, ?int $limit = null): mixed {
+    public function delete(array | string $table = null, array | string $where = null, ?int $limit = null): mixed
+    {
         if ($table === null) {
             if (! isset($this->from[0])) {
                 return false;
@@ -122,11 +127,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
      *
      * @return mixed
      */
-    public function execute(string $sql, array $params = [], string $method = 'execute', array $args = []): mixed {
+    public function execute(string $sql, array $params = [], string $method = 'execute', array $args = []): mixed
+    {
         return $this->realize($sql, $params, $method, $args);
     }
 
-    public function flush(): self {
+    public function flush(): self
+    {
         parent::flush();
 
         $this->from           = [];
@@ -150,7 +157,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function from(array | string $from): self {
+    public function from(array | string $from): self
+    {
         $this->from = [];
         foreach ((array) $from as $val) {
             if (strpos($val, ',') !== false) {
@@ -172,7 +180,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function groupBy(array | string $field): self {
+    public function groupBy(array | string $field): self
+    {
         if (is_string($field)) {
             $field = explode(',', $field);
         }
@@ -188,7 +197,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function hasOperator($str): bool {
+    public function hasOperator($str): bool
+    {
         $str = trim($str);
         if (! preg_match("/(\s|<|>|!|=|is null|is not null)/i", $str)) {
             return false;
@@ -197,19 +207,23 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return true;
     }
 
-    public function having(array | string $field, mixed $value = null, bool $quoting = true): self {
+    public function having(array | string $field, mixed $value = null, bool $quoting = true): self
+    {
         return $this->makeHaving($field, $value, 'AND ', $quoting);
     }
 
-    public function havingBrackets(): self {
+    public function havingBrackets(): self
+    {
         return $this->brackets($this->having);
     }
 
-    public function havingBracketsEnd(): self {
+    public function havingBracketsEnd(): self
+    {
         return $this->bracketsEnd($this->having);
     }
 
-    public function insert(?string $table = null, array $set = [], bool $replaceIfExists = false): mixed {
+    public function insert(?string $table = null, array $set = [], bool $replaceIfExists = false): mixed
+    {
         if (count($set)) {
             if (ArrayHelper::isAssociative($set)) {
                 $this->set($set);
@@ -234,7 +248,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this->realize($sql);
     }
 
-    public function join(string $table, string $rule, ?string $type = null): self {
+    public function join(string $table, string $rule, ?string $type = null): self
+    {
         if ($type !== null) {
             $type = strtoupper(trim($type));
 
@@ -267,27 +282,33 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function joinInner(string $table, string $rule): self {
+    public function joinInner(string $table, string $rule): self
+    {
         return $this->join($table, $rule, 'INNER');
     }
 
-    public function joinLeft(string $table, string $rule): self {
+    public function joinLeft(string $table, string $rule): self
+    {
         return $this->join($table, $rule, 'LEFT');
     }
 
-    public function joinOuter(string $table, string $rule): self {
+    public function joinOuter(string $table, string $rule): self
+    {
         return $this->join($table, $rule, 'OUTER');
     }
 
-    public function joinRight(string $table, string $rule): self {
+    public function joinRight(string $table, string $rule): self
+    {
         return $this->join($table, $rule, 'RIGHT');
     }
 
-    public function like(array | string $field, ?string $match = null, string $side = 'both'): mixed {
+    public function like(array | string $field, ?string $match = null, string $side = 'both'): mixed
+    {
         return $this->makeLike($field, $match, 'AND ', $side);
     }
 
-    public function limit(int $value, ?int $offset = null): self {
+    public function limit(int $value, ?int $offset = null): self
+    {
         $this->limit = abs($value);
         if ($offset !== null) {
             $this->offset($offset);
@@ -295,7 +316,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function modifiers(array | string $modifiers): self {
+    public function modifiers(array | string $modifiers): self
+    {
         if (is_string($modifiers)) {
             $modifiers = explode(' ', $modifiers);
         }
@@ -307,39 +329,48 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function notLike(array | string $field, ?string $match = null, string $side = 'both'): self {
+    public function notLike(array | string $field, ?string $match = null, string $side = 'both'): self
+    {
         return $this->makeLike($field, $match, 'AND ', $side, 'NOT');
     }
 
-    public function offset(int $offset): self {
+    public function offset(int $offset): self
+    {
         $this->offset = abs($offset);
 
         return $this;
     }
 
-    public function orHaving(array | string $field, mixed $value, bool $quoting = true): self {
+    public function orHaving(array | string $field, mixed $value, bool $quoting = true): self
+    {
         return $this->makeHaving($field, $value, 'OR ', $quoting);
     }
 
-    public function orLike(array | string $field, ?string $match = null, string $side = 'both'): self {
+    public function orLike(array | string $field, ?string $match = null, string $side = 'both'): self
+    {
         return $this->makeLike($field, $match, 'OR ', $side);
     }
 
-    public function orNotLike(array | string $field, ?string $match = null, string $side = 'both'): self {
+    public function orNotLike(array | string $field, ?string $match = null, string $side = 'both'): self
+    {
         return $this->makeLike($field, $match, 'OR ', $side, 'NOT');
     }
-    public function orWhere(array | string $field, mixed $value = null, bool $quoting = true): self {
+    public function orWhere(array | string $field, mixed $value = null, bool $quoting = true): self
+    {
         return $this->makeWhere($field, $value, 'OR ', $quoting);
     }
-    public function orWhereIn(string $field, array $values): self {
+    public function orWhereIn(string $field, array $values): self
+    {
         return $this->makeWhereIn($field, $values, false, 'OR ');
     }
 
-    public function orWhereNotIn(string $field, array $values): self {
+    public function orWhereNotIn(string $field, array $values): self
+    {
         return $this->makeWhereIn($field, $values, true, 'OR ');
     }
 
-    public function orderBy(array | string $field, array | string $direction = 'ASC'): self {
+    public function orderBy(array | string $field, array | string $direction = 'ASC'): self
+    {
         $validDirections = ['ASC', 'DESC'];
         $orderClauses    = [];
 
@@ -397,27 +428,33 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function prepare(bool $value = false): self {
+    public function prepare(bool $value = false): self
+    {
         return $this->setPrepare($value);
     }
 
-    public function optimize(bool $value = false): self {
+    public function optimize(bool $value = false): self
+    {
         return $this->setOptimize($value);
     }
 
-    public function row(array $args = []): mixed {
+    public function row(array $args = []): mixed
+    {
         return $this->realize($this->makeSelect(), [], 'fetch', $args);
     }
 
-    public function rowColumn(array $args = []): mixed {
+    public function rowColumn(array $args = []): mixed
+    {
         return $this->realize($this->makeSelect(), [], 'fetchColumn', $args);
     }
 
-    public function rows(array $args = []): mixed {
+    public function rows(array $args = []): mixed
+    {
         return $this->realize($this->makeSelect(), [], 'fetchAll', $args);
     }
 
-    public function select(array | string $select = '*', bool $quoting = true): self {
+    public function select(array | string $select = '*', bool $quoting = true): self
+    {
         if (is_string($select)) {
             $select = explode(',', $select);
         }
@@ -433,7 +470,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function set(array | string $field, mixed $value = null, bool $quoting = true, bool $isBatch = false): self {
+    public function set(array | string $field, mixed $value = null, bool $quoting = true, bool $isBatch = false): self
+    {
         // $field = $this->objectToArray($field);
 
         if (! is_array($field)) {
@@ -456,7 +494,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function setAsBatch(array $field, mixed $value = null, bool $quoting = true): self {
+    public function setAsBatch(array $field, mixed $value = null, bool $quoting = true): self
+    {
         if (! ArrayHelper::isAssociative($field)) {
             foreach ($field as $batch) {
                 $this->setAsBatch($batch, null, $quoting);
@@ -467,7 +506,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this->set($field, $value, $quoting, true);
     }
 
-    public function truncate(string $table = null): mixed {
+    public function truncate(string $table = null): mixed
+    {
         if ($table === null) {
             if (! isset($this->from[0])) {
                 return false;
@@ -481,7 +521,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this->realize($this->makeTruncate($table));
     }
 
-    public function update(array | string $tableName = null, array $set = [], array | string $where = null, ?string $whereKey = null, ?int $limit = null): mixed {
+    public function update(array | string $tableName = null, array $set = [], array | string $where = null, ?string $whereKey = null, ?int $limit = null): mixed
+    {
         if (count($set)) {
             if (ArrayHelper::isAssociative($set)) {
                 $this->set($set);
@@ -525,34 +566,66 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this->realize($sql);
     }
 
-    public function where(array | string $field, mixed $value = null, bool $quoting = true): self {
+    public function where(array | string $field, mixed $value = null, bool $quoting = true): self
+    {
         return $this->makeWhere($field, $value, 'AND ', $quoting);
     }
 
-    public function whereBrackets(): self {
+    public function whereBrackets(): self
+    {
+        return $this->wrap();
+    }
+
+    public function orWhereBrackets(): self
+    {
+        return $this->wrapOr();
+    }
+
+    public function whereBracketsEnd(): self
+    {
+        return $this->wrapEnd();
+    }
+
+    public function wrap(): self{
         return $this->brackets($this->where);
     }
 
-    public function whereBracketsEnd(): self {
+    public function wrapOr(): self{
+        return $this->brackets($this->where, 'OR ');
+    }
+
+    public function wrapEnd(): self{
         return $this->bracketsEnd($this->where);
     }
 
-    public function whereIn(string $field, array $values): self {
+    public function whereIn(string $field, array $values): self
+    {
         return $this->makeWhereIn($field, $values);
     }
 
-    public function whereKey(string $key): self {
+    public function whereKey(string $key): self
+    {
         $this->whereKey = $key;
 
         return $this;
     }
 
-    public function whereNotIn(string $field, array $values): self {
+    public function whereNotIn(string $field, array $values): self
+    {
         return $this->makeWhereIn($field, $values, true);
     }
 
-    protected function brackets(&$source): self {
-        $source[] = self::BRACKET_START;
+    protected function brackets(array &$source, string $type = 'AND '): self
+    {
+        if ($this->hasBrackets()) {
+            if (end($this->bracketsSource) === static::BRACKET_START) {
+                $this->bracketsAccept(static::BRACKET_START);
+            } else {
+                $this->bracketsAccept($type . static::BRACKET_START);
+            }
+        } else {
+            $source[] = count($source) ? $type . static::BRACKET_START : static::BRACKET_START;
+        }
 
         $this->bracketsPrev[] = $this->bracketsSource;
         $this->bracketsSource = &$source;
@@ -560,11 +633,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    protected function bracketsAccept($value) {
+    protected function bracketsAccept($value)
+    {
         $this->bracketsSource[] = $value;
     }
 
-    protected function bracketsEnd(&$source): self {
+    protected function bracketsEnd(&$source): self
+    {
         $source[] = self::BRACKET_END;
 
         $bracketsPrev         = array_pop($this->bracketsPrev);
@@ -573,7 +648,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    protected function makeDelete(string $table, array $where = [], array $orderBy = [], ?int $limit = null): string {
+    protected function makeDelete(string $table, array $where = [], array $orderBy = [], ?int $limit = null): string
+    {
         $sql = "DELETE FROM ";
         if (count($this->modifiers)) {
             $sql .= implode(" ", $this->modifiers);
@@ -602,7 +678,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $sql;
     }
 
-    protected function makeHaving(array | string $field, mixed $value = null, string $type = 'AND ', bool $quoting = true): self {
+    protected function makeHaving(array | string $field, mixed $value = null, string $type = 'AND ', bool $quoting = true): self
+    {
         if (! is_array($field)) {
             $field = [$field => $value];
         }
@@ -610,22 +687,19 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         foreach ($field as $k => $v) {
 
             switch ($this->hasBrackets()) {
-            case true:
-                $prefix = $type;
-                if (end($this->bracketsSource) == static::BRACKET_START) {
-                    $prefix = "";
-                    while (end($this->bracketsSource) == static::BRACKET_START) {
-                        $prefix .= array_pop($this->bracketsSource);
+                case true:
+                    if ($this->isBracketStartToken(end($this->bracketsSource))) {
+                        $prefix = '';
+                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
+                            $prefix .= array_pop($this->bracketsSource);
+                        }
+                    } else {
+                        $prefix = $type;
                     }
-
-                    if (count($this->bracketsSource)) {
-                        $prefix = "$type $prefix";
-                    }
-                }
-                break;
-            default:
-                $prefix = count($this->having) == 0 ? '' : $type;
-                break;
+                    break;
+                default:
+                    $prefix = count($this->having) == 0 ? '' : $type;
+                    break;
             }
 
             if ($quoting === true) {
@@ -652,7 +726,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    protected function makeInsert(string $tableName, array $keys, array $values, bool $replaceIfExists = false): string {
+    protected function makeInsert(string $tableName, array $keys, array $values, bool $replaceIfExists = false): string
+    {
         $sql = 'INSERT ';
         if ($replaceIfExists == true) {
             $sql = 'REPLACE ';
@@ -665,7 +740,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return "$sql INTO $tableName (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ")";
     }
 
-    protected function makeInsertBatch(string $tableName, array $rows = [], bool $replaceIfExists = false): string {
+    protected function makeInsertBatch(string $tableName, array $rows = [], bool $replaceIfExists = false): string
+    {
         $sql = 'INSERT ';
         if ($replaceIfExists == true) {
             $sql = 'REPLACE ';
@@ -688,29 +764,27 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return "$sql INTO $tableName (" . implode(', ', $keys) . ") VALUES " . implode(', ', $values);
     }
 
-    protected function makeLike(array | string $field, ?string $match = null, string $type = 'AND ', string $side = 'both', string $not = ''): self {
+    protected function makeLike(array | string $field, ?string $match = null, string $type = 'AND ', string $side = 'both', string $not = ''): self
+    {
         if (! is_array($field)) {
             $field = [$field => $match];
         }
 
         foreach ($field as $key => $value) {
             switch ($this->hasBrackets()) {
-            case true:
-                $prefix = $type;
-                if (end($this->bracketsSource) == static::BRACKET_START) {
-                    $prefix = "";
-                    while (end($this->bracketsSource) == static::BRACKET_START) {
-                        $prefix .= array_pop($this->bracketsSource);
+                case true:
+                    if ($this->isBracketStartToken(end($this->bracketsSource))) {
+                        $prefix = '';
+                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
+                            $prefix .= array_pop($this->bracketsSource);
+                        }
+                    } else {
+                        $prefix = $type;
                     }
-
-                    if (count($this->bracketsSource)) {
-                        $prefix = "$type $prefix";
-                    }
-                }
-                break;
-            default:
-                $prefix = count($this->where) > 0 ? $type : '';
-                break;
+                    break;
+                default:
+                    $prefix = count($this->where) > 0 ? $type : '';
+                    break;
             }
 
             $statement = match (strtolower($side)) {
@@ -730,7 +804,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    protected function makeLimit(string $sql, int $limit, int $offset): string {
+    protected function makeLimit(string $sql, int $limit, int $offset): string
+    {
         $queryParts = [];
         if ($limit > 0) {
             $queryParts[] = "LIMIT $limit";
@@ -747,7 +822,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $sql;
     }
 
-    protected function makeSelect(): string {
+    protected function makeSelect(): string
+    {
         $sql = $this->makeWith();
         $sql .= "\nSELECT ";
         if (count($this->modifiers)) {
@@ -823,18 +899,20 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         // Write the UNION
         foreach ($this->unions as $union) {
             $sql .= $union['all']
-            ? "\n UNION ALL " . $union['sql']
-            : "\n UNION " . $union['sql'];
+                ? "\n UNION ALL " . $union['sql']
+                : "\n UNION " . $union['sql'];
         }
 
         return $sql;
     }
 
-    protected function makeTruncate(string $tableName): string {
+    protected function makeTruncate(string $tableName): string
+    {
         return "TRUNCATE $tableName";
     }
 
-    protected function makeUpdate(array | string $tableName, array $values = [], array $where = [], array $orderBy = [], int $limit = 0): string {
+    protected function makeUpdate(array | string $tableName, array $values = [], array $where = [], array $orderBy = [], int $limit = 0): string
+    {
         $sql = 'UPDATE ';
         if (count($this->modifiers)) {
             $sql .= implode(' ', $this->modifiers) . ' ';
@@ -869,7 +947,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $sql;
     }
 
-    protected function makeUpdateBatch(array | string $tableName, array $values = [], array $where = [], ?string $whereKey = null, array $orderBy = [], ?int $limit = 0): string {
+    protected function makeUpdateBatch(array | string $tableName, array $values = [], array $where = [], ?string $whereKey = null, array $orderBy = [], ?int $limit = 0): string
+    {
         if (empty($whereKey)) {
             return '';
         }
@@ -929,29 +1008,27 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $sql;
     }
 
-    protected function makeWhere(array | string $field, mixed $value = null, string $type = 'AND ', bool $quoting = true): self {
+    protected function makeWhere(array | string $field, mixed $value = null, string $type = 'AND ', bool $quoting = true): self
+    {
         if (! is_array($field)) {
             $field = [$field => $value];
         }
 
         foreach ($field as $key => $value) {
             switch ($this->hasBrackets()) {
-            case true:
-                $prefix = $type;
-                if (end($this->bracketsSource) == static::BRACKET_START) {
-                    $prefix = "";
-                    while (end($this->bracketsSource) == static::BRACKET_START) {
-                        $prefix .= array_pop($this->bracketsSource);
+                case true:
+                    if ($this->isBracketStartToken(end($this->bracketsSource))) {
+                        $prefix = '';
+                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
+                            $prefix .= array_pop($this->bracketsSource);
+                        }
+                    } else {
+                        $prefix = $type;
                     }
-
-                    if (count($this->bracketsSource)) {
-                        $prefix = "$type $prefix";
-                    }
-                }
-                break;
-            default:
-                $prefix = count($this->where) > 0 ? $type : '';
-                break;
+                    break;
+                default:
+                    $prefix = count($this->where) > 0 ? $type : '';
+                    break;
             }
 
             if ($value === NULL && ! $this->hasOperator($key)) {
@@ -985,7 +1062,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    protected function makeWhereIn(string $field, array $values, $not = false, $type = 'AND '): self {
+    protected function makeWhereIn(string $field, array $values, $not = false, $type = 'AND '): self
+    {
         $not     = $not ? ' NOT' : '';
         $whereIn = [];
 
@@ -997,22 +1075,19 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
         if (! empty($whereIn)) {
             switch ($this->hasBrackets()) {
-            case true:
-                $prefix = $type;
-                if (end($this->bracketsSource) == static::BRACKET_START) {
-                    $prefix = "";
-                    while (end($this->bracketsSource) == static::BRACKET_START) {
-                        $prefix .= array_pop($this->bracketsSource);
+                case true:
+                    if ($this->isBracketStartToken(end($this->bracketsSource))) {
+                        $prefix = '';
+                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
+                            $prefix .= array_pop($this->bracketsSource);
+                        }
+                    } else {
+                        $prefix = $type;
                     }
-
-                    if (count($this->bracketsSource)) {
-                        $prefix = "$type $prefix";
-                    }
-                }
-                break;
-            default:
-                $prefix = count($this->where) > 0 ? $type : '';
-                break;
+                    break;
+                default:
+                    $prefix = count($this->where) > 0 ? $type : '';
+                    break;
             }
 
             $statement = $prefix . $this->protectIdentifiers($field) . $not . " IN (" . $whereIn . ") ";
@@ -1030,11 +1105,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     /**
      * @return bool
      */
-    protected function hasBrackets() {
+    protected function hasBrackets()
+    {
         return count($this->bracketsSource) > 0;
     }
 
-    protected function addTableAlias(array | string $table): bool {
+    protected function addTableAlias(array | string $table): bool
+    {
         if (is_array($table)) {
             foreach ($table as $tableItem) {
                 $this->addTableAlias($tableItem);
@@ -1068,23 +1145,28 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return false;
     }
 
-    public function whereBetween(string $field, array $range): self {
+    public function whereBetween(string $field, array $range): self
+    {
         return $this->makeWhereBetween($field, $range, false, 'AND ');
     }
 
-    public function orWhereBetween(string $field, array $range): self {
+    public function orWhereBetween(string $field, array $range): self
+    {
         return $this->makeWhereBetween($field, $range, false, 'OR ');
     }
 
-    public function whereNotBetween(string $field, array $range): self {
+    public function whereNotBetween(string $field, array $range): self
+    {
         return $this->makeWhereBetween($field, $range, true, 'AND ');
     }
 
-    public function orWhereNotBetween(string $field, array $range): self {
+    public function orWhereNotBetween(string $field, array $range): self
+    {
         return $this->makeWhereBetween($field, $range, true, 'OR ');
     }
 
-    protected function makeWhereBetween(string $field, array $range, bool $not = false, string $type = 'AND '): self {
+    protected function makeWhereBetween(string $field, array $range, bool $not = false, string $type = 'AND '): self
+    {
         if (count($range) !== 2) {
             throw new EInvalidArgumentException('The range must contain exactly two values.');
         }
@@ -1093,15 +1175,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         $notSql        = $not ? ' NOT' : '';
 
         if ($this->hasBrackets()) {
-            $prefix = $type;
-            if (end($this->bracketsSource) === static::BRACKET_START) {
+            if ($this->isBracketStartToken(end($this->bracketsSource))) {
                 $prefix = '';
-                while (end($this->bracketsSource) === static::BRACKET_START) {
+                while ($this->isBracketStartToken(end($this->bracketsSource))) {
                     $prefix .= array_pop($this->bracketsSource);
                 }
-                if (count($this->bracketsSource)) {
-                    $prefix = "$type $prefix";
-                }
+            } else {
+                $prefix = $type;
             }
         } else {
             $prefix = count($this->where) > 0 ? $type : '';
@@ -1121,7 +1201,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function with(string $alias, string $sql, array $columns = []): self {
+    public function with(string $alias, string $sql, array $columns = []): self
+    {
         // $this->ctes[$alias] = $sql;
         $this->ctes[] = [
             'alias'     => $alias,
@@ -1132,7 +1213,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function withRecursive(string $alias, string $sql,array $columns = []): self {
+    public function withRecursive(string $alias, string $sql, array $columns = []): self
+    {
         // $this->cteRecursive = true;
         // return $this->with($alias, $sql);
         $this->ctes[] = [
@@ -1144,7 +1226,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    protected function makeWith(): string {
+    protected function makeWith(): string
+    {
         if (empty($this->ctes)) {
             return '';
         }
@@ -1178,15 +1261,18 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $keyword . ' ' . implode(', ', $parts) . ' ';
     }
 
-    public function union(callable $callback): self {
+    public function union(callable $callback): self
+    {
         return $this->addUnion($callback, false);
     }
 
-    public function unionAll(callable $callback): self {
+    public function unionAll(callable $callback): self
+    {
         return $this->addUnion($callback, true);
     }
 
-    protected function addUnion(callable $callback, bool $all): self {
+    protected function addUnion(callable $callback, bool $all): self
+    {
         // create a new instance of the query builder
         $query = new static($this->getDatabase());
         $callback($query);
@@ -1200,33 +1286,36 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this;
     }
 
-    public function whereNull(string $field): self {
+    public function whereNull(string $field): self
+    {
         return $this->makeWhereNull($field, false, 'AND ');
     }
 
-    public function orWhereNull(string $field): self {
+    public function orWhereNull(string $field): self
+    {
         return $this->makeWhereNull($field, false, 'OR ');
     }
 
-    public function whereNotNull(string $field): self {
+    public function whereNotNull(string $field): self
+    {
         return $this->makeWhereNull($field, true, 'AND ');
     }
 
-    public function orWhereNotNull(string $field): self {
+    public function orWhereNotNull(string $field): self
+    {
         return $this->makeWhereNull($field, true, 'OR ');
     }
 
-    protected function makeWhereNull(string $field, bool $not, string $type = 'AND '): self {
+    protected function makeWhereNull(string $field, bool $not, string $type = 'AND '): self
+    {
         if ($this->hasBrackets()) {
-            $prefix = $type;
-            if (end($this->bracketsSource) === static::BRACKET_START) {
+            if ($this->isBracketStartToken(end($this->bracketsSource))) {
                 $prefix = '';
-                while (end($this->bracketsSource) === static::BRACKET_START) {
+                while ($this->isBracketStartToken(end($this->bracketsSource))) {
                     $prefix .= array_pop($this->bracketsSource);
                 }
-                if (count($this->bracketsSource)) {
-                    $prefix = "$type$prefix";
-                }
+            } else {
+                $prefix = $type;
             }
         } else {
             $prefix = count($this->where) > 0 ? $type : '';
@@ -1245,6 +1334,15 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         }
 
         return $this;
+    }
+
+    protected function isBracketStartToken(mixed $token): bool
+    {
+        return in_array($token, [
+            static::BRACKET_START,
+            'AND ' . static::BRACKET_START,
+            'OR ' . static::BRACKET_START,
+        ], true);
     }
 }
 /** End of QueryBuilder **/
