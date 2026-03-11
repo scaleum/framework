@@ -53,6 +53,7 @@ interface QueryBuilderInterface {
     public function update(?string $table = null, array $set = [], array | string $where = null, ?string $whereKey = null, ?int $limit = null): mixed;
     public function where(array | string $field, mixed $value = null, bool $quoting = true): self;
     public function whereBrackets(): self;
+    public function orWhereBrackets(): self;
     public function whereBracketsEnd(): self;
     public function whereIn(string $field, array $values): self;
     public function whereNotIn(string $field, array $values): self;
