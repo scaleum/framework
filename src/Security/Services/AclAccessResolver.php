@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -16,8 +16,7 @@ use Scaleum\Security\Contracts\AclResourceInterface;
 use Scaleum\Security\Subject;
 use Scaleum\Storages\PDO\ModelAbstract;
 
-final class AclAccessResolver
-{
+final class AclAccessResolver {
     public function isAllowed(
         ModelAbstract $model,
         Subject $subject,
@@ -49,16 +48,7 @@ final class AclAccessResolver
             return false;
         }
 
-        $database = $model->getDatabase();
-        AclTableGuard::assertTableExists($database, $model->getAclTable());
-
-        $acl = $database
-            ->getQueryBuilder()
-            ->select()
-            ->from($model->getAclTable())
-            ->where('record_id', $model->getId(), false)
-            ->limit(1)
-            ->row();
+        $acl = $this->resolveAcl($model);
 
         if (! $acl) {
             return $model->isAllowedWhenAclMissing();
@@ -102,12 +92,53 @@ final class AclAccessResolver
         }
     }
 
-    private function match(int $mask, int $permission, bool $requireAllPermissions = true): bool
-    {
+    private function match(int $mask, int $permission, bool $requireAllPermissions = true): bool {
         if ($requireAllPermissions) {
             return ($mask & $permission) === $permission;
         }
 
         return ($mask & $permission) !== 0;
+    }
+
+    /**
+     * Uses preloaded ACL data when available and valid, otherwise loads row from ACL table.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function resolveAcl(AclResourceInterface&ModelAbstract $model): ?array {
+        $acl = $model->getAclData();
+        if ($this->isValidAclData($acl)) {
+            return $acl;
+        }
+
+        $database = $model->getDatabase();
+        AclTableGuard::assertTableExists($database, $model->getAclTable());
+
+        $row = $database
+            ->getQueryBuilder()
+            ->select()
+            ->from($model->getAclTable())
+            ->where('record_id', $model->getId(), false)
+            ->limit(1)
+            ->row();
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @param array<string, mixed>|null $acl
+     */
+    private function isValidAclData(?array $acl): bool {
+        if (empty($acl)) {
+            return false;
+        }
+
+        foreach (['owner_id', 'group_id', 'owner_perms', 'group_perms', 'other_perms'] as $key) {
+            if (! array_key_exists($key, $acl) || ! is_int($acl[$key])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

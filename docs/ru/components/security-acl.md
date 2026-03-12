@@ -29,6 +29,15 @@
 Для каждой master-таблицы используется отдельная ACL-таблица `*_acl`.
 Связь выполняется по полю `record_id`.
 
+Для строгой связи 1:1 нормальный вариант, когда `record_id` одновременно:
+
+- внешний ключ на master-таблицу
+- первичный ключ ACL-таблицы
+
+Это гарантирует не более одной ACL-строки на запись и упрощает выборку.
+Если в проекте/ORM требуется отдельный surrogate key (`id`), его можно добавить,
+а на `record_id` оставить `UNIQUE` + `FOREIGN KEY`.
+
 Рекомендуемая структура:
 
 - `record_id`
@@ -49,6 +58,32 @@ CREATE TABLE document_acl (
     group_perms INT NOT NULL DEFAULT 0,
     other_perms INT NOT NULL DEFAULT 0,
     PRIMARY KEY (record_id),
+    CONSTRAINT fk_document_acl_record
+        FOREIGN KEY (record_id) REFERENCES document(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    INDEX idx_document_acl_owner_id (owner_id),
+    INDEX idx_document_acl_group_id (group_id)
+);
+```
+
+Альтернатива с отдельным `id` (если этого требует модельный слой):
+
+```sql
+CREATE TABLE document_acl (
+    id INT NOT NULL AUTO_INCREMENT,
+    record_id INT NOT NULL,
+    owner_id INT NOT NULL,
+    group_id INT NULL,
+    owner_perms INT NOT NULL DEFAULT 0,
+    group_perms INT NOT NULL DEFAULT 0,
+    other_perms INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_document_acl_record_id (record_id),
+    CONSTRAINT fk_document_acl_record
+        FOREIGN KEY (record_id) REFERENCES document(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
     INDEX idx_document_acl_owner_id (owner_id),
     INDEX idx_document_acl_group_id (group_id)
 );
@@ -87,9 +122,13 @@ CREATE TABLE document_acl (
 interface AclResourceInterface
 {
     public function getAclTable(): string;
+    public function getAclData(): ?array;
     public function isAllowedWhenAclMissing(): bool;
 }
 ```
+
+`getAclData()` позволяет вернуть уже подгруженную ACL-строку (например, через `hasOne`-связь модели).
+Если возвращается `null` или пустой массив, `AclAccessResolver` выполнит fallback-загрузку из ACL-таблицы.
 
 Пример модели:
 
@@ -99,6 +138,13 @@ final class Document extends ModelAbstract implements AclResourceInterface
     public function getAclTable(): string
     {
         return 'document_acl';
+    }
+
+    public function getAclData(): ?array
+    {
+        // Например, если relation `acl` уже загружен в модель.
+        // Формат: owner_id/group_id/owner_perms/group_perms/other_perms.
+        return isset($this->acl) ? $this->acl->toArray() : null;
     }
 
     public function isAllowedWhenAclMissing(): bool
@@ -152,8 +198,8 @@ $this->aclQueryApplier->applyAny(
 
 1. Проверяет, что модель реализует `AclResourceInterface`
 2. Проверяет, что модель существует (`isExisting()`)
-3. Проверяет наличие ACL-таблицы (`AclTableGuard`)
-4. Загружает ACL-строку по `record_id`
+3. Пытается взять ACL-данные из модели через `getAclData()`
+4. Если данных нет/они пустые — проверяет ACL-таблицу (`AclTableGuard`) и загружает строку по `record_id`
 5. Если строки нет — возвращает `isAllowedWhenAclMissing()`
 6. Иначе проверяет права владельца/группы/остальных
 
@@ -238,6 +284,7 @@ RuntimeException: ACL table `document_acl` is not found. Create it via migration
 
 - [ ] Создана `*_acl` таблица с полями `owner_perms/group_perms/other_perms`
 - [ ] Есть PK/индекс по `record_id`
+- [ ] Настроен `FOREIGN KEY (record_id)` на master-таблицу (при необходимости с `ON UPDATE/DELETE CASCADE`)
 - [ ] Модель реализует `AclResourceInterface`
 - [ ] Для списков используется `AclAccessQueryApplier`
 - [ ] Для одной записи используется `AclAccessResolver`
