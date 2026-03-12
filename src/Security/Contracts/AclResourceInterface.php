@@ -18,6 +18,16 @@ interface AclResourceInterface
     public function getAclTable(): string;
 
     /**
+     * Returns ACL row that is already loaded via model relation.
+     *
+     * Return null or an empty array when ACL data is not preloaded.
+     * Expected keys: owner_id, group_id, owner_perms, group_perms, other_perms.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getAclData(): ?array;
+
+    /**
      * Defines access policy when ACL row is missing.
      */
     public function isAllowedWhenAclMissing(): bool;
