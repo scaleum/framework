@@ -1,4 +1,4 @@
-[Вернуться к оглавлению](../index.md)
+﻿[Вернуться к оглавлению](../../index.md)
 # Security ACL
 
 Компонент `Security ACL` отвечает за проверку прав доступа на уровне конкретной записи (Record ACL).
@@ -280,15 +280,15 @@ RuntimeException: ACL table `document_acl` is not found. Create it via migration
 | `AclAccessResolver` | `assertAllowedAny(...)` | Бросить исключение при отказе доступа в режиме ANY |
 | `AclTableGuard` | `assertTableExists(...)` *(static)* | Проверить наличие ACL-таблицы |
 
-## Чеклист внедрения
+## Минимум для запуска
 
-- [ ] Создана `*_acl` таблица с полями `owner_perms/group_perms/other_perms`
-- [ ] Есть PK/индекс по `record_id`
-- [ ] Настроен `FOREIGN KEY (record_id)` на master-таблицу (при необходимости с `ON UPDATE/DELETE CASCADE`)
-- [ ] Модель реализует `AclResourceInterface`
-- [ ] Для списков используется `AclAccessQueryApplier`
-- [ ] Для одной записи используется `AclAccessResolver`
-- [ ] Операции `update/delete` выполняются только после ACL-проверки
-- [ ] `roleIds` не подмешиваются в Record ACL-логику
+- [ ] Создана `*_acl` таблица: `record_id`, `owner_id`, `group_id`, `owner_perms`, `group_perms`, `other_perms`
+- [ ] Настроены ключи для связи и поиска (`PK/UNIQUE` по `record_id`, плюс `FOREIGN KEY` при необходимости)
+- [ ] Модель реализует `AclResourceInterface` и задаёт policy на случай отсутствия ACL-строки
+- [ ] Для списков применяется `AclAccessQueryApplier`, для single-record проверки - `AclAccessResolver`
+- [ ] `update/delete` выполняются только после ACL-проверки; `roleIds` не подмешиваются в Record ACL
 
-[Вернуться к оглавлению](../index.md)
+[Вернуться к оглавлению](../../index.md)
+
+
+

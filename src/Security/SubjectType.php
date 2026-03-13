@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -10,13 +10,11 @@ declare(strict_types=1);
  */
 namespace Scaleum\Security;
 
-final class SubjectType
-{
-    public const USER = 1;
-    public const GROUP = 2;
-    public const ROLE = 3;
+final class SubjectType {
+    public const USER    = 1;
+    public const GROUP   = 2;
+    public const ROLE    = 3;
 
-    private function __construct()
-    {
+    private function __construct() {
     }
 }

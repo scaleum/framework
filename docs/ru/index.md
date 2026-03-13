@@ -1,4 +1,4 @@
-# Оглавление документации
+﻿# Оглавление документации
 
 ### 1. Введение
 - [Введение](./introduction.md)
@@ -81,7 +81,9 @@
   - [Translator](./components/i18n/Translator.md)
   - [TranslatorTrait](./components/i18n/TranslatorTrait.md)
 - [Logger](./components/logger.md)
-- [Security](./components/security.md)
+- [Security](./components/security/index.md)
+  - [RBAC](./components/security/rbac.md)
+  - [ACL](./components/security/acl.md)
 - [Session](./components/session.md)
 - Storages
   - PDO
@@ -127,3 +129,5 @@
 - [UrlHelper](./helpers/url-helper.md)
 - [Utf8Helper](./helpers/utf8-helper.md)
 - [XmlHelper](./helpers/xml-helper.md)
+
+
