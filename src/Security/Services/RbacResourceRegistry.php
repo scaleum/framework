@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
@@ -8,6 +9,7 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace Scaleum\Security\Services;
 
 use Scaleum\Security\Contracts\RbacResourceInterface;
@@ -37,8 +39,8 @@ final class RbacResourceRegistry
         }
 
         $this->registerDefinition([
-            'id' => $resourceClass::getId(),
-            'name' => $resourceClass::getName(),
+            'id'          => $resourceClass::getId(),
+            'name'        => $resourceClass::getName(),
             'description' => $resourceClass::getDescription(),
             'permissions' => $resourceClass::getSupportedPermissions(),
         ], $resourceClass);
@@ -97,15 +99,15 @@ final class RbacResourceRegistry
         }
 
         $this->definitionsById[$resourceId] = [
-            'id' => $resourceId,
-            'name' => $name,
+            'id'          => $resourceId,
+            'name'        => $name,
             'description' => $description,
             'permissions' => $permissions,
-            'class' => $resourceClass,
+            'class'       => $resourceClass,
         ];
 
         if ($resourceClass !== null) {
-            $this->resourcesById[$resourceId] = $resourceClass;
+            $this->resourcesById[$resourceId]         = $resourceClass;
             $this->resourceIdsByClass[$resourceClass] = $resourceId;
         }
     }
@@ -184,8 +186,8 @@ final class RbacResourceRegistry
         $definition = $this->definitionsById[$resourceId];
 
         return [
-            'id' => $resourceId,
-            'name' => $definition['name'],
+            'id'          => $resourceId,
+            'name'        => $definition['name'],
             'description' => $definition['description'],
             'permissions' => $definition['permissions'],
         ];
@@ -198,33 +200,33 @@ final class RbacResourceRegistry
      * - current registry = resources declared in code now
      * - $other registry = persisted/legacy snapshot
      *
-        * Result structure:
-        * - onlyInCurrent: resources present only in current registry.
-        * - onlyInOther: resources present only in compared registry.
-        * - outdatedInOther: alias of onlyInOther for explicit business meaning
-        *   (legacy resources that are missing in current registry).
-        * - classMismatches: resources with same id in both registries but
-        *   bound to different classes.
-        *
-        * Buckets contain copies of original resource definitions to simplify consumption.
+     * Result structure:
+     * - onlyInCurrent: resources present only in current registry.
+     * - onlyInOther: resources present only in compared registry.
+     * - outdatedInOther: alias of onlyInOther for explicit business meaning
+     *   (legacy resources that are missing in current registry).
+     * - classMismatches: resources with same id in both registries but
+     *   bound to different classes.
+     *
+     * Buckets contain copies of original resource definitions to simplify consumption.
      *
      * @return array{
-        *   onlyInCurrent:list<array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null}>,
-        *   onlyInOther:list<array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null}>,
-        *   outdatedInOther:list<array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null}>,
-        *   classMismatches:list<array{
-        *     current:array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null},
-        *     other:array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null}
-        *   }>
+     *   onlyInCurrent:list<array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null}>,
+     *   onlyInOther:list<array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null}>,
+     *   outdatedInOther:list<array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null}>,
+     *   classMismatches:list<array{
+     *     current:array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null},
+     *     other:array{id:string,name:string,description:?string,permissions:list<int>,class:class-string<RbacResourceInterface>|null}
+     *   }>
      * }
      */
     public function compareWith(self $other): array
     {
         $currentIds = array_keys($this->definitionsById);
-        $otherIds = array_keys($other->definitionsById);
+        $otherIds   = array_keys($other->definitionsById);
 
         $onlyInCurrentIds = array_values(array_diff($currentIds, $otherIds));
-        $onlyInOtherIds = array_values(array_diff($otherIds, $currentIds));
+        $onlyInOtherIds   = array_values(array_diff($otherIds, $currentIds));
 
         sort($onlyInCurrentIds);
         sort($onlyInOtherIds);
@@ -236,12 +238,12 @@ final class RbacResourceRegistry
         $classMismatches = [];
         foreach (array_intersect($currentIds, $otherIds) as $resourceId) {
             $currentClass = $this->definitionsById[$resourceId]['class'];
-            $otherClass = $other->definitionsById[$resourceId]['class'];
+            $otherClass   = $other->definitionsById[$resourceId]['class'];
 
             if ($currentClass !== null && $otherClass !== null && $currentClass !== $otherClass) {
                 $classMismatches[] = [
                     'current' => $this->definitionsById[$resourceId],
-                    'other' => $other->definitionsById[$resourceId],
+                    'other'   => $other->definitionsById[$resourceId],
                 ];
             }
         }
@@ -253,10 +255,10 @@ final class RbacResourceRegistry
 
         return [
             // IDs that exist only in current registry snapshot.
-            'onlyInCurrent' => $onlyInCurrent,
+            'onlyInCurrent'   => $onlyInCurrent,
 
             // IDs that exist only in compared registry snapshot.
-            'onlyInOther' => $onlyInOther,
+            'onlyInOther'     => $onlyInOther,
 
             // Legacy/outdated IDs: present in compared snapshot, missing in current.
             'outdatedInOther' => $onlyInOther,

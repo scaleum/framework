@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
@@ -8,6 +9,7 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace Scaleum\Security\Services;
 
 use Scaleum\Security\Contracts\RbacLoaderInterface;
@@ -45,9 +47,9 @@ final class RbacAccessResolver
     public function clear(?string $objectId = null): void
     {
         if ($objectId === null) {
-            $this->entriesCache = [];
+            $this->entriesCache     = [];
             $this->subjectMaskCache = [];
-            $this->loaded = [];
+            $this->loaded           = [];
             return;
         }
 
@@ -103,7 +105,7 @@ final class RbacAccessResolver
         }
 
         $entries = $this->resolveEntries($objectId);
-        $mask = 0;
+        $mask    = 0;
 
         foreach ($entries as $entry) {
             if ($this->isEntryMatched($entry, $subject)) {
@@ -111,7 +113,7 @@ final class RbacAccessResolver
             }
         }
 
-        $this->subjectMaskCache[$objectId][$subjectKey] = $mask;
+        $this->subjectMaskCache[$objectId][$subjectKey]  = $mask;
         return $mask;
     }
 
@@ -134,7 +136,7 @@ final class RbacAccessResolver
         }
 
         $this->entriesCache[$objectId] = array_values($entries);
-        $this->loaded[$objectId] = true;
+        $this->loaded[$objectId]       = true;
 
         return $this->entriesCache[$objectId];
     }
@@ -145,7 +147,7 @@ final class RbacAccessResolver
     private function isEntryMatched(array $entry, Subject $subject): bool
     {
         $subjectType = (int) ($entry['subject_type'] ?? 0);
-        $subjectId = (int) ($entry['subject_id'] ?? 0);
+        $subjectId   = (int) ($entry['subject_id'] ?? 0);
 
         if ($subjectType === SubjectType::USER) {
             return $subjectId === $subject->getUserId();
@@ -175,7 +177,7 @@ final class RbacAccessResolver
     private function buildSubjectKey(Subject $subject): string
     {
         $groupIds = array_map('intval', $subject->getGroupIds());
-        $roleIds = array_map('intval', $subject->getRoleIds());
+        $roleIds  = array_map('intval', $subject->getRoleIds());
 
         sort($groupIds);
         sort($roleIds);
