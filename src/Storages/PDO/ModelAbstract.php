@@ -55,6 +55,12 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface 
         parent::__construct($database);
         $this->parent = $parent;
         $this->data   = new ModelData();
+
+        $this->init();
+    }
+
+    protected function init(): void {
+        //...
     }
 
     public function __get(string $name): mixed {
