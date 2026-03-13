@@ -27,7 +27,6 @@ use Scaleum\Stdlib\Helpers\EnvHelper;
 use Scaleum\Stdlib\Helpers\FileHelper;
 use Scaleum\Stdlib\Helpers\PathHelper;
 use Scaleum\Stdlib\Helpers\StringHelper;
-use Throwable;
 
 /**
  * KernelAbstract
@@ -114,25 +113,15 @@ abstract class KernelAbstract implements KernelInterface {
         }
 
         $this->dispatchStart();
-        $exception = null;
 
-        try {
-            if ($response = $this->getHandler()->handle()) {
-                if (! $response instanceof ResponderInterface) {
-                    throw new ERuntimeError("Handler must return an instance of `ResponderInterface`");
-                }
-                $response->send();
+        if ($response = $this->getHandler()->handle()) {
+            if (! $response instanceof ResponderInterface) {
+                throw new ERuntimeError("Handler must return an instance of `ResponderInterface`");
             }
-        } catch (Throwable $e) {
-            $exception = $e;
-        } finally {
-            $this->dispatchFinish();
+            $response->send();
         }
 
-        if ($exception !== null) {
-            throw $exception;
-        }
-
+        $this->dispatchFinish();
         $this->halt(0);
     }
 
