@@ -53,22 +53,24 @@
 ### Инициализация
 
 ```php
+$tokenResolver = new TokenResolver();
+
 $authManager = new AuthManager([
     new CredentialsAuthenticator($userRepository),
-    new HttpJwtAuthenticator($jwtManager),
+    new HttpJwtAuthenticator($tokenResolver, $jwtManager, $userRepository),
 ]);
 ```
 
 ### Пример попытки аутентификации
 ```php
 $user = $authManager->authenticate(
-    credentials: ['username' => 'admin', 'password' => 'secret'],
+    credentials: ['identity' => 'admin', 'password' => 'secret'],
     headers: getallheaders(),
     verbose: true
 );
 
 if ($user !== null) {
-    echo "User authenticated: " . $user->getIdentity();
+    echo "User authenticated";
 } else {
     echo "Authentication failed";
 }
@@ -94,8 +96,12 @@ if ($authManager->hasReports('error')) {
 #### Генерация токена
 ```php
 $jwtManager = new JwtManager();
-$payload = new JwtTokenPayload(['user_id' => 123]);
-$token = $jwtManager->encode($payload);
+$token = $jwtManager->generate([
+    'user_id' => 123,
+]);
+
+$payload = $jwtManager->verify($token);
+$userId = $payload?->getUserId();
 ```
 
 #### Извлечение токена из запроса
@@ -128,15 +134,16 @@ $token = $resolver->resolve($_GET, $_POST, getallheaders(), $_COOKIE);
 ## Пример полного цикла
 ```php
 $jwtManager = new JwtManager();
+$tokenResolver = new TokenResolver();
 $userRepository = new UserRepository();
+
 $authManager = new AuthManager([
-    new HttpJwtAuthenticator($jwtManager),
+    new HttpJwtAuthenticator($tokenResolver, $jwtManager, $userRepository),
     new CredentialsAuthenticator($userRepository),
 ]);
 
 // Извлечь токен
-$resolver = new TokenResolver();
-$token = $resolver->resolve($_GET, $_POST, getallheaders());
+$token = $tokenResolver->resolve($_GET, $_POST, getallheaders(), $_COOKIE);
 
 // Аутентифицировать пользователя
 $user = $authManager->authenticate(
@@ -146,7 +153,7 @@ $user = $authManager->authenticate(
 );
 
 if ($user) {
-    echo "Authenticated as " . $user->getIdentity();
+    echo "Authenticated";
 } else {
     foreach ($authManager->getReportsByType('error') as $error) {
         echo "Auth error: " . $error['message'] . PHP_EOL;
@@ -156,7 +163,9 @@ if ($user) {
 ## Ошибки
 Исключение | Условие
 |:---|:---|
-`ERuntimeError`, `InvalidArgumentException` | Ошибки при работе с токенами или авторизацией
+`RuntimeException` | `assertAllowed(...)`/`assertAllowedAny(...)` в ACL/RBAC при отказе доступа, а также при отсутствии ACL-таблицы
+
+Примечание: методы аутентификаторов обычно не выбрасывают исключения, а возвращают `null` и пишут детали в отчёты (`getReportsByType('error')`).
 
 [Вернуться к оглавлению](../../index.md)
 

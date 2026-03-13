@@ -27,6 +27,7 @@ use Scaleum\Stdlib\Helpers\EnvHelper;
 use Scaleum\Stdlib\Helpers\FileHelper;
 use Scaleum\Stdlib\Helpers\PathHelper;
 use Scaleum\Stdlib\Helpers\StringHelper;
+use Throwable;
 
 /**
  * KernelAbstract
@@ -37,6 +38,9 @@ abstract class KernelAbstract implements KernelInterface {
     protected ?ContainerInterface $container = null;
     protected ?Registry $registry            = null;
     protected bool $inReadiness              = false;
+    protected bool $inStarted                = false;
+    protected bool $inFinished               = false;
+    protected bool $inHalting                = false;
     /**
      * Constructor for the KernelAbstract class.
      *
@@ -109,23 +113,65 @@ abstract class KernelAbstract implements KernelInterface {
             $this->inReadiness = true;
         }
 
-        $this->getEventManager()->dispatch(KernelEvents::START);
-        if ($response = $this->getHandler()->handle()) {
-            if (! $response instanceof ResponderInterface) {
-                throw new ERuntimeError("Handler must return an instance of `ResponderInterface`");
+        $this->dispatchStart();
+        $exception = null;
+
+        try {
+            if ($response = $this->getHandler()->handle()) {
+                if (! $response instanceof ResponderInterface) {
+                    throw new ERuntimeError("Handler must return an instance of `ResponderInterface`");
+                }
+                $response->send();
             }
-            $response->send();
+        } catch (Throwable $e) {
+            $exception = $e;
+        } finally {
+            $this->dispatchFinish();
         }
-        $this->getEventManager()->dispatch(KernelEvents::FINISH);
+
+        if ($exception !== null) {
+            throw $exception;
+        }
 
         $this->halt(0);
     }
 
     public function halt(int $code = 0): void {
+        if (! $this->inHalting) {
+            $this->inHalting = true;
+            $this->dispatchFinish();
+        }
+
         $this->getEventManager()->dispatch(KernelEvents::HALT, [
             'code' => $code,
         ]);
         exit($code);
+    }
+
+    public function isStarted(): bool {
+        return $this->inStarted;
+    }
+
+    public function isFinished(): bool {
+        return $this->inFinished;
+    }
+
+    protected function dispatchStart(): void {
+        if ($this->inStarted) {
+            return;
+        }
+
+        $this->getEventManager()->dispatch(KernelEvents::START);
+        $this->inStarted = true;
+    }
+
+    protected function dispatchFinish(): void {
+        if ($this->inFinished) {
+            return;
+        }
+
+        $this->getEventManager()->dispatch(KernelEvents::FINISH);
+        $this->inFinished = true;
     }
 
     abstract public function getHandler(): HandlerInterface;
@@ -150,11 +196,13 @@ abstract class KernelAbstract implements KernelInterface {
     }
 
     public function getApplicationDir(): string {
-        return $this->getRegistry()->get('application_dir', realpath(PathHelper::getScriptDir()));
+        $path = PathHelper::getScriptDir();
+        return $this->getRegistry()->get('application_dir', realpath($path) ?: $path);
     }
 
     public function getConfigDir(): string {
-        return $this->getRegistry()->get('config_dir', realpath(PathHelper::join($this->getApplicationDir(), 'config')));
+        $path = PathHelper::join($this->getApplicationDir(), 'config');
+        return $this->getRegistry()->get('config_dir', realpath($path) ?: $path);
     }
 
     public function getConfig(string $filename): array {

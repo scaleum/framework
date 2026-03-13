@@ -11,6 +11,7 @@
 - Регистрация поведений (Behaviors)
 - Регистрация сервисов
 - Генерация события `KernelEvents::BOOTSTRAP`
+- Генерация событий жизненного цикла `KernelEvents::START`, `KernelEvents::FINISH`, `KernelEvents::HALT`
 - Перевод ядра в состояние готовности (`inReadiness = true`)
 
 
@@ -23,7 +24,12 @@
 5. Регистрация сервисов (`services`) в [ServiceManager](./components/service-locator.md).
 6. Генерация события `KernelEvents::BOOTSTRAP`.
 7. Установка флага готовности (`inReadiness = true`).
-8. Запуск основного потока.
+8. Генерация события `KernelEvents::START` (однократно).
+9. Выполнение основного обработчика (`HandlerInterface::handle()`) и отправка ответа.
+10. Генерация события `KernelEvents::FINISH` (гарантированно, однократно).
+11. Генерация события `KernelEvents::HALT` и завершение процесса (`exit`).
+
+`KernelEvents::HALT` является последним событием жизненного цикла.
 
 ## Основные методы
 
@@ -37,6 +43,8 @@
 `getContainer(): ContainerInterface` | Возвращает экземпляр контейнера [Container](./components/dependency-injection.md)
 `bootstrap(array $config = []): self` | Запуск подготовки ядра: конфигурации, сервисы, события.
 `run(): void` | Запуск основного потока: обработка запроса, отправка ответа.
+`isStarted(): bool` | Возвращает `true`, если событие `KernelEvents::START` уже было сгенерировано
+`isFinished(): bool` | Возвращает `true`, если событие `KernelEvents::FINISH` уже было сгенерировано
 `halt(int $code = 0): void` | Прерывает выполнения потока и устанавливает код(`$code`) завершения
 
 
