@@ -233,13 +233,23 @@ interface AclQueryApplierInterface
 {
     public function apply(
         QueryBuilderInterface $query,
-        AclResourceInterface $resource,
+        AclResourceInterface|string $resource,
+        string $recordField,
+        Subject $subject,
+        int $permission
+    ): void;
+
+    public function applyAny(
+        QueryBuilderInterface $query,
+        AclResourceInterface|string $resource,
         string $recordField,
         Subject $subject,
         int $permission
     ): void;
 }
 ```
+
+Для list/select фильтрации можно передать либо ACL-ресурс, либо строку с именем ACL-таблицы.
 
 `$recordField` передаётся явно, чтобы корректно работать с разными алиасами и join-структурами (например, `d.id`, `document.id`, `id`).
 

@@ -304,4 +304,28 @@ final class AclServicesTest extends TestCase
         $this->assertContains('(acl.group_perms & 3) != 0', $conditions);
         $this->assertContains('(acl.other_perms & 3) != 0', $conditions);
     }
+
+    public function testQueryApplierAcceptsAclTableAsString(): void
+    {
+        $subject = new Subject(10, [2]);
+
+        /** @var MockObject&QueryBuilderInterface $query */
+        $query = $this->createMock(QueryBuilderInterface::class);
+
+        $query->expects($this->once())
+            ->method('joinInner')
+            ->with('document_acl AS acl', 'acl.record_id = d.id')
+            ->willReturnSelf();
+
+        $query->method('whereWrap')->willReturnSelf();
+        $query->method('whereWrapOr')->willReturnSelf();
+        $query->method('whereWrapEnd')->willReturnSelf();
+        $query->method('whereIn')->willReturnSelf();
+        $query->method('where')->willReturnSelf();
+
+        $applier = new AclAccessQueryApplier();
+        $applier->apply($query, 'document_acl', 'd.id', $subject, Permission::READ);
+
+        $this->assertTrue(true);
+    }
 }
