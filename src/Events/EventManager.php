@@ -27,6 +27,10 @@ class EventManager implements EventManagerInterface {
             throw new ETypeException(sprintf('%s: expects a callback; null provided', __METHOD__));
         }
 
+        if (! is_callable($callback)) {
+            throw new ETypeException(sprintf('%s: expects a callable callback; `%s` provided', __METHOD__, gettype($callback)));
+        }
+
         if (is_array($event)) {
             $listeners = [];
             foreach ($event as $name) {
@@ -62,6 +66,7 @@ class EventManager implements EventManagerInterface {
             }
         }
 
+        // Lower numeric priority executes earlier (e.g. -1 before 0 before 1).
         uasort($result, function ($a, $b) {
             return $a->getPriority() - $b->getPriority();
         });
@@ -99,21 +104,22 @@ class EventManager implements EventManagerInterface {
         }
     }
 
-    protected function dispatchInternal(string $event, EventInterface $ref, mixed $callback = null) {
+    protected function dispatchInternal(string $event, EventInterface $ref, mixed $callback = null): array {
         $effect    = [];
         $listeners = $this->getListeners($event);
         foreach ($listeners as $listener) {
             /** @var Listener $listener */
             $result = call_user_func($listener->getCallback(), $ref);
+
+            if ($listener->isOneOff()) {
+                $this->remove($listener);
+            }
+
             if (! empty($result)) {
                 $effect[] = $result;
                 if ($callback && call_user_func($callback, $result)) {
                     break;
                 }
-            }
-
-            if ($listener->isOneOff()) {
-                $this->remove($listener);
             }
 
             if ($ref->fireStopped()) {

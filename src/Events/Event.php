@@ -1,5 +1,6 @@
 <?php
-declare (strict_types = 1);
+
+declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -19,69 +20,68 @@ use Scaleum\Stdlib\Base\Hydrator;
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  * @datetime 09.01.2025 18:52:00
  */
-class Event extends Hydrator implements EventInterface {
+class Event extends Hydrator implements EventInterface
+{
     protected mixed $context    = null;
     protected bool $fireStopped = false;
-    protected string $name;
-    protected array $params = [];
+    protected string $name      = '';
+    protected array $params     = [];
 
-    public function fireStop($flag = true) {
+    public function fireStop($flag = true): void
+    {
         $this->fireStopped = (bool) $flag;
     }
 
-    public function fireStopped(): bool {
+    public function fireStopped(): bool
+    {
         return $this->fireStopped;
     }
 
-    public function getContext(): mixed {
+    public function getContext(): mixed
+    {
         return $this->context;
     }
 
-    public function getName(): string {
+    public function getName(): string
+    {
         return $this->name;
     }
 
-    public function getParam(string $name, mixed $default = null) {
-        if (is_array($this->params)) {
-            if (!array_key_exists($name, $this->params)) {
-                return $default;
-            }
-
-            return $this->params[$name];
-        }
-
-        if (!array_key_exists($name, $this->params)) {
+    public function getParam(string $name, mixed $default = null): mixed
+    {
+        if (! array_key_exists($name, $this->params)) {
             return $default;
         }
 
-        return $this->params->{$name};
+        return $this->params[$name];
     }
 
-    public function getParams(): array {
+    public function getParams(): array
+    {
         return $this->params;
     }
 
-    public function setContext($context): self {
+    public function setContext(mixed $context): self
+    {
         $this->context = $context;
         return $this;
     }
 
-    public function setName(string $name): self {
+    public function setName(string $name): self
+    {
         $this->name = $name;
         return $this;
     }
 
-    public function setParam(string $name, mixed $value): self {
-        if (is_array($this->params)) {
-            $this->params[$name] = $value;
-        } else {
-            $this->params->{$name} = $value;
-        }
+    public function setParam(string $name, mixed $value): self
+    {
+        $this->params[$name] = $value;
 
         return $this;
     }
 
-    public function setParams(array $params):self {
+    public function setParams(array $params): self
+    {
         $this->params = $params;
         return $this;
     }

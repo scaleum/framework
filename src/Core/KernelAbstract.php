@@ -131,7 +131,7 @@ abstract class KernelAbstract implements KernelInterface {
             $this->dispatchFinish();
         }
 
-        $this->getEventManager()->dispatch(KernelEvents::HALT, [
+        $this->getEventManager()->dispatch(KernelEvents::HALT, null, [
             'code' => $code,
         ]);
         exit($code);
