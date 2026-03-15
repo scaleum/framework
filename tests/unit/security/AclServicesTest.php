@@ -9,6 +9,7 @@ use Scaleum\Security\Services\AclAccessQueryApplier;
 use Scaleum\Security\Services\AclAccessResolver;
 use Scaleum\Security\Services\AclTableGuard;
 use Scaleum\Security\Subject;
+use Scaleum\Storages\PDO\Builders\Adapters\MySQL\Query as MySQLQueryBuilder;
 use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
 use Scaleum\Storages\PDO\Builders\Contracts\SchemaBuilderInterface;
 use Scaleum\Storages\PDO\Database;
@@ -192,13 +193,27 @@ final class AclServicesTest extends TestCase
         $this->assertTrue($resolver->isAllowed($model, $subject, Permission::READ));
     }
 
-    public function testResolverAcceptsPreloadedAclDataWithNullGroupId(): void
+    public function testResolverFallsBackToDatabaseWhenPreloadedAclHasNullGroupId(): void
     {
         $subject = new Subject(10, [2]);
 
+        /** @var MockObject&QueryBuilderInterface $queryBuilder */
+        $queryBuilder = $this->createMock(QueryBuilderInterface::class);
+        $queryBuilder->expects($this->once())->method('select')->willReturnSelf();
+        $queryBuilder->method('from')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('limit')->willReturnSelf();
+        $queryBuilder->method('row')->willReturn([
+            'owner_id' => 10,
+            'group_id' => 2,
+            'owner_perms' => Permission::READ,
+            'group_perms' => 0,
+            'other_perms' => 0,
+        ]);
+
         /** @var MockObject&SchemaBuilderInterface $schemaBuilder */
         $schemaBuilder = $this->createMock(SchemaBuilderInterface::class);
-        $schemaBuilder->expects($this->never())->method('existsTable');
+        $schemaBuilder->expects($this->once())->method('existsTable')->willReturn(true);
 
         /** @var MockObject&Database $database */
         $database = $this->getMockBuilder(Database::class)
@@ -208,7 +223,7 @@ final class AclServicesTest extends TestCase
 
         $database->method('getSignature')->willReturn('db-signature-6');
         $database->method('getSchemaBuilder')->willReturn($schemaBuilder);
-        $database->expects($this->never())->method('getQueryBuilder');
+        $database->expects($this->once())->method('getQueryBuilder')->willReturn($queryBuilder);
 
         $model = (new AclModelStub())
             ->setAclData([
@@ -327,5 +342,38 @@ final class AclServicesTest extends TestCase
         $applier->apply($query, 'document_acl', 'd.id', $subject, Permission::READ);
 
         $this->assertTrue(true);
+    }
+
+    public function testQueryApplierBuildsSqlWithOrBetweenOwnerAndOtherBranches(): void
+    {
+        $subject = new Subject(3, []);
+
+        /** @var MockObject&SchemaBuilderInterface $schemaBuilder */
+        $schemaBuilder = $this->createMock(SchemaBuilderInterface::class);
+        $schemaBuilder->method('existsTable')->with('movies_acl')->willReturn(true);
+
+        /** @var MockObject&Database $database */
+        $database = $this->getMockBuilder(Database::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getPDO', 'getSignature', 'getSchemaBuilder'])
+            ->getMock();
+
+        $database->method('getPDO')->willReturn(new \PDO('sqlite::memory:'));
+        $database->method('getSignature')->willReturn('db-signature-6');
+        $database->method('getSchemaBuilder')->willReturn($schemaBuilder);
+
+        $query = new MySQLQueryBuilder($database);
+        $query->prepare(true)
+            ->select('m.*')
+            ->from('movies AS m');
+
+        $applier = new AclAccessQueryApplier();
+        $applier->apply($query, 'movies_acl', 'm.movie_id', $subject, Permission::READ | Permission::WRITE);
+
+        $sql = $query->rows();
+
+        $this->assertIsString($sql);
+        $this->assertMatchesRegularExpression('/WHERE\s*\(\(`acl`\.`owner_id`\s*=\s*\'?3\'?\s+AND\s+\(acl\.owner_perms\s*&\s*3\)\s*=\s*3\s*\)\s+OR\s+\(\(acl\.other_perms\s*&\s*3\)\s*=\s*3\s*\)\s*\)/', $sql);
+        $this->assertStringNotContainsString('AND ((acl.other_perms & 3) = 3)', $sql);
     }
 }

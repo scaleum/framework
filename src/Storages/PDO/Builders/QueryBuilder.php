@@ -36,8 +36,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected const BRACKET_END   = ')';
 
     private array $cachedState      = [];
-    protected array $bracketsPrev   = [];
-    protected array $bracketsSource = [];
+    protected int $bracketsLevel    = 0;
+    protected ?string $bracketsTarget = null;
     protected array $from           = [];
     protected array $groupBy        = [];
     protected array $having         = [];
@@ -148,8 +148,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         $this->tableAliased   = [];
         $this->where          = [];
         $this->whereKey       = null;
-        $this->bracketsSource = [];
-        $this->bracketsPrev   = [];
+        $this->bracketsLevel  = 0;
+        $this->bracketsTarget = null;
         $this->ctes           = [];
         $this->cteRecursive   = false;
         $this->unions         = [];
@@ -214,17 +214,17 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
     public function havingWrap(): self
     {
-        return $this->brackets($this->having);
+        return $this->brackets('having');
     }
 
     public function havingWrapOr(): self
     {
-        return $this->brackets($this->having, 'OR ');
+        return $this->brackets('having', 'OR ');
     }    
 
     public function havingWrapEnd(): self
     {
-        return $this->bracketsEnd($this->having);
+        return $this->bracketsEnd('having');
     }
 
     public function insert(?string $table = null, array $set = [], bool $replaceIfExists = false): mixed
@@ -578,17 +578,17 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
     public function whereWrap(): self
     {
-        return $this->brackets($this->where);
+        return $this->brackets('where');
     }
 
     public function whereWrapOr(): self
     {
-        return $this->brackets($this->where, 'OR ');
+        return $this->brackets('where', 'OR ');
     }
 
     public function whereWrapEnd(): self
     {
-        return $this->bracketsEnd($this->where);
+        return $this->bracketsEnd('where');
     }
 
     public function whereIn(string $field, array $values): self
@@ -608,35 +608,47 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $this->makeWhereIn($field, $values, true);
     }
 
-    protected function brackets(array &$source, string $type = 'AND '): self
+    protected function brackets(string $target, string $type = 'AND '): self
     {
         if ($this->hasBrackets()) {
-            if (end($this->bracketsSource) === static::BRACKET_START) {
+            if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                 $this->bracketsAccept(static::BRACKET_START);
             } else {
                 $this->bracketsAccept($type . static::BRACKET_START);
             }
         } else {
+            $source = &$this->$target;
             $source[] = count($source) ? $type . static::BRACKET_START : static::BRACKET_START;
+            $this->bracketsTarget = $target;
         }
 
-        $this->bracketsPrev[] = $this->bracketsSource;
-        $this->bracketsSource = &$source;
+        $this->bracketsLevel++;
 
         return $this;
     }
 
     protected function bracketsAccept($value)
     {
-        $this->bracketsSource[] = $value;
+        if ($this->bracketsTarget === 'having') {
+            $this->having[] = $value;
+            return;
+        }
+
+        $this->where[] = $value;
     }
 
-    protected function bracketsEnd(&$source): self
+    protected function bracketsEnd(string $target): self
     {
-        $source[] = self::BRACKET_END;
+        $activeTarget = $this->bracketsTarget ?? $target;
+        $this->{$activeTarget}[] = self::BRACKET_END;
 
-        $bracketsPrev         = array_pop($this->bracketsPrev);
-        $this->bracketsSource = &$bracketsPrev;
+        if ($this->bracketsLevel > 0) {
+            $this->bracketsLevel--;
+        }
+
+        if ($this->bracketsLevel === 0) {
+            $this->bracketsTarget = null;
+        }
 
         return $this;
     }
@@ -681,10 +693,10 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
             switch ($this->hasBrackets()) {
                 case true:
-                    if ($this->isBracketStartToken(end($this->bracketsSource))) {
+                    if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                         $prefix = '';
-                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
-                            $prefix .= array_pop($this->bracketsSource);
+                        while ($this->isBracketStartToken($this->getBracketSourceLast())) {
+                            $prefix .= (string) $this->popBracketSource();
                         }
                     } else {
                         $prefix = $type;
@@ -766,10 +778,10 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         foreach ($field as $key => $value) {
             switch ($this->hasBrackets()) {
                 case true:
-                    if ($this->isBracketStartToken(end($this->bracketsSource))) {
+                    if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                         $prefix = '';
-                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
-                            $prefix .= array_pop($this->bracketsSource);
+                        while ($this->isBracketStartToken($this->getBracketSourceLast())) {
+                            $prefix .= (string) $this->popBracketSource();
                         }
                     } else {
                         $prefix = $type;
@@ -1010,10 +1022,10 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         foreach ($field as $key => $value) {
             switch ($this->hasBrackets()) {
                 case true:
-                    if ($this->isBracketStartToken(end($this->bracketsSource))) {
+                    if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                         $prefix = '';
-                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
-                            $prefix .= array_pop($this->bracketsSource);
+                        while ($this->isBracketStartToken($this->getBracketSourceLast())) {
+                            $prefix .= (string) $this->popBracketSource();
                         }
                     } else {
                         $prefix = $type;
@@ -1069,10 +1081,10 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         if (! empty($whereIn)) {
             switch ($this->hasBrackets()) {
                 case true:
-                    if ($this->isBracketStartToken(end($this->bracketsSource))) {
+                    if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                         $prefix = '';
-                        while ($this->isBracketStartToken(end($this->bracketsSource))) {
-                            $prefix .= array_pop($this->bracketsSource);
+                        while ($this->isBracketStartToken($this->getBracketSourceLast())) {
+                            $prefix .= (string) $this->popBracketSource();
                         }
                     } else {
                         $prefix = $type;
@@ -1100,7 +1112,25 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
      */
     protected function hasBrackets()
     {
-        return count($this->bracketsSource) > 0;
+        return $this->bracketsLevel > 0 && $this->bracketsTarget !== null;
+    }
+
+    protected function getBracketSourceLast(): mixed
+    {
+        if ($this->bracketsTarget === 'having') {
+            return end($this->having);
+        }
+
+        return end($this->where);
+    }
+
+    protected function popBracketSource(): mixed
+    {
+        if ($this->bracketsTarget === 'having') {
+            return array_pop($this->having);
+        }
+
+        return array_pop($this->where);
     }
 
     protected function addTableAlias(array | string $table): bool
@@ -1168,10 +1198,10 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         $notSql        = $not ? ' NOT' : '';
 
         if ($this->hasBrackets()) {
-            if ($this->isBracketStartToken(end($this->bracketsSource))) {
+            if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                 $prefix = '';
-                while ($this->isBracketStartToken(end($this->bracketsSource))) {
-                    $prefix .= array_pop($this->bracketsSource);
+                while ($this->isBracketStartToken($this->getBracketSourceLast())) {
+                    $prefix .= (string) $this->popBracketSource();
                 }
             } else {
                 $prefix = $type;
@@ -1302,10 +1332,10 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected function makeWhereNull(string $field, bool $not, string $type = 'AND '): self
     {
         if ($this->hasBrackets()) {
-            if ($this->isBracketStartToken(end($this->bracketsSource))) {
+            if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                 $prefix = '';
-                while ($this->isBracketStartToken(end($this->bracketsSource))) {
-                    $prefix .= array_pop($this->bracketsSource);
+                while ($this->isBracketStartToken($this->getBracketSourceLast())) {
+                    $prefix .= (string) $this->popBracketSource();
                 }
             } else {
                 $prefix = $type;
