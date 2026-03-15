@@ -696,7 +696,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                     if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                         $prefix = '';
                         while ($this->isBracketStartToken($this->getBracketSourceLast())) {
-                            $prefix .= (string) $this->popBracketSource();
+                            $prefix = (string) $this->popBracketSource() . $prefix;
                         }
                     } else {
                         $prefix = $type;
@@ -781,7 +781,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                     if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                         $prefix = '';
                         while ($this->isBracketStartToken($this->getBracketSourceLast())) {
-                            $prefix .= (string) $this->popBracketSource();
+                            $prefix = (string) $this->popBracketSource() . $prefix;
                         }
                     } else {
                         $prefix = $type;
@@ -1025,7 +1025,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                     if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                         $prefix = '';
                         while ($this->isBracketStartToken($this->getBracketSourceLast())) {
-                            $prefix .= (string) $this->popBracketSource();
+                            $prefix = (string) $this->popBracketSource() . $prefix;
                         }
                     } else {
                         $prefix = $type;
@@ -1084,7 +1084,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                     if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                         $prefix = '';
                         while ($this->isBracketStartToken($this->getBracketSourceLast())) {
-                            $prefix .= (string) $this->popBracketSource();
+                            $prefix = (string) $this->popBracketSource() . $prefix;
                         }
                     } else {
                         $prefix = $type;
@@ -1201,7 +1201,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                 $prefix = '';
                 while ($this->isBracketStartToken($this->getBracketSourceLast())) {
-                    $prefix .= (string) $this->popBracketSource();
+                    $prefix = (string) $this->popBracketSource() . $prefix;
                 }
             } else {
                 $prefix = $type;
@@ -1335,7 +1335,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             if ($this->isBracketStartToken($this->getBracketSourceLast())) {
                 $prefix = '';
                 while ($this->isBracketStartToken($this->getBracketSourceLast())) {
-                    $prefix .= (string) $this->popBracketSource();
+                    $prefix = (string) $this->popBracketSource() . $prefix;
                 }
             } else {
                 $prefix = $type;

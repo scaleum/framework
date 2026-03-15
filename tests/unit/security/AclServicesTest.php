@@ -376,4 +376,42 @@ final class AclServicesTest extends TestCase
         $this->assertMatchesRegularExpression('/WHERE\s*\(\(`acl`\.`owner_id`\s*=\s*\'?3\'?\s+AND\s+\(acl\.owner_perms\s*&\s*3\)\s*=\s*3\s*\)\s+OR\s+\(\(acl\.other_perms\s*&\s*3\)\s*=\s*3\s*\)\s*\)/', $sql);
         $this->assertStringNotContainsString('AND ((acl.other_perms & 3) = 3)', $sql);
     }
+
+    public function testQueryApplierKeepsValidAndPrefixWithExistingWhereClauses(): void
+    {
+        $subject = new Subject(3, [25, 23]);
+
+        /** @var MockObject&SchemaBuilderInterface $schemaBuilder */
+        $schemaBuilder = $this->createMock(SchemaBuilderInterface::class);
+        $schemaBuilder->method('existsTable')->with('movies_acl')->willReturn(true);
+
+        /** @var MockObject&Database $database */
+        $database = $this->getMockBuilder(Database::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getPDO', 'getSignature', 'getSchemaBuilder'])
+            ->getMock();
+
+        $database->method('getPDO')->willReturn(new \PDO('sqlite::memory:'));
+        $database->method('getSignature')->willReturn('db-signature-7');
+        $database->method('getSchemaBuilder')->willReturn($schemaBuilder);
+
+        $query = new MySQLQueryBuilder($database);
+        $query->prepare(true)
+            ->select('*')
+            ->from('movies AS m')
+            ->where('2 = 2', null, false);
+
+        $applier = new AclAccessQueryApplier();
+        $applier->applyAny($query, 'movies_acl', 'm.movie_id', $subject, Permission::READ | Permission::WRITE | Permission::EXECUTE);
+
+        $query->where('1 = 1', null, false);
+
+        $sql = $query->rows();
+
+        $this->assertIsString($sql);
+        $this->assertStringContainsString('WHERE 2 = 2', $sql);
+        $this->assertStringContainsString('AND ((', $sql);
+        $this->assertStringNotContainsString('(AND (', $sql);
+        $this->assertStringContainsString('AND 1 = 1', $sql);
+    }
 }
