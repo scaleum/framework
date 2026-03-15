@@ -92,6 +92,7 @@
     - [ModelAbstract](./components/storages/pdo/ModelAbstract.md)
     - [ModelData](./components/storages/pdo/ModelData.md)
     - [ModelInterface](./components/storages/pdo/ModelInterface.md)
+    - [RecordsetAbstract](./components/storages/pdo/RecordsetAbstract.md)
     - Builders
       - [BuilderAbstract](./components/storages/pdo/builders/BuilderAbstract.md)
       - [ColumnBuilder](./components/storages/pdo/builders/ColumnBuilder.md)
