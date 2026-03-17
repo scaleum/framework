@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 namespace Scaleum\Security\Services;
 
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Storages\PDO\Database;
 
 final class AclTableGuard
@@ -28,7 +29,7 @@ final class AclTableGuard
         }
 
         if (! $database->getSchemaBuilder()->existsTable($tableName)) {
-            throw new \RuntimeException(
+            throw new ERuntimeError(
                 sprintf(
                     "ACL table `%s` is not found. Create it via migration before using ACL resource.",
                     $tableName

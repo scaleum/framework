@@ -5,6 +5,9 @@ use PHPUnit\Framework\TestCase;
 use Scaleum\Security\Contracts\RbacResourceInterface;
 use Scaleum\Security\Permission;
 use Scaleum\Security\Services\RbacResourceRegistry;
+use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
+use Scaleum\Stdlib\Exceptions\ENotFoundError;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 final class RegistryDocResource implements RbacResourceInterface
 {
@@ -139,7 +142,7 @@ final class RbacResourceRegistryTest extends TestCase
         $this->assertSame('Invoice', $description['name']);
         $this->assertSame([Permission::READ, Permission::WRITE], $description['permissions']);
 
-        $this->expectException(OutOfBoundsException::class);
+        $this->expectException(ENotFoundError::class);
         $this->expectExceptionMessage('has no bound class');
         $registry->get('invoice');
     }
@@ -166,7 +169,7 @@ final class RbacResourceRegistryTest extends TestCase
         $registry = new RbacResourceRegistry();
         $registry->register(RegistryDocResource::class);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ERuntimeError::class);
         $this->expectExceptionMessage('Duplicate RBAC resource id `document`');
 
         $registry->register(RegistryDuplicateIdResource::class);
@@ -176,7 +179,7 @@ final class RbacResourceRegistryTest extends TestCase
     {
         $registry = new RbacResourceRegistry();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(EInvalidArgumentException::class);
         $this->expectExceptionMessage('returned empty id');
 
         $registry->register(RegistryEmptyIdResource::class);

@@ -91,17 +91,58 @@ CREATE TABLE document_acl (
 
 ## Разрешения (`Permission`)
 
-`Permission` использует битовые флаги (`READ`, `WRITE`, `DELETE`, и т.д.).
-Проверка выполняется по маске:
+`Permission` использует битовые флаги (`READ`, `WRITE`, `DELETE`, и т.д.) и может расширяться в проекте через наследование.
+Базовые константы также вынесены в `Security/Contracts/PermissionInterface`.
+
+Проверка выполняется по маске (режим ALL):
 
 ```php
 ($mask & $permission) === $permission
 ```
 
-Для сценария «хотя бы одно из прав» используется проверка:
+Для сценария «хотя бы одно из прав» (режим ANY):
 
 ```php
 ($mask & $permission) !== 0
+```
+
+Для этих сценариев в классе доступны helper-методы:
+
+```php
+Permission::has($mask, Permission::READ | Permission::WRITE);
+Permission::hasAny($mask, Permission::READ | Permission::WRITE);
+Permission::label(Permission::READ);   // Read
+Permission::labels($mask);             // [bit => label, ...]
+```
+
+Ограничение по битам:
+
+- По умолчанию включён soft-limit `31` бит (индексы `0..30`)
+- Почему не `32`: в signed `INT` старший (32-й) бит является битом знака,
+  и его использование приводит к отрицательным значениям маски.
+- При необходимости можно поднять лимит до `63` (на 64-bit runtime):
+- Если используете `63` бита, поле в БД для маски должно быть `BIGINT`
+    (обычно signed `BIGINT`), а runtime PHP должен быть 64-bit.
+
+```php
+Permission::setMaxBits(63);
+```
+
+Пример расширения под проектные политики:
+
+```php
+final class AppPermission extends Permission
+{
+    public const APPROVE = 1 << 8;
+    public const PUBLISH = 1 << 9;
+
+    protected static array $perms = Permission::BASE_LABELS + [
+        self::APPROVE => 'Approve',
+        self::PUBLISH => 'Publish',
+    ];
+}
+
+$all = AppPermission::all(); // Актуальная полная маска из зарегистрированных битов
 ```
 
 ## Субъект доступа (`Subject`)

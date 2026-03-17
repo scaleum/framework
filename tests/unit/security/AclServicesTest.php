@@ -9,6 +9,7 @@ use Scaleum\Security\Services\AclAccessQueryApplier;
 use Scaleum\Security\Services\AclAccessResolver;
 use Scaleum\Security\Services\AclTableGuard;
 use Scaleum\Security\Subject;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Storages\PDO\Builders\Adapters\MySQL\Query as MySQLQueryBuilder;
 use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
 use Scaleum\Storages\PDO\Builders\Contracts\SchemaBuilderInterface;
@@ -110,7 +111,7 @@ final class AclServicesTest extends TestCase
         $database->method('getSignature')->willReturn('db-signature-2');
         $database->method('getSchemaBuilder')->willReturn($schemaBuilder);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ERuntimeError::class);
         $this->expectExceptionMessage('ACL table `missing_acl` is not found');
 
         AclTableGuard::assertTableExists($database, 'missing_acl');

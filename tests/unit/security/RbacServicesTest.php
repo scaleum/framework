@@ -8,6 +8,7 @@ use Scaleum\Security\Permission;
 use Scaleum\Security\Services\RbacAccessResolver;
 use Scaleum\Security\Subject;
 use Scaleum\Security\SubjectType;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 final class RbacServicesTest extends TestCase
 {
@@ -20,7 +21,7 @@ final class RbacServicesTest extends TestCase
             ['subject_type' => SubjectType::USER, 'subject_id' => 10, 'permissions' => Permission::READ],
         ]);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(ERuntimeError::class);
         $this->expectExceptionMessage('Access denied');
 
         $resolver->assertAllowed('obj-assert-1', $subject, Permission::READ | Permission::WRITE);

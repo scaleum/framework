@@ -54,6 +54,9 @@ CREATE TABLE rbac_entries (
 
 ## Разрешения (`Permission`)
 
+`Permission` может использоваться как есть или расширяться в проекте для domain-specific прав.
+Базовый контракт констант доступен через `Security/Contracts/PermissionInterface`.
+
 Проверка в режиме ALL:
 
 ```php
@@ -65,6 +68,32 @@ CREATE TABLE rbac_entries (
 ```php
 ($mask & $permission) !== 0
 ```
+
+Эквивалентные helper-методы:
+
+```php
+Permission::has($mask, $permission);      // ALL
+Permission::hasAny($mask, $permission);   // ANY
+Permission::label(Permission::READ);      // Read
+Permission::labels($mask);                // [bit => label, ...]
+Permission::all();                        // Полная маска из текущего реестра прав
+```
+
+Ограничение по битам:
+
+- По умолчанию используется soft-limit `31` бит (индексы `0..30`)
+- Почему не `32`: в signed `INT` старший (32-й) бит — это бит знака,
+  поэтому его обычно не используют для bitmask-прав.
+- При необходимости (и подходящем runtime/storage) лимит можно поднять до `63`:
+- Для `63` бит храните маску в `BIGINT` (обычно signed `BIGINT`) и
+    используйте 64-bit PHP runtime.
+
+```php
+Permission::setMaxBits(63);
+```
+
+Для наследников `Permission` рекомендуется использовать `YourPermission::all()`,
+а не полагаться на `BASE_ALL`, если набор project-specific битов может меняться.
 
 `RbacAccessResolver` внутри агрегирует (OR) все совпавшие записи субъекта:
 
