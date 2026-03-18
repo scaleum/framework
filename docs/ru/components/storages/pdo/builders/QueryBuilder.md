@@ -55,6 +55,8 @@
 | `rows(array $args = []): mixed` | `mixed` | Выполняет `SELECT` и возвращает набор строк (`fetchAll`). |
 | `row(array $args = []): mixed` | `mixed` | Выполняет `SELECT` и возвращает одну запись (`fetch`). |
 | `rowColumn(array $args = []): mixed` | `mixed` | Выполняет `SELECT` и возвращает одну колонку (`fetchColumn`). |
+| `union(callable\|string\|self $query): self` | `self` | Добавляет `UNION` из callback, готового SQL или другого builder-инстанса. |
+| `unionAll(callable\|string\|self $query): self` | `self` | Добавляет `UNION ALL` из callback, готового SQL или другого builder-инстанса. |
 
 ## Расширенные возможности
 
@@ -65,7 +67,7 @@
 | Наборы условий | `whereIn()`, `whereNotIn()`, `orWhereIn()`, `orWhereNotIn()` | Формирует `IN`/`NOT IN`. |
 | Диапазоны и NULL | `whereBetween()`, `orWhereBetween()`, `whereNotBetween()`, `orWhereNotBetween()`, `whereNull()`, `orWhereNull()`, `whereNotNull()`, `orWhereNotNull()` | Поддерживает `BETWEEN` и проверки `IS [NOT] NULL`. |
 | CTE | `with()`, `withRecursive()` | Добавляет CTE-выражения в начало запроса (`WITH ...`). |
-| Объединение | `union()`, `unionAll()` | Объединяет запросы через callback на отдельном билдере. |
+| Объединение | `union()`, `unionAll()` | Объединяет запросы через callback, готовый SQL-текст или другой builder. |
 | Выполнение и состояние | `execute()`, `prepare()`, `optimize()`, `flush()` | Выполняет произвольный SQL, включает режимы подготовки и очищает состояние билдера. |
 
 ## Внутренняя логика
@@ -149,6 +151,93 @@ $tree = (new QueryBuilder($db))
     ->orderBy(['t.level', 't.id'], ['ASC', 'ASC'])
     ->rows();
 ```
+
+### WITH RECURSIVE через unionAll() builder API
+
+```php
+use Scaleum\Storages\PDO\Builders\QueryBuilder;
+use Scaleum\Storages\PDO\Database;
+
+$db = new Database('mysql:host=localhost;dbname=app', 'root', 'secret');
+
+$cteSql = (new QueryBuilder($db))
+    ->prepare(true)
+    ->select(['id', 'parent_id', 'title'])
+    ->from('categories')
+    ->where('parent_id', null)
+    ->unionAll(function ($q) {
+        $q->prepare(true)
+            ->select(['c.id', 'c.parent_id', 'c.title'])
+            ->from('categories c')
+            ->joinInner('tree t', 'c.parent_id = t.id');
+    })
+    ->rows();
+
+$sql = (new QueryBuilder($db))
+    ->prepare(true)
+    ->withRecursive('tree', $cteSql, ['id', 'parent_id', 'title'])
+    ->select(['t.id', 't.title'])
+    ->from('tree t')
+    ->rows();
+```
+
+## Примеры с UNION
+
+### UNION через callback
+
+```php
+$sql = (new QueryBuilder($db))
+    ->prepare(true)
+    ->select(['id', 'email'])
+    ->from('users')
+    ->where('active', 1)
+    ->union(function ($q) {
+        $q->prepare(true)
+            ->select(['id', 'email'])
+            ->from('admins')
+            ->where('active', 1);
+    })
+    ->rows();
+```
+
+### UNION через готовый SQL-текст
+
+```php
+$unionSql = (new QueryBuilder($db))
+    ->prepare(true)
+    ->select(['id', 'email'])
+    ->from('admins')
+    ->where('active', 1)
+    ->rows();
+
+$sql = (new QueryBuilder($db))
+    ->prepare(true)
+    ->select(['id', 'email'])
+    ->from('users')
+    ->where('active', 1)
+    ->union($unionSql)
+    ->rows();
+```
+
+### UNION ALL через другой builder-инстанс
+
+```php
+$unionBuilder = (new QueryBuilder($db))
+    ->select(['id', 'email'])
+    ->from('admins')
+    ->where('active', 1);
+
+$sql = (new QueryBuilder($db))
+    ->prepare(true)
+    ->select(['id', 'email'])
+    ->from('users')
+    ->where('active', 1)
+    ->unionAll($unionBuilder)
+    ->rows();
+```
+
+Во всех режимах `union()/unionAll()` материализуют SQL подзапроса сразу (snapshot),
+поэтому дальнейшие изменения исходного callback/builder не меняют уже добавленный `UNION`.
 
 ### Получить SQL без выполнения
 

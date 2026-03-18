@@ -16,7 +16,15 @@ use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
 interface AclQueryApplierInterface {
     public function apply(
         QueryBuilderInterface $query,
-        AclResourceInterface $resource,
+        AclResourceInterface|string $resource,
+        string $recordField,
+        Subject $subject,
+        int $permission
+    ): void;
+
+    public function applyAny(
+        QueryBuilderInterface $query,
+        AclResourceInterface|string $resource,
         string $recordField,
         Subject $subject,
         int $permission

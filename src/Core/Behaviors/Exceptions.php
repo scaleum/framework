@@ -61,21 +61,18 @@ class Exceptions extends KernelProviderAbstract implements EventHandlerInterface
     }
 
     public function handlerShutdown(): void {
-
-        // Check for unhandled errors (fatal shutdown)
+        // Check for unhandled fatal errors captured at shutdown.
         $err = error_get_last();
-
-        // If none, check function args (error handler)
-        if ($err === null) {
-            $err = func_get_args();
-        }
-
         if (empty($err)) {
             return;
         }
 
-        $err       = array_combine(['errno', 'errstr', 'errfile', 'errline'], $err);
-        $exception = new \ErrorException($err['errstr'], 0, $err['errno'], $err['errfile'], $err['errline']);
+        // Native shape of error_get_last(): type, message, file, line.
+        if (! isset($err['type'], $err['message'], $err['file'], $err['line'])) {
+            return;
+        }
+
+        $exception = new \ErrorException($err['message'], 0, $err['type'], $err['file'], $err['line']);
 
         if (error_reporting() & $err['type']) {
             try {

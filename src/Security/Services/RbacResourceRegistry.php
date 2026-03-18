@@ -13,6 +13,9 @@ declare(strict_types=1);
 namespace Scaleum\Security\Services;
 
 use Scaleum\Security\Contracts\RbacResourceInterface;
+use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
+use Scaleum\Stdlib\Exceptions\ENotFoundError;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 final class RbacResourceRegistry
 {
@@ -31,7 +34,7 @@ final class RbacResourceRegistry
     public function register(string $resourceClass): void
     {
         if (! is_subclass_of($resourceClass, RbacResourceInterface::class)) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new EInvalidArgumentException(sprintf(
                 'Resource class `%s` must implement `%s`.',
                 $resourceClass,
                 RbacResourceInterface::class
@@ -64,12 +67,12 @@ final class RbacResourceRegistry
     {
         $resourceId = trim((string) ($definition['id'] ?? ''));
         if ($resourceId == '') {
-            throw new \InvalidArgumentException('RBAC resource definition returned empty id.');
+            throw new EInvalidArgumentException('RBAC resource definition returned empty id.');
         }
 
         $name = trim((string) ($definition['name'] ?? ''));
         if ($name == '') {
-            throw new \InvalidArgumentException(sprintf(
+            throw new EInvalidArgumentException(sprintf(
                 'RBAC resource definition `%s` returned empty name.',
                 $resourceId
             ));
@@ -80,7 +83,7 @@ final class RbacResourceRegistry
         /** @var mixed $permissionsRaw */
         $permissionsRaw = $definition['permissions'] ?? [];
         if (! is_array($permissionsRaw)) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new EInvalidArgumentException(sprintf(
                 'RBAC resource definition `%s` returned invalid permissions payload.',
                 $resourceId
             ));
@@ -90,7 +93,7 @@ final class RbacResourceRegistry
 
         $existingClass = $this->resourcesById[$resourceId] ?? null;
         if ($resourceClass !== null && $existingClass !== null && $existingClass !== $resourceClass) {
-            throw new \RuntimeException(sprintf(
+            throw new ERuntimeError(sprintf(
                 'Duplicate RBAC resource id `%s` for classes `%s` and `%s`.',
                 $resourceId,
                 $existingClass,
@@ -133,11 +136,11 @@ final class RbacResourceRegistry
     public function get(string $resourceId): string
     {
         if (! isset($this->definitionsById[$resourceId])) {
-            throw new \OutOfBoundsException(sprintf('RBAC resource id `%s` is not registered.', $resourceId));
+            throw new ENotFoundError(sprintf('RBAC resource id `%s` is not registered.', $resourceId));
         }
 
         if (! isset($this->resourcesById[$resourceId])) {
-            throw new \OutOfBoundsException(sprintf(
+            throw new ENotFoundError(sprintf(
                 'RBAC resource id `%s` is registered as a definition but has no bound class.',
                 $resourceId
             ));
@@ -168,7 +171,7 @@ final class RbacResourceRegistry
     public function getIdByClass(string $resourceClass): string
     {
         if (! isset($this->resourceIdsByClass[$resourceClass])) {
-            throw new \OutOfBoundsException(sprintf('RBAC resource class `%s` is not registered.', $resourceClass));
+            throw new ENotFoundError(sprintf('RBAC resource class `%s` is not registered.', $resourceClass));
         }
 
         return $this->resourceIdsByClass[$resourceClass];
@@ -180,7 +183,7 @@ final class RbacResourceRegistry
     public function describe(string $resourceId): array
     {
         if (! isset($this->definitionsById[$resourceId])) {
-            throw new \OutOfBoundsException(sprintf('RBAC resource id `%s` is not registered.', $resourceId));
+            throw new ENotFoundError(sprintf('RBAC resource id `%s` is not registered.', $resourceId));
         }
 
         $definition = $this->definitionsById[$resourceId];

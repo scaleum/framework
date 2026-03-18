@@ -57,8 +57,8 @@ interface QueryBuilderInterface {
     public function set(array | string $field, mixed $value = null, bool $quoting = true, bool $isBatch = false): self;
     public function setAsBatch(array $field, mixed $value = null, bool $quoting = true): self;
     public function truncate(?string $table = null): mixed;
-    public function union(callable $callback): self;
-    public function unionAll(callable $callback): self;
+    public function union(callable | string | self $query): self;
+    public function unionAll(callable | string | self $query): self;
     public function update(?string $table = null, array $set = [], array | string $where = null, ?string $whereKey = null, ?int $limit = null): mixed;
     public function where(array | string $field, mixed $value = null, bool $quoting = true): self;
     public function whereBetween(string $field, array $range): self;

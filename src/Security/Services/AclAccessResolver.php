@@ -14,6 +14,7 @@ namespace Scaleum\Security\Services;
 
 use Scaleum\Security\Contracts\AclResourceInterface;
 use Scaleum\Security\Subject;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 use Scaleum\Storages\PDO\ModelAbstract;
 
 final class AclAccessResolver {
@@ -77,7 +78,7 @@ final class AclAccessResolver {
     ): void {
 
         if (! $this->isAllowed($model, $subject, $permission)) {
-            throw new \RuntimeException('Access denied');
+            throw new ERuntimeError('Access denied');
         }
     }
 
@@ -88,7 +89,7 @@ final class AclAccessResolver {
     ): void {
 
         if (! $this->isAllowedAny($model, $subject, $permission)) {
-            throw new \RuntimeException('Access denied');
+            throw new ERuntimeError('Access denied');
         }
     }
 

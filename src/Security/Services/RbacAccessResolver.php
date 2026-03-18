@@ -15,6 +15,7 @@ namespace Scaleum\Security\Services;
 use Scaleum\Security\Contracts\RbacLoaderInterface;
 use Scaleum\Security\Subject;
 use Scaleum\Security\SubjectType;
+use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 final class RbacAccessResolver
 {
@@ -71,14 +72,14 @@ final class RbacAccessResolver
     public function assertAllowed(string $objectId, Subject $subject, int $permission): void
     {
         if (! $this->isAllowed($objectId, $subject, $permission)) {
-            throw new \RuntimeException('Access denied');
+            throw new ERuntimeError('Access denied');
         }
     }
 
     public function assertAllowedAny(string $objectId, Subject $subject, int $permission): void
     {
         if (! $this->isAllowedAny($objectId, $subject, $permission)) {
-            throw new \RuntimeException('Access denied');
+            throw new ERuntimeError('Access denied');
         }
     }
 

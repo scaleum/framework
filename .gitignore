@@ -32,4 +32,4 @@ vendor
 .env*/
 
 # Testing
-tests/
+# Keep tests tracked in VCS.

@@ -41,23 +41,23 @@ class Framework implements ConfiguratorInterface {
             self::SVC_POOL         => ServiceManager::class,
             self::SVC_LOGGERS      => LoggerManager::class,
 
-            KernelInterface::class => function (ContainerInterface $c) {
-                return $c->get('kernel');
+            KernelInterface::class => function (ContainerInterface $container) {
+                return $container->get('kernel');
             },
-            EventManager::class    => function (ContainerInterface $c) {
+            EventManager::class    => function (ContainerInterface $container) {
                 return new EventManager();
             },
 
-            ServiceManager::class  => function (ContainerInterface $c) {
+            ServiceManager::class  => function (ContainerInterface $container) {
                 return new ServiceManager();
             },
 
-            LoggerManager::class   => function (ContainerInterface $c) {
+            LoggerManager::class   => function (ContainerInterface $container) {
                 return new LoggerManager();
             },
 
-            LoaderResolver::class  => function (ContainerInterface $c) {
-                return new LoaderResolver($c->get('environment'));
+            LoaderResolver::class  => function (ContainerInterface $container) {
+                return new LoaderResolver($container->get('environment'));
             },
         ]);
     }

@@ -12,7 +12,7 @@ declare (strict_types = 1);
 namespace Scaleum\Events;
 
 interface EventInterface {
-    public function fireStop($flag = true);
+    public function fireStop($flag = true): void;
 
     public function fireStopped():bool;
 
@@ -20,15 +20,15 @@ interface EventInterface {
 
     public function getName():string;
 
-    public function getParam(string $name, mixed $default = null);
+    public function getParam(string $name, mixed $default = null): mixed;
 
     public function getParams():array;
 
-    public function setContext(mixed $context);
+    public function setContext(mixed $context): self;
 
-    public function setName(string $name);
+    public function setName(string $name): self;
 
-    public function setParam(string $name, mixed $value);
+    public function setParam(string $name, mixed $value): self;
 
-    public function setParams(array $params);
+    public function setParams(array $params): self;
 }

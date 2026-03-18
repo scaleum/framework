@@ -57,6 +57,21 @@ interface KernelInterface extends ContainerProviderInterface {
      * @return void
      */
     public function run(): void;
+
+    /**
+     * Indicates whether START event has been dispatched.
+     *
+     * @return bool True when kernel lifecycle has started.
+     */
+    public function isStarted(): bool;
+
+    /**
+     * Indicates whether FINISH event has been dispatched.
+     *
+     * @return bool True when kernel lifecycle has finished.
+     */
+    public function isFinished(): bool;
+
     /**
      * Halts the execution of the application with the given exit code.
      *

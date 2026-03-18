@@ -21,7 +21,7 @@ final class AclAccessQueryApplier implements AclQueryApplierInterface
 {
     public function apply(
         QueryBuilderInterface $query,
-        AclResourceInterface $resource,
+        AclResourceInterface|string $resource,
         string $recordField,
         Subject $subject,
         int $permission
@@ -31,7 +31,7 @@ final class AclAccessQueryApplier implements AclQueryApplierInterface
 
     public function applyAny(
         QueryBuilderInterface $query,
-        AclResourceInterface $resource,
+        AclResourceInterface|string $resource,
         string $recordField,
         Subject $subject,
         int $permission
@@ -41,14 +41,14 @@ final class AclAccessQueryApplier implements AclQueryApplierInterface
 
     private function applyInternal(
         QueryBuilderInterface $query,
-        AclResourceInterface $resource,
+        AclResourceInterface|string $resource,
         string $recordField,
         Subject $subject,
         int $permission,
         bool $requireAllPermissions
     ): void {
         $alias    = 'acl';
-        $aclTable = $resource->getAclTable();
+        $aclTable = $this->resolveAclTable($resource);
 
         if (method_exists($query, 'getDatabase')) {
             AclTableGuard::assertTableExists($query->getDatabase(), $aclTable);
@@ -82,6 +82,15 @@ final class AclAccessQueryApplier implements AclQueryApplierInterface
             ->whereWrapEnd()
 
             ->whereWrapEnd();
+    }
+
+    private function resolveAclTable(AclResourceInterface|string $resource): string
+    {
+        if (is_string($resource)) {
+            return $resource;
+        }
+
+        return $resource->getAclTable();
     }
 
     private function buildPermissionCondition(string $field, int $permission, bool $requireAllPermissions = true): string
