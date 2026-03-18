@@ -292,6 +292,44 @@ class QueryBuilderTest extends TestCase {
         $this->assertSqlEqualsNormalized($expected, $sql);
     }
 
+    public function testUnionWithSqlString(): void {
+        $unionSql = $this->database->getQueryBuilder()
+            ->prepare(true)
+            ->select(['id', 'name'])
+            ->from('admins')
+            ->where('active', 1)
+            ->rows();
+
+        $sql = $this->database->getQueryBuilder()
+            ->prepare(true)
+            ->select(['id', 'name'])
+            ->from('users')
+            ->where('active', 1)
+            ->union($unionSql)
+            ->rows();
+
+        $expected = "SELECT `id`, `name`\nFROM `users`\nWHERE `active` = 1\n UNION SELECT `id`, `name`\nFROM `admins`\nWHERE `active` = 1";
+        $this->assertSqlEqualsNormalized($expected, $sql);
+    }
+
+    public function testUnionAllWithBuilderInstance(): void {
+        $unionBuilder = $this->database->getQueryBuilder()
+            ->select(['id', 'name'])
+            ->from('admins')
+            ->where('active', 1);
+
+        $sql = $this->database->getQueryBuilder()
+            ->prepare(true)
+            ->select(['id', 'name'])
+            ->from('users')
+            ->where('active', 1)
+            ->unionAll($unionBuilder)
+            ->rows();
+
+        $expected = "SELECT `id`, `name`\nFROM `users`\nWHERE `active` = 1\n UNION ALL SELECT `id`, `name`\nFROM `admins`\nWHERE `active` = 1";
+        $this->assertSqlEqualsNormalized($expected, $sql);
+    }
+
     public function testCteSqlIsMaterializedWhenRowsIsCalled(): void {
         $cteBuilder = $this->database->getQueryBuilder()
             ->prepare(true)

@@ -74,8 +74,8 @@
 | ------- | ---------------- | ---------- |
 | `with(string $alias, string $sql, array $columns = []): self` | `self` | Добавляет CTE `WITH alias AS (...)`. |
 | `withRecursive(string $alias, string $sql, array $columns = []): self` | `self` | Добавляет рекурсивный CTE (`WITH RECURSIVE`). |
-| `union(callable $callback): self` | `self` | Объединяет текущий запрос с другим (`UNION`). |
-| `unionAll(callable $callback): self` | `self` | Объединяет запросы без удаления дублей (`UNION ALL`). |
+| `union(callable\|string\|self $query): self` | `self` | Объединяет текущий запрос с другим (`UNION`) через callback, готовый SQL или builder. |
+| `unionAll(callable\|string\|self $query): self` | `self` | Объединяет запросы без удаления дублей (`UNION ALL`) через callback, готовый SQL или builder. |
 | `prepare(bool $value = false): self` | `self` | Включает/выключает режим подготовки SQL без немедленного выполнения. |
 | `optimize(bool $value = false): self` | `self` | Переключает оптимизацию/форматирование SQL. |
 | `flush(): self` | `self` | Сбрасывает внутреннее состояние билдера. |
@@ -113,5 +113,6 @@ $users = $qb
 * Для сложной логики фильтрации комбинируйте `whereWrap()`/`whereWrapEnd()` и `havingWrap()`/`havingWrapEnd()`.
 * Для генерации SQL без выполнения включайте `prepare(true)`.
 * Для CTE-сценариев (`WITH`) сначала определяйте подзапросы через `with()`/`withRecursive()`, затем собирайте основной `select()`.
+* Для `union()`/`unionAll()` можно передавать callback, SQL-строку или другой builder; подзапрос фиксируется сразу (snapshot), поэтому поздние изменения источника не влияют на уже добавленный `UNION`.
 
 [Вернуться к оглавлению](../../../../../index.md)

@@ -35,25 +35,25 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected const BRACKET_START = '(';
     protected const BRACKET_END   = ')';
 
-    private array $cachedState      = [];
-    protected int $bracketsLevel    = 0;
+    private array $cachedState        = [];
+    protected int $bracketsLevel      = 0;
     protected ?string $bracketsTarget = null;
-    protected array $from           = [];
-    protected array $groupBy        = [];
-    protected array $having         = [];
-    protected array $join           = [];
-    protected int $limit            = 0;
-    protected array $modifiers      = [];
-    protected int $offset           = 0;
-    protected array $orderBy        = [];
-    protected array $select         = [];
-    protected array $set            = [];
-    protected array $tableAliased   = [];
-    protected array $where          = [];
-    protected ?string $whereKey     = null;
-    protected array $ctes           = [];
-    protected bool $cteRecursive    = false;
-    protected array $unions         = [];
+    protected array $from             = [];
+    protected array $groupBy          = [];
+    protected array $having           = [];
+    protected array $join             = [];
+    protected int $limit              = 0;
+    protected array $modifiers        = [];
+    protected int $offset             = 0;
+    protected array $orderBy          = [];
+    protected array $select           = [];
+    protected array $set              = [];
+    protected array $tableAliased     = [];
+    protected array $where            = [];
+    protected ?string $whereKey       = null;
+    protected array $ctes             = [];
+    protected bool $cteRecursive      = false;
+    protected array $unions           = [];
 
     protected function cache(): self
     {
@@ -220,7 +220,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     public function havingWrapOr(): self
     {
         return $this->brackets('having', 'OR ');
-    }    
+    }
 
     public function havingWrapEnd(): self
     {
@@ -617,8 +617,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                 $this->bracketsAccept($type . static::BRACKET_START);
             }
         } else {
-            $source = &$this->$target;
-            $source[] = count($source) ? $type . static::BRACKET_START : static::BRACKET_START;
+            $source               = &$this->$target;
+            $source[]             = count($source) ? $type . static::BRACKET_START : static::BRACKET_START;
             $this->bracketsTarget = $target;
         }
 
@@ -639,7 +639,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
     protected function bracketsEnd(string $target): self
     {
-        $activeTarget = $this->bracketsTarget ?? $target;
+        $activeTarget            = $this->bracketsTarget ?? $target;
         $this->{$activeTarget}[] = self::BRACKET_END;
 
         if ($this->bracketsLevel > 0) {
@@ -677,7 +677,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         // Write the "LIMIT" portion of the query
         if ($limit > 0) {
             $sql .= "\n";
-            $sql = $this->makeLimit($sql, $limit, 0);
+            $sql  = $this->makeLimit($sql, $limit, 0);
         }
 
         return $sql;
@@ -829,7 +829,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
 
     protected function makeSelect(): string
     {
-        $sql = $this->makeWith();
+        $sql  = $this->makeWith();
         $sql .= "\nSELECT ";
         if (count($this->modifiers)) {
             $sql .= implode(' ', $this->modifiers) . ' ';
@@ -857,7 +857,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             $br_end   = self::BRACKET_END;
             $from     = implode(', ', $this->from);
 
-            if (!preg_match('/\s*(SELECT|FROM|JOIN)\b/i', $from)) {
+            if (! preg_match('/\s*(SELECT|FROM|JOIN)\b/i', $from)) {
                 $br_start = $br_end = '';
             }
 
@@ -898,7 +898,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         // Write the "LIMIT" & "OFFSET" portion of the query
         if ($this->limit > 0 || $this->offset > 0) {
             $sql .= "\n";
-            $sql = $this->makeLimit($sql, $this->limit, $this->offset);
+            $sql  = $this->makeLimit($sql, $this->limit, $this->offset);
         }
 
         // Write the UNION
@@ -928,8 +928,8 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             $values_str[] = "$key = $val";
         }
 
-        $tableName = is_array($tableName) ? implode(", ", $tableName) : $tableName;
-        $sql .= $tableName . " SET " . implode(', ', $values_str);
+        $tableName  = is_array($tableName) ? implode(", ", $tableName) : $tableName;
+        $sql       .= $tableName . " SET " . implode(', ', $values_str);
 
         // Write the "WHERE" portion of the query
         if (count($where) > 0) {
@@ -946,7 +946,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         // Write the "LIMIT" portion of the query
         if ($limit > 0) {
             $sql .= "\n";
-            $sql = $this->makeLimit($sql, $limit, 0);
+            $sql  = $this->makeLimit($sql, $limit, 0);
         }
 
         return $sql;
@@ -1007,7 +1007,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         // Write the "LIMIT" portion of the query
         if ($limit > 0) {
             $sql .= "\n";
-            $sql = $this->makeLimit($sql, $limit, 0);
+            $sql  = $this->makeLimit($sql, $limit, 0);
         }
 
         return $sql;
@@ -1055,7 +1055,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                 $key = $this->protectIdentifiers($key, $quoting);
             }
 
-            $statement = "$prefix$key$value";
+            $statement  = "$prefix$key$value";
 
             if ($this->hasBrackets()) {
                 $this->bracketsAccept($statement);
@@ -1284,29 +1284,47 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $keyword . ' ' . implode(', ', $parts) . ' ';
     }
 
-    public function union(callable $callback): self
+    public function union(callable | string | Contracts\QueryBuilderInterface $query): self
     {
-        return $this->addUnion($callback, false);
+        return $this->addUnion($query, false);
     }
 
-    public function unionAll(callable $callback): self
+    public function unionAll(callable | string | Contracts\QueryBuilderInterface $query): self
     {
-        return $this->addUnion($callback, true);
+        return $this->addUnion($query, true);
     }
 
-    protected function addUnion(callable $callback, bool $all): self
+    protected function addUnion(callable | string | Contracts\QueryBuilderInterface $query, bool $all): self
     {
-        // create a new instance of the query builder
-        $query = new static($this->getDatabase());
-        $callback($query);
+        $sql = $this->materializeUnionSql($query);
 
         // building the SQL of the subquery and saving it
         $this->unions[] = [
-            'sql' => $query->makeSelect(),
+            'sql' => $sql,
             'all' => $all,
         ];
 
         return $this;
+    }
+
+    protected function materializeUnionSql(callable | string | Contracts\QueryBuilderInterface $query): string
+    {
+        if (is_string($query)) {
+            return trim($query);
+        }
+
+        if (is_callable($query)) {
+            // Build union SQL via isolated callback builder to avoid leaking state.
+            $builder = new static($this->getDatabase());
+            $query($builder);
+            return $builder->makeSelect();
+        }
+
+        // Materialize SQL from an external builder without mutating caller's state.
+        $builder = clone $query;
+        return (string) $builder
+            ->prepare(true)
+            ->rows();
     }
 
     public function whereNull(string $field): self
