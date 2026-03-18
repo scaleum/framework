@@ -1,24 +1,33 @@
 <?php
 declare (strict_types = 1);
 
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Scaleum\Storages\PDO\Database;
 
 class QueryBuilderTest extends TestCase {
     private Database $database;
-    protected function setUp(): void {
-        $file           = __DIR__ . '/test.sqlite';
-        $this->database = new Database([
-            // 'dsn' => 'sqlite:' . $file,
-            'dsn'      => 'mysql:host=localhost;dbname=test',
-            'user'     => 'root',
-            'password' => '',
 
-            // 'dsn'               => 'pgsql:host=localhost;dbname=test;port=5432',
-            // 'user'              => 'postgres',
-            // 'password'          => '12345678',
-            
-        ]);
+    protected function setUp(): void {
+        /** @var MockObject&Database $database */
+        $database = $this->getMockBuilder(Database::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getPDO', 'getPDODriverName'])
+            ->getMock();
+
+        $database->method('getPDO')->willReturn(new \PDO('sqlite::memory:'));
+        $database->method('getPDODriverName')->willReturn('mysql');
+
+        $this->database = $database;
+    }
+
+    private function assertSqlEqualsNormalized(string $expected, string $actual): void {
+        $normalize = static function (string $sql): string {
+            $sql = trim((string) preg_replace('/\s+/', ' ', $sql));
+            $sql = (string) preg_replace('/\s+\)/', ')', $sql);
+            return $sql;
+        };
+        $this->assertEquals($normalize($expected), $normalize($actual));
     }
 
     public function testSelect(): void {
@@ -192,5 +201,82 @@ class QueryBuilderTest extends TestCase {
         fwrite(STDOUT, str_pad('Build DELETE(multi-tables)', 76, '-', STR_PAD_BOTH) . "\n");
         fwrite(STDOUT, $sql);
         fwrite(STDOUT, "\n");
+    }
+
+    public function testWithCte(): void {
+        $query      = $this->database->getQueryBuilder();
+        $cteBuilder = $this->database->getQueryBuilder()
+            ->prepare(true)
+            ->select(['id', 'name'])
+            ->from('users')
+            ->where('active', 1);
+        $cteSql = $cteBuilder->rows();
+        $sql    = $query
+            ->prepare(true)
+            ->with('active_users', $cteSql, ['id', 'name'])
+            ->select(['au.id', 'au.name'])
+            ->from('active_users au')
+            ->rows();
+        $expected = "WITH `active_users` (`id`, `name`) AS (SELECT `id`, `name`\nFROM `users`\nWHERE `active` = 1 )\nSELECT `au`.`id`, `au`.`name`\nFROM `active_users` au";
+        $this->assertSqlEqualsNormalized($expected, $sql);
+    }
+
+    public function testWithRecursiveCte(): void {
+        $query   = $this->database->getQueryBuilder();
+        $baseCte = $this->database->getQueryBuilder()
+            ->prepare(true)
+            ->select(['id', 'parent_id', 'name'])
+            ->from('categories')
+            ->where('parent_id', null);
+        $recursiveCte = $this->database->getQueryBuilder()
+            ->prepare(true)
+            ->select(['c.id', 'c.parent_id', 'c.name'])
+            ->from('categories c')
+            ->joinInner('category_tree ct', 'c.parent_id = ct.id');
+        $cteSql = $baseCte->rows() . "\nUNION ALL\n" . $recursiveCte->rows();
+        $sql    = $query
+            ->prepare(true)
+            ->withRecursive('category_tree', $cteSql, ['id', 'parent_id', 'name'])
+            ->select(['ct.id', 'ct.name'])
+            ->from('category_tree ct')
+            ->rows();
+        $expected = "WITH RECURSIVE `category_tree` (`id`, `parent_id`, `name`) AS (SELECT `id`, `parent_id`, `name`\nFROM `categories`\nWHERE `parent_id` IS NULL\nUNION ALL\nSELECT `c`.`id`, `c`.`parent_id`, `c`.`name`\nFROM `categories` c\nINNER JOIN `category_tree` ct ON `c`.`parent_id` = `ct`.`id`)\nSELECT `ct`.`id`, `ct`.`name`\nFROM `category_tree` ct";
+        $this->assertSqlEqualsNormalized($expected, $sql);
+    }
+
+    public function testUnion(): void {
+        $query = $this->database->getQueryBuilder();
+        $sql   = $query
+            ->prepare(true)
+            ->select(['id', 'name'])
+            ->from('users')
+            ->where('active', 1)
+            ->union(function ($q) {
+                $q->prepare(true)
+                    ->select(['id', 'name'])
+                    ->from('admins')
+                    ->where('active', 1);
+            })
+            ->rows();
+        $expected = "SELECT `id`, `name`\nFROM `users`\nWHERE `active` = 1\n UNION SELECT `id`, `name`\nFROM `admins`\nWHERE `active` = 1";
+        $this->assertSqlEqualsNormalized($expected, $sql);
+    }
+
+    public function testUnionAll(): void {
+        $query = $this->database->getQueryBuilder();
+        $sql   = $query
+            ->prepare(true)
+            ->select(['id', 'name'])
+            ->from('users')
+            ->where('active', 1)
+            ->unionAll(function ($q) {
+                $q->prepare(true)
+                    ->select(['id', 'name'])
+                    ->from('admins')
+                    ->where('active', 1);
+            })
+            ->rows();
+        $expected = "SELECT `id`, `name`\nFROM `users`\nWHERE `active` = 1\n UNION ALL SELECT `id`, `name`\nFROM `admins`\nWHERE `active` = 1";
+        $this->assertSqlEqualsNormalized($expected, $sql);
     }
 }
