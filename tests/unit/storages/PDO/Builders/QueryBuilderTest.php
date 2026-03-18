@@ -222,19 +222,29 @@ class QueryBuilderTest extends TestCase {
     }
 
     public function testWithRecursiveCte(): void {
-        $query   = $this->database->getQueryBuilder();
-        $baseCte = $this->database->getQueryBuilder()
+        $query                = $this->database->getQueryBuilder();
+        $capturedRecursiveCte = null;
+
+        $cteBuilder = $this->database->getQueryBuilder()
             ->prepare(true)
             ->select(['id', 'parent_id', 'name'])
             ->from('categories')
-            ->where('parent_id', null);
-        $recursiveCte = $this->database->getQueryBuilder()
-            ->prepare(true)
-            ->select(['c.id', 'c.parent_id', 'c.name'])
-            ->from('categories c')
-            ->joinInner('category_tree ct', 'c.parent_id = ct.id');
-        $cteSql = $baseCte->rows() . "\nUNION ALL\n" . $recursiveCte->rows();
-        $sql    = $query
+            ->where('parent_id', null)
+            ->unionAll(function ($q) use (&$capturedRecursiveCte) {
+                $capturedRecursiveCte = $q;
+                $q->prepare(true)
+                    ->select(['c.id', 'c.parent_id', 'c.name'])
+                    ->from('categories c')
+                    ->joinInner('category_tree ct', 'c.parent_id = ct.id');
+            });
+
+        $cteSql = $cteBuilder->rows();
+
+        // Changes after materialization must not affect SQL already captured for CTE.
+        $cteBuilder->where('active', 1);
+        $capturedRecursiveCte?->where('c.depth', 2);
+
+        $sql = $query
             ->prepare(true)
             ->withRecursive('category_tree', $cteSql, ['id', 'parent_id', 'name'])
             ->select(['ct.id', 'ct.name'])
@@ -242,6 +252,8 @@ class QueryBuilderTest extends TestCase {
             ->rows();
         $expected = "WITH RECURSIVE `category_tree` (`id`, `parent_id`, `name`) AS (SELECT `id`, `parent_id`, `name`\nFROM `categories`\nWHERE `parent_id` IS NULL\nUNION ALL\nSELECT `c`.`id`, `c`.`parent_id`, `c`.`name`\nFROM `categories` c\nINNER JOIN `category_tree` ct ON `c`.`parent_id` = `ct`.`id`)\nSELECT `ct`.`id`, `ct`.`name`\nFROM `category_tree` ct";
         $this->assertSqlEqualsNormalized($expected, $sql);
+        $this->assertStringNotContainsString('`active` = 1', $sql);
+        $this->assertStringNotContainsString('`c`.`depth` = 2', $sql);
     }
 
     public function testUnion(): void {
@@ -278,5 +290,58 @@ class QueryBuilderTest extends TestCase {
             ->rows();
         $expected = "SELECT `id`, `name`\nFROM `users`\nWHERE `active` = 1\n UNION ALL SELECT `id`, `name`\nFROM `admins`\nWHERE `active` = 1";
         $this->assertSqlEqualsNormalized($expected, $sql);
+    }
+
+    public function testCteSqlIsMaterializedWhenRowsIsCalled(): void {
+        $cteBuilder = $this->database->getQueryBuilder()
+            ->prepare(true)
+            ->select(['id'])
+            ->from('users')
+            ->where('active', 1, false);
+
+        $cteSql = $cteBuilder->rows();
+
+        // Further builder changes must not affect already materialized CTE SQL.
+        $cteBuilder->where('role', 'admin');
+
+        $sql = $this->database->getQueryBuilder()
+            ->prepare(true)
+            ->with('active_users', $cteSql, ['id'])
+            ->select(['active_users.id'])
+            ->from('active_users')
+            ->rows();
+
+        $this->assertStringContainsString('`active` = 1', $sql);
+        $this->assertStringNotContainsString('`role` = \'admin\'', $sql);
+    }
+
+    public function testUnionSqlIsMaterializedAtUnionCallTime(): void {
+        $captured = null;
+
+        $query = $this->database->getQueryBuilder()
+            ->prepare(true)
+            ->select(['id'])
+            ->from('users')
+            ->where('active', 1)
+            ->union(function ($q) use (&$captured) {
+                $captured = $q;
+                $q->prepare(true)
+                    ->select(['id'])
+                    ->from('admins')
+                    ->where('active', 1);
+            });
+
+        // UNION part should already be snapshotted in addUnion().
+        $captured?->where('role', 'superadmin');
+
+        $sql = $query->rows();
+
+        $this->assertStringContainsString('UNION SELECT `id` FROM `admins` WHERE `active` = 1', $this->normalizeSql($sql));
+        $this->assertStringNotContainsString('`role` = \'superadmin\'', $sql);
+    }
+
+    private function normalizeSql(string $sql): string {
+        $sql = trim((string) preg_replace('/\s+/', ' ', $sql));
+        return (string) preg_replace('/\s+\)/', ')', $sql);
     }
 }

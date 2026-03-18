@@ -178,29 +178,25 @@ final class PdoGroupHierarchyLoaderCte implements SubjectMembershipHierarchyLoad
             return [];
         }
 
-
-        $builder = $this->database->getQueryBuilder();
-
-        // QueryBuilder unionAll реализован только через callback
-        $cteSql = $builder
+        // CTE формируем отдельным билдером и материализуем SQL через rows().
+        $cteSql = $this->database
+            ->getQueryBuilder()
             ->prepare(true)
             ->select(['group_id', 'parent_group_id'])
             ->from('groups')
             ->where('group_id', $membershipId)
-            ->row();
+            ->unionAll(function ($q) {
+                $q
+                    ->prepare(true)
+                    ->select(['g.group_id', 'g.parent_group_id'])
+                    ->from('groups g')
+                    ->joinInner('group_tree gt', 'gt.parent_group_id = g.group_id');
+            })
+            ->rows();
 
-        $builder->unionAll(function($q) use ($membershipId) {
-            $q
-            ->prepare(true)
-            ->select(['g.group_id', 'g.parent_group_id'])
-            ->from('groups g')
-            ->joinInner('group_tree gt', 'gt.parent_group_id = g.group_id')
-            ->row();
-        });
-
-        $cteSql = $builder->row();
-
-        $sql = $builder
+        // Основной запрос строим другим билдером.
+        $sql = $this->database
+            ->getQueryBuilder()
             ->prepare(true)
             ->withRecursive('group_tree', $cteSql, ['group_id', 'parent_group_id'])
             ->select('DISTINCT group_id', false)
@@ -253,29 +249,24 @@ $hydrator->hydrateGroupIdsForUser($subject, $groupResolver, [743]);
 
 ```php
 
-$builder = $database->getQueryBuilder();
-
-
-// QueryBuilder unionAll — только через callback
-$cteSql = $builder
+// QueryBuilder unionAll — через callback; CTE материализуется в rows().
+$cteSql = $database
+    ->getQueryBuilder()
     ->prepare(true)
     ->select(['group_id'])
     ->from('user_group_memberships')
-    ->where('user_id', 321)    
-    ->row();
+    ->where('user_id', 321)
+    ->unionAll(function ($q) {
+        $q
+            ->prepare(true)
+            ->select(['g.group_id'])
+            ->from('groups g')
+            ->joinInner('resolved r', 'g.parent_group_id = r.group_id');
+    })
+    ->rows();
 
-$builder->unionAll(function($q) {
-    $q
-    ->prepare(true)
-    ->select(['g.group_id'])
-    ->from('groups g')
-    ->joinInner('resolved r', 'g.parent_group_id = r.group_id')
-    ->row();
-});
-
-$cteSql = $builder->row();
-
-$sql = $builder
+$sql = $database
+    ->getQueryBuilder()
     ->prepare(true)
     ->withRecursive('resolved', $cteSql, ['group_id'])
     ->select('DISTINCT g.group_id', false)
