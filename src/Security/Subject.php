@@ -40,8 +40,18 @@ final class Subject
         return $this->groupIds;
     }
 
+    public function setGroupIds(array $groupIds): void
+    {
+        $this->groupIds = $groupIds;
+    }
+
     public function getRoleIds(): array
     {
         return $this->roleIds;
+    }
+
+    public function setRoleIds(array $roleIds): void
+    {
+        $this->roleIds = $roleIds;
     }
 }

@@ -39,6 +39,10 @@
 - [Security RBAC](./rbac.md)
 - [Security ACL](./acl.md)
 
+В разделе RBAC дополнительно описан практический pipeline подготовки `Subject`
+через `SubjectMembershipLoaderInterface`, `SubjectIdsResolverInterface` и `SubjectHydrator`
+с реальным примером (`user_id = 321`, default group `743`, иерархия групп).
+
 ## Поддерживаемые авторизаторы
 
 | Авторизатор | Назначение |

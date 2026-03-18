@@ -11,6 +11,8 @@ RBAC-правила агрегируются по субъекту (`user`, `gro
 - Ленивая загрузка RBAC-записей через `RbacLoaderInterface`
 - Сессионный in-memory cache записей и вычисленных масок
 - Поддержка сценария с несколькими субъектами в одной сессии
+- Подготовка `Subject` через `SubjectHydrator` и membership-резолверы
+- Поддержка вложенных membership-структур (группы/роли) без циклов
 
 ## Основные компоненты
 
@@ -21,8 +23,277 @@ RBAC-правила агрегируются по субъекту (`user`, `gro
 | `Security/SubjectType` | Тип субъекта записи (`USER`, `GROUP`, `ROLE`) |
 | `Security/Contracts/RbacResourceInterface` | Контракт ресурса с `getId(): string` |
 | `Security/Contracts/RbacLoaderInterface` | Контракт lazy-загрузки RBAC-записей |
+| `Security/Contracts/SubjectMembershipLoaderInterface` | Контракт загрузки прямых membership-id для `(member_type, member_id)` |
+| `Security/Contracts/SubjectMembershipHierarchyLoaderInterface` | Контракт загрузки родительских membership-id |
+| `Security/Contracts/SubjectIdsResolverInterface` | Унифицированный контракт резолва ID (группы/роли) |
+| `Security/Services/SubjectMembershipIdsResolver` | Резолв прямых + унаследованных membership-id |
+| `Security/Services/SubjectHydrator` | In-place заполнение `Subject::groupIds/roleIds` |
 | `Security/Services/RbacAccessResolver` | Проверка прав (`isAllowed`, `isAllowedAny`, `assert...`) |
 | `Security/Services/RbacResourceRegistry` | Реестр ресурс-классов и проверка уникальности `getId()` |
+
+## Подготовка Subject через membership (реальный сценарий)
+
+RBAC-проверка принимает уже готовый `Subject`, поэтому на практике обычно есть этап
+подготовки `groupIds` и `roleIds` через membership-данные проекта.
+
+Типичный pipeline:
+
+1. Получить прямые membership-id для пользователя (или другого субъекта).
+2. Достроить иерархию (родительские группы/роли).
+3. Нормализовать список ID (только положительные, уникальные, отсортированные).
+4. Гидрировать итог в текущий `Subject`.
+
+### Минимальные таблицы для групп
+
+```sql
+CREATE TABLE user_group_memberships (
+    user_id INT NOT NULL,
+    group_id INT NOT NULL,
+    PRIMARY KEY (user_id, group_id)
+);
+
+CREATE TABLE groups (
+    group_id INT NOT NULL PRIMARY KEY,
+    parent_group_id INT NULL
+);
+```
+
+### Реальные данные (user 321, default group 743, 3 уровня)
+
+```sql
+INSERT INTO user_group_memberships (user_id, group_id) VALUES
+(321, 743),   -- default group
+(321, 900);   -- дополнительная группа
+
+INSERT INTO groups (group_id, parent_group_id) VALUES
+(743, 800),
+(800, 900),
+(900, 1000),
+(1000, NULL);
+```
+
+Эффективный набор групп для `321`: `743, 800, 900, 1000`.
+
+### Контракты загрузчиков для этого сценария
+
+```php
+use Scaleum\Security\Contracts\SubjectMembershipHierarchyLoaderInterface;
+use Scaleum\Security\Contracts\SubjectMembershipLoaderInterface;
+use Scaleum\Security\SubjectType;
+use Scaleum\Storages\PDO\Database;
+
+final class PdoGroupMembershipLoader implements SubjectMembershipLoaderInterface
+{
+    public function __construct(private Database $database)
+    {
+    }
+
+    public function loadDirectMembershipIds(int $memberType, int $memberId): array
+    {
+        if ($memberType !== SubjectType::USER) {
+            return [];
+        }
+
+        $rows = $this->database
+            ->getQueryBuilder()
+            ->select(['group_id'])
+            ->from('user_group_memberships')
+            ->where('user_id', $memberId)
+            ->rows();
+
+        if (! is_array($rows)) {
+            return [];
+        }
+
+        return array_values(array_map(
+            static fn(array $row): int => (int) $row['group_id'],
+            $rows
+        ));
+    }
+}
+
+final class PdoGroupHierarchyLoader implements SubjectMembershipHierarchyLoaderInterface
+{
+    public function __construct(private Database $database)
+    {
+    }
+
+    public function loadParentMembershipIds(int $membershipId): array
+    {
+        $visited = [];
+        $queue = [$membershipId];
+        $parents = [];
+
+        while (! empty($queue)) {
+            $currentId = (int) array_shift($queue);
+            if ($currentId <= 0 || isset($visited[$currentId])) {
+                continue;
+            }
+
+            $visited[$currentId] = true;
+
+            $rows = $this->database
+                ->getQueryBuilder()
+                ->select(['parent_group_id'])
+                ->from('groups')
+                ->where('group_id', $currentId)
+                ->rows();
+
+            if (! is_array($rows)) {
+                continue;
+            }
+
+            foreach ($rows as $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+
+                $parentId = (int) ($row['parent_group_id'] ?? 0);
+                if ($parentId <= 0 || isset($parents[$parentId])) {
+                    continue;
+                }
+
+                $parents[$parentId] = true;
+                $queue[] = $parentId;
+            }
+        }
+
+        $result = array_map('intval', array_keys($parents));
+        sort($result);
+
+        return $result;
+    }
+}
+
+final class PdoGroupHierarchyLoaderCte implements SubjectMembershipHierarchyLoaderInterface
+{
+    public function __construct(private Database $database)
+    {
+    }
+
+    public function loadParentMembershipIds(int $membershipId): array
+    {
+        $membershipId = (int) $membershipId;
+        if ($membershipId <= 0) {
+            return [];
+        }
+
+
+        $builder = $this->database->getQueryBuilder();
+
+        // QueryBuilder unionAll реализован только через callback
+        $cteSql = $builder
+            ->prepare(true)
+            ->select(['group_id', 'parent_group_id'])
+            ->from('groups')
+            ->where('group_id', $membershipId)
+            ->row();
+
+        $builder->unionAll(function($q) use ($membershipId) {
+            $q
+            ->prepare(true)
+            ->select(['g.group_id', 'g.parent_group_id'])
+            ->from('groups g')
+            ->joinInner('group_tree gt', 'gt.parent_group_id = g.group_id')
+            ->row();
+        });
+
+        $cteSql = $builder->row();
+
+        $sql = $builder
+            ->prepare(true)
+            ->withRecursive('group_tree', $cteSql, ['group_id', 'parent_group_id'])
+            ->select('DISTINCT group_id', false)
+            ->from('group_tree')
+            ->where('group_id <>', $membershipId, false)
+            ->orderBy('group_id')
+            ->rows();
+
+        $rows = $this->database
+            ->setQuery($sql)
+            ->fetchAll();
+
+        $ids = array_map('intval', array_column(is_array($rows) ? $rows : [], 'group_id'));
+        $ids = array_values(array_filter($ids, static fn(int $id): bool => $id > 0));
+        sort($ids);
+
+        return array_values(array_unique($ids));
+    }
+}
+```
+
+Обычно достаточно первого варианта (пошаговый обход). CTE-вариант удобен, когда
+нужно получить всех предков одним SQL-запросом.
+
+### Гидрация Subject перед RBAC-проверкой
+
+```php
+use Scaleum\Security\Services\SubjectHydrator;
+use Scaleum\Security\Services\SubjectMembershipIdsResolver;
+use Scaleum\Security\Subject;
+
+$subject = new Subject(321);
+
+$groupResolver = new SubjectMembershipIdsResolver(
+    new PdoGroupMembershipLoader($database),
+    new PdoGroupHierarchyLoader($database)
+    // Альтернатива: new PdoGroupHierarchyLoaderCte($database)
+);
+
+$hydrator = new SubjectHydrator();
+$hydrator->hydrateGroupIdsForUser($subject, $groupResolver, [743]);
+
+// После гидрации: [743, 800, 900, 1000]
+```
+
+### Вариант с единым SQL (CTE через QueryBuilder)
+
+Если нужно одним запросом получить только реально существующие id с иерархией,
+можно собрать SQL полностью через QueryBuilder и выполнить через Database API:
+
+```php
+
+$builder = $database->getQueryBuilder();
+
+
+// QueryBuilder unionAll — только через callback
+$cteSql = $builder
+    ->prepare(true)
+    ->select(['group_id'])
+    ->from('user_group_memberships')
+    ->where('user_id', 321)    
+    ->row();
+
+$builder->unionAll(function($q) {
+    $q
+    ->prepare(true)
+    ->select(['g.group_id'])
+    ->from('groups g')
+    ->joinInner('resolved r', 'g.parent_group_id = r.group_id')
+    ->row();
+});
+
+$cteSql = $builder->row();
+
+$sql = $builder
+    ->prepare(true)
+    ->withRecursive('resolved', $cteSql, ['group_id'])
+    ->select('DISTINCT g.group_id', false)
+    ->from('groups g')
+    ->joinInner('resolved r', 'r.group_id = g.group_id')
+    ->orderBy('g.group_id')
+    ->rows();
+
+$rows = $database
+    ->setQuery($sql)
+    ->fetchAll();
+
+$ids = array_map('intval', array_column(is_array($rows) ? $rows : [], 'group_id'));
+// $ids: только реальные id из groups, например [743, 800, 900, 1000]
+```
+
+Такой подход полезен, когда нужно жёстко отфильтровать «висячие» seed/direct id,
+которых уже нет в целевой таблице `groups`.
 
 ## Структура RBAC-записей
 
