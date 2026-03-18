@@ -402,6 +402,76 @@ final class DocumentRbacResource implements RbacResourceInterface
 }
 ```
 
+## Откуда брать resource и policy в RBAC
+
+Коротко:
+
+- В `RbacAccessResolver` передаётся не класс ресурса, а строковый `objectId`.
+- `RbacResourceInterface` и `RbacResourceRegistry` отвечают за каталог ресурсов (id, имя, описание, поддерживаемые биты),
+  но не вычисляют доступ сами.
+- "Политика" в RBAC обычно реализуется в прикладном слое как правило маппинга:
+  `action -> permission bit` и `domain object -> objectId`.
+- `objectId` может быть любым стабильным идентификатором ресурса, принятым в проекте:
+    строковый slug (`document`), составной ключ (`document:123`), UUID (`d9d7f2f6-2bf6-4f0d-a56d-e8e2a4d6f5a1`) и т.д.
+    Конкретный формат определяется частным архитектурным решением проекта.
+
+То есть источник данных такой:
+
+1. `objectId` приходит из вашего доменного объекта/контекста (например, `document` или `document:123`).
+2. `permission` определяется из действия use-case (например, `update -> Permission::WRITE`).
+3. `RbacAccessResolver` проверяет, есть ли нужный bitmask для данного `objectId` и `Subject`.
+
+### Практический шаблон policy-класса
+
+```php
+use Scaleum\Security\Contracts\RbacResourceInterface;
+use Scaleum\Security\Permission;
+use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
+
+final class DocumentRbacPolicy
+{
+    public static function resourceTypeId(): string
+    {
+        // Обычно совпадает с RbacResourceInterface::getId().
+        return DocumentRbacResource::getId(); // 'document'
+    }
+
+    public static function objectIdForRecord(int $documentId): string
+    {
+        // Пер-объектный RBAC (тонкая гранулярность).
+        return self::resourceTypeId() . ':' . $documentId;
+    }
+
+    public static function permissionForAction(string $action): int
+    {
+        return match ($action) {
+            'view', 'list' => Permission::READ,
+            'create', 'update' => Permission::WRITE,
+            'delete' => Permission::DELETE,
+            default => throw new EInvalidArgumentException('Unknown RBAC action: ' . $action),
+        };
+    }
+}
+```
+
+### Как это стыкуется в use-case
+
+```php
+$objectId = DocumentRbacPolicy::objectIdForRecord($documentId);
+$permission = DocumentRbacPolicy::permissionForAction('update');
+
+$rbacResolver->assertAllowed($objectId, $subject, $permission);
+```
+
+Важно: формат `objectId` должен быть единым во всех местах проекта:
+
+- там, где пишете записи в `rbac_entries.object_id`
+- там, где загружаете их через `RbacLoaderInterface`
+- там, где проверяете доступ через `RbacAccessResolver`
+
+Если нужна проверка "на тип ресурса", используйте `objectId = 'document'`.
+Если нужна проверка "на конкретную запись", используйте `objectId = 'document:{id}'`.
+
 ## Контракт загрузчика (`RbacLoaderInterface`)
 
 ```php

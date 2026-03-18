@@ -43,6 +43,75 @@
 через `SubjectMembershipLoaderInterface`, `SubjectIdsResolverInterface` и `SubjectHydrator`
 с реальным примером (`user_id = 321`, default group `743`, иерархия групп).
 
+## Интеграция RBAC + ACL: что и куда подключать
+
+Ниже практический чек-лист для внедрения обеих моделей вместе.
+
+1. Аутентификация (кто пользователь):
+    - `AuthManager` + нужные аутентификаторы (`CredentialsAuthenticator`, `HttpJwtAuthenticator`, и т.д.)
+    - результат шага: получен `userId`
+2. Подготовка Subject (какие у пользователя группы и роли):
+    - создайте `Subject($userId)`
+    - заполните `groupIds` и `roleIds` через `SubjectHydrator` + резолверы membership (см. RBAC)
+3. RBAC (можно ли в принципе выполнять действие в домене):
+    - для операций уровня ресурса/типа объекта используйте `RbacAccessResolver`
+        - обычно здесь проверяются coarse-grained разрешения как bitmask (`Permission::*`),
+            например `Permission::READ`, `Permission::WRITE`, `Permission::DELETE`
+4. ACL (можно ли работать с конкретной записью):
+    - для списков: `AclAccessQueryApplier` (фильтрация выборки на уровне SQL)
+    - для одной записи: `AclAccessResolver`
+5. Порядок проверок в use-case:
+    - сначала RBAC (быстрая проверка «вообще можно?»)
+    - затем ACL (проверка ownership/group/other для конкретной записи)
+6. Точки интеграции в приложении:
+    - list/select endpoint: применяйте ACL-фильтрацию к query до выполнения
+    - update/delete endpoint: перед изменением вызывайте `assertAllowed(...)` у RBAC и ACL
+7. Данные и схема:
+    - RBAC: таблица с `object_id`, `subject_type`, `subject_id`, `permissions`
+    - ACL: `*_acl` таблица с `record_id`, `owner_id`, `group_id`, `owner_perms`, `group_perms`, `other_perms`
+8. Кэш и консистентность:
+    - при изменении RBAC-прав очищайте кэш резолвера через `clear($objectId)`
+    - ACL-таблица должна создаваться миграцией до включения ACL-проверок
+
+### Короткий сквозной flow
+
+```php
+// 1) Auth
+$user = $authManager->authenticate($credentials, $headers, verbose: true);
+if ($user === null) {
+     // 401
+}
+
+// 2) Subject
+$subject = new Subject((int) $user->getId());
+$subjectHydrator->hydrateGroupIdsForUser($subject, $groupResolver, [743]);
+$subjectHydrator->hydrateRoleIdsForUser($subject, $roleResolver);
+
+// 3) RBAC (доступ к ресурсу как таковому)
+$rbacResolver->assertAllowed('document', $subject, Permission::READ);
+
+// 4a) ACL для списка
+$qb = $database->getQueryBuilder()->select('*')->from('document d');
+$aclQueryApplier->apply($qb, 'document_acl', 'd.id', $subject, Permission::READ);
+$rows = $database->setQuery($qb->prepare(true)->rows())->fetchAll();
+
+// 4b) ACL для одной записи
+$aclResolver->assertAllowed($documentModel, $subject, Permission::WRITE);
+
+// 5) Безопасное изменение
+// ... update/delete
+```
+
+### Когда использовать только RBAC, только ACL или оба слоя
+
+- Только RBAC: когда права одинаковы для всего ресурса и нет record-level ограничений.
+- Только ACL: когда нет ролевой модели, но нужен доступ по owner/group/other.
+- RBAC + ACL: для production-сценария с разделением domain-права (RBAC) и доступа к конкретной записи (ACL).
+
+См. подробности и контракты:
+- [Security RBAC](./rbac.md)
+- [Security ACL](./acl.md)
+
 ## Поддерживаемые авторизаторы
 
 | Авторизатор | Назначение |
