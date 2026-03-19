@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/bytes-helper.md) | [UK](../../uk/helpers/bytes-helper.md) | **RU**
 # BytesHelper
 
 `BytesHelper` — утилитарный класс для работы с размерами данных в байтах, килобайтах и других единицах.

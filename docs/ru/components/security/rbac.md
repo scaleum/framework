@@ -1,4 +1,6 @@
-﻿[Вернуться к оглавлению](../../index.md)
+[Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/security/rbac.md) | [UK](../../../uk/components/security/rbac.md) | **RU**
 # Security RBAC
 
 Компонент `Security RBAC` отвечает за ролевую модель доступа на уровне произвольного объекта (`object_id`).

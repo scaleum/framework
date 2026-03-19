@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../../index.md)
 
+[EN](../../../../en/components/i18n/loaders/PhpArray.md) | [UK](../../../../uk/components/i18n/loaders/PhpArray.md) | **RU**
 # PhpArray
 
 Класс‑загрузчик переводов из PHP‑массивов (`.php`‑файлы, возвращающие массив строк). Наследует `TranslationLoaderAbstract` и реализует метод `load`, обеспечивающий подключение файла и валидацию содержимого.

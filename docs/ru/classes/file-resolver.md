@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/classes/file-resolver.md) | [UK](../../uk/classes/file-resolver.md) | **RU**
 # FileResolver
 
 **FileResolver** — класс для поиска и разрешения файлов по зарегистрированным путям.

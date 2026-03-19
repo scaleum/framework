@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/inbound-response.md) | [UK](../../../uk/components/http/inbound-response.md) | **RU**
 # InboundResponse
 
 `InboundResponse` — класс, представляющий HTTP-ответ, полученный от внешнего сервера,

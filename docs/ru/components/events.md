@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/components/events.md) | [UK](../../uk/components/events.md) | **RU**
 # Event Manager
 
 Компонент `EventManager` фреймворка Scaleum — это система управления событиями, реализующая интерфейс `EventManagerInterface`.

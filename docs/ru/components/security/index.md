@@ -1,4 +1,6 @@
-﻿[Вернуться к оглавлению](../../index.md)
+[Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/security/index.md) | [UK](../../../uk/components/security/index.md) | **RU**
 # Security
 
 Раздел `Security` в Scaleum объединяет механики аутентификации и авторизации.

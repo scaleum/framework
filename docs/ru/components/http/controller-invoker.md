@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/controller-invoker.md) | [UK](../../../uk/components/http/controller-invoker.md) | **RU**
 # ControllerInvoker
 
 `ControllerInvoker` — класс, отвечающий за вызов метода контроллера, разрешённого `ControllerResolver`, и возвращающий `ResponderInterface`.

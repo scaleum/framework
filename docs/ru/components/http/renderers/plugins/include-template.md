@@ -1,4 +1,6 @@
 [Назад](../template-renderer.md) | [Вернуться к оглавлению](../../../../index.md)
+
+[EN](../../../../../en/components/http/renderers/plugins/include-template.md) | [UK](../../../../../uk/components/http/renderers/plugins/include-template.md) | **RU**
 # Плагин IncludeTemplate
 
 `IncludeTemplate` — плагин для `TemplateRenderer`, позволяющий включать один шаблон внутрь другого, передавая данные и рендеря его как частичный.

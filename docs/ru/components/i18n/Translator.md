@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../en/components/i18n/Translator.md) | [UK](../../../uk/components/i18n/Translator.md) | **RU**
 # Translator
 
 `Translator` — центральный сервис извлечения переводов в проектах **Scaleum**. Он хранит список файлов перевода, кэш сообщений и определяет локаль через стратегию `LocaleIdentity`. Загрузчики ресурсов предоставляются через `LoaderDispatcher`.

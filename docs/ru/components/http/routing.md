@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/routing.md) | [UK](../../../uk/components/http/routing.md) | **RU**
 # Routing
 
 Класс `Scaleum\Http\DependencyInjection\Routing` — конфигуратор контейнера зависимостей для модуля HTTP-маршрутизации. Реализует `ConfiguratorInterface`, регистрируя в контейнере сервисы и параметры, необходимые для работы маршрутизатора.

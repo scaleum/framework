@@ -1,5 +1,6 @@
 # TranslationLoaderAbstract
 
+[EN](../../../../en/components/i18n/loaders/TranslationLoaderAbstract.md) | [UK](../../../../uk/components/i18n/loaders/TranslationLoaderAbstract.md) | **RU**
 Базовый абстрактный загрузчик переводов, реализующий `TranslationLoaderInterface` и предоставляющий вспомогательный метод проверки файла. Упрощает создание конкретных загрузчиков, вынося повторяемую логику (существование и доступность файла) в одно место.
 
 ## Методы

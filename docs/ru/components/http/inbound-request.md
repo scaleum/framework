@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/inbound-request.md) | [UK](../../../uk/components/http/inbound-request.md) | **RU**
 # InboundRequest
 
 `InboundRequest` — класс входящего HTTP-запроса во фреймворке Scaleum,

@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/timezone-helper.md) | [UK](../../uk/helpers/timezone-helper.md) | **RU**
 # TimezoneHelper
 
 `TimezoneHelper` — утилитарный класс для работы с часовыми поясами и временными зонами в Scaleum Framework.

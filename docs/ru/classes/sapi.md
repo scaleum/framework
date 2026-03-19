@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/classes/sapi.md) | [UK](../../uk/classes/sapi.md) | **RU**
 # SAPI Explorer
 
 **Explorer** и перечисления **SapiIdentifier** и **SapiMode** — компоненты для определения типа окружения (SAPI) в котором работает приложение.

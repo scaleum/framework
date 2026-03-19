@@ -1,5 +1,6 @@
 # TranslationLoaderInterface
 
+[EN](../../../../en/components/i18n/contracts/TranslationLoaderInterface.md) | [UK](../../../../uk/components/i18n/contracts/TranslationLoaderInterface.md) | **RU**
 **Пространство имён:** `Scaleum\i18n\Contracts`
 
 Интерфейс описывает механизм загрузки файлов переводов в виде объекта `ArrayObject`. Используется компонентами i18n для подгрузки текстовых ресурсов (PHP‑массивы, JSON и др.) в память приложения. Позволяет абстрагировать источник данных и формат хранения.

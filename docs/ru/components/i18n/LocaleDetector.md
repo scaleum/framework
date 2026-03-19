@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../en/components/i18n/LocaleDetector.md) | [UK](../../../uk/components/i18n/LocaleDetector.md) | **RU**
 # LocaleDetector
 
 `LocaleDetector` наследует `LocaleIdentityAbstract` и автоматически определяет текущую локаль приложения. Опирается на переменные окружения (`LANG`, `LC_ALL`, `LC_CTYPE`), заголовок `Accept-Language` (при работе в веб‑среде) и системную locale. При необходимости нормализует строку в формат `ll_CC` и добавляет страну по умолчанию.

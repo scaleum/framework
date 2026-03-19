@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/headers-manager.md) | [UK](../../../uk/components/http/headers-manager.md) | **RU**
 # HeadersManager
 
 `HeadersManager` — утилитный класс для управления HTTP-заголовками в виде ассоциативного массива.

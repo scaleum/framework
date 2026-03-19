@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../../en/components/storages/pdo/ModelAbstract.md) | [UK](../../../../uk/components/storages/pdo/ModelAbstract.md) | **RU**
 # ModelAbstract
 
 `ModelAbstract` — базовый **Active‑Record**‑класс в Scaleum для работы с `PDO`‑хранилищем. Он реализует большую часть контракта `ModelInterface`, включая управление состояниями (`insert`, `update`, `readonly`) и **поддержку связей** (*relations*). Все данные экземпляра хранятся во внутреннем объекте `ModelData`, а соединение с БД передаётся через конструктор.

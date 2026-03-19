@@ -1,4 +1,6 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/response.md) | [UK](../../../uk/components/console/response.md) | **RU**
 # Response
 
 `Response` — реализация интерфейса `ConsoleResponseInterface` для формирования и отправки вывода в консольном режиме (CLI) во фреймворке Scaleum.

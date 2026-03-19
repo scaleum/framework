@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/xml-helper.md) | [UK](../../uk/helpers/xml-helper.md) | **RU**
 # XmlHelper
 
 `XmlHelper` — утилитарный класс для работы с XML в Scaleum Framework.

@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../en/components/i18n/TranslatorTrait.md) | [UK](../../../uk/components/i18n/TranslatorTrait.md) | **RU**
 # TranslatorTrait
 
 `TranslatorTrait` предоставляет вспомогательные методы для быстрого доступа к сервису `Translator` из любого класса. Трейт обращается к `ServiceLocator`, поэтому вызывающему коду достаточно зарегистрировать сервис `translator` — дополнительная зависимость не нужна.

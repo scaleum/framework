@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](./index.md)
+
+[EN](../../en/components/cache.md) | [UK](../../uk/components/cache.md) | **RU**
 # Cache
 Компонент `Cache` в Scaleum обеспечивает централизованную работу с кэшированием, абстрагируя взаимодействие через интерфейс `CacheInterface`.
 

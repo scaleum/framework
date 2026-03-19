@@ -1,4 +1,6 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/command-dispatcher.md) | [UK](../../../uk/components/console/command-dispatcher.md) | **RU**
 # CommandDispatcher
 
 `CommandDispatcher` — центральный компонент модуля консольных команд, отвечающий за регистрацию доступных команд и их вызов по имени на основании входного запроса CLI.

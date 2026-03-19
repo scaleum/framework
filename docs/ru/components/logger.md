@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/components/logger.md) | [UK](../../uk/components/logger.md) | **RU**
 # Logger
 
 Компонент логирования в Scaleum состоит из нескольких частей:

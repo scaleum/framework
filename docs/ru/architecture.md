@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](./index.md)
+
+[EN](../en/architecture.md) | [UK](../uk/architecture.md) | **RU**
 # Архитектура проекта
 
 ## Общая концепция

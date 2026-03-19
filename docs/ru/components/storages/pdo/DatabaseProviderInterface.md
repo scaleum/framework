@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../../en/components/storages/pdo/DatabaseProviderInterface.md) | [UK](../../../../uk/components/storages/pdo/DatabaseProviderInterface.md) | **RU**
 # DatabaseProviderInterface
 
 `DatabaseProviderInterface` описывает контракт для классов, предоставляющих объект подключения к базе данных (`Database`) и позволяющих заменить его на другой экземпляр во время работы приложения.

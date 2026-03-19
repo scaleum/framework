@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../../../index.md)
+
+[EN](../../../../../en/components/http/client/transport/curl-transport.md) | [UK](../../../../../uk/components/http/client/transport/curl-transport.md) | **RU**
 # CurlTransport
 
 `CurlTransport` — реализация `TransportInterface` на базе cURL, отвечающая за отправку `OutboundRequest` и получение `InboundResponse`.

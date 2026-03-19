@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](./index.md)
+
+[EN](../en/installation.md) | [UK](../uk/installation.md) | **RU**
 # Установка
 
 ## Требования

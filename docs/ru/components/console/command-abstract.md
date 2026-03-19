@@ -1,4 +1,6 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/command-abstract.md) | [UK](../../../uk/components/console/command-abstract.md) | **RU**
 # CommandAbstract
 
 `CommandAbstract` — базовый абстрактный класс для реализации CLI-команд во фреймворке Scaleum. Частично реализует `CommandInterface`, предоставляя удобные методы для работы с опциями, аргументами и выводом сообщений.

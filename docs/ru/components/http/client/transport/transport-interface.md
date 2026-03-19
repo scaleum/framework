@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../../../index.md)
+
+[EN](../../../../../en/components/http/client/transport/transport-interface.md) | [UK](../../../../../uk/components/http/client/transport/transport-interface.md) | **RU**
 # TransportInterface
 
 `TransportInterface` — интерфейс для транспортных механизмов HTTP-клиента во фреймворке Scaleum. Определяет контракт для отправки `OutboundRequest` и проверки поддержки транспорта.

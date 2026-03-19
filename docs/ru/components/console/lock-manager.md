@@ -1,4 +1,6 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/lock-manager.md) | [UK](../../../uk/components/console/lock-manager.md) | **RU**
 # LockManager
 
 `LockManager` — класс для управления lock-файлами в консольных приложениях Scaleum. Обеспечивает механизм предотвращения одновременного запуска одноимённых задач, запись и проверку PID, а также освобождение и очистку устаревших блокировок.

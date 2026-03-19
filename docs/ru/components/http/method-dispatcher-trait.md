@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/method-dispatcher-trait.md) | [UK](../../../uk/components/http/method-dispatcher-trait.md) | **RU**
 # MethodDispatcherTrait
 
 `MethodDispatcherTrait` — трейт для маршрутизации входящих вызовов на методы контроллера по шаблону `HTTP_метод_путь`, где путь формируется из сегментов маршрута. Обеспечивает гибкий механизм «dispatch» без явного указания метода.

@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/controller-resolver.md) | [UK](../../../uk/components/http/controller-resolver.md) | **RU**
 # ControllerResolver
 
 `ControllerResolver` — класс, отвечающий за разрешение контроллера по информации маршрута и созданию его экземпляра через контейнер или рефлексию, с последующей генерацией события.

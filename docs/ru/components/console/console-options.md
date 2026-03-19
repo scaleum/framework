@@ -1,4 +1,6 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/console-options.md) | [UK](../../../uk/components/console/console-options.md) | **RU**
 # ConsoleOptions
 
 `ConsoleOptions` — класс для парсинга и управления опциями и аргументами командной строки в CLI-модуле Scaleum. Расширяет `Hydrator` для гибкой конфигурации через массив и автоматически обрабатывает переданные флаги.

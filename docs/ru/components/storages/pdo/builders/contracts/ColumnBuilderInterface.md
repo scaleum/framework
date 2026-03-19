@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../../../../index.md)
 
+[EN](../../../../../../en/components/storages/pdo/builders/contracts/ColumnBuilderInterface.md) | [UK](../../../../../../uk/components/storages/pdo/builders/contracts/ColumnBuilderInterface.md) | **RU**
 # ColumnBuilderInterface
 
 `ColumnBuilderInterface` определяет **флюентный** (chain‑вызовы) API для конфигурирования столбцов при генерации/модификации схемы БД через Query‑Builder Scaleum.  Интерфейс располагается в пространстве имён `Scaleum\Storages\PDO\Builders\Contracts` и используется строителями `ColumnBuilder` и миграциями.

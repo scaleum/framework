@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/http-helper.md) | [UK](../../uk/helpers/http-helper.md) | **RU**
 # HttpHelper
 
 `HttpHelper` — утилитарный класс для работы с HTTP-заголовками, статусами, IP-адресами и User-Agent.

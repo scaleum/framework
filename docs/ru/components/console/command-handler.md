@@ -1,4 +1,6 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/command-handler.md) | [UK](../../../uk/components/console/command-handler.md) | **RU**
 # CommandHandler
 
 `CommandHandler` — класс для обработки консольных запросов, реализующий `HandlerInterface`. Отвечает за загрузку описаний команд, регистрацию их в `CommandDispatcher` и выполнение выбранной команды.

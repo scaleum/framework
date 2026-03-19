@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](./index.md)
+
+[EN](../en/kernel-abstract.md) | [UK](../uk/kernel-abstract.md) | **RU**
 # KernelAbstract
 
 `KernelAbstract` — базовый абстрактный класс фреймворка Scaleum, управляющий процессом подготовки (bootstrap) и запуска приложения.

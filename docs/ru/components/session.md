@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/components/session.md) | [UK](../../uk/components/session.md) | **RU**
 # Session
 
 Компонент `Session` в Scaleum реализует абстрактный механизм работы с сессиями с поддержкой различных драйверов хранения данных.

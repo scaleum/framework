@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/application.md) | [UK](../../../uk/components/http/application.md) | **RU**
 # Application
 
 Класс `Http\Application` — это реализация ядра `KernelAbstract` специально для работы в режиме HTTP.

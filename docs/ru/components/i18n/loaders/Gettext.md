@@ -1,5 +1,6 @@
 # Gettext
 
+[EN](../../../../en/components/i18n/loaders/Gettext.md) | [UK](../../../../uk/components/i18n/loaders/Gettext.md) | **RU**
 Класс‑загрузчик переводов в формате GNU Gettext (`.po`). Наследует `TranslationLoaderAbstract` и реализует разбор файла при помощи регулярных выражений, формируя коллекцию переводов в виде `ArrayObject`.
 
 ## Методы

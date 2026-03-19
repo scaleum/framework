@@ -1,4 +1,6 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/request.md) | [UK](../../../uk/components/console/request.md) | **RU**
 # Request
 
 `Request` — класс для представления CLI-запроса во фреймворке Scaleum, реализующий `ConsoleRequestInterface`. Отвечает за сбор и предоставление необработанных аргументов командной строки.

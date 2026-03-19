@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/string-helper.md) | [UK](../../uk/helpers/string-helper.md) | **RU**
 # StringHelper
 
 `StringHelper` — это набор методов для работы с строками в Scaleum Framework.

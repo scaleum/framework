@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/application.md) | [UK](../../../uk/components/console/application.md) | **RU**
 # Application
 
 Класс `Console\Application` — реализация ядра `KernelAbstract` для работы в консольном режиме (CLI).<br>

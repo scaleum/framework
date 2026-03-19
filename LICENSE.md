@@ -1,6 +1,4 @@
 # Scaleum Framework License
-
-### Navigation
 [EN](#english-version) | [UK](#українська-версія) | [RU](#русская-версия)
 
 

@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/outbound-request.md) | [UK](../../../uk/components/http/outbound-request.md) | **RU**
 # OutboundRequest
 
 `OutboundRequest` — класс для формирования исходящего HTTP-запроса к внешнему серверу,

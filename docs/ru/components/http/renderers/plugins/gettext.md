@@ -1,4 +1,6 @@
 [Назад](../template-renderer.md) | [Вернуться к оглавлению](../../../../index.md)
+
+[EN](../../../../../en/components/http/renderers/plugins/gettext.md) | [UK](../../../../../uk/components/http/renderers/plugins/gettext.md) | **RU**
 # Плагин Gettext
 
 `Gettext` — плагин для `TemplateRenderer`, обеспечивающий перевод сообщений с помощью сервиса `Translator`.

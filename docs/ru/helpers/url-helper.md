@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/url-helper.md) | [UK](../../uk/helpers/url-helper.md) | **RU**
 # UrlHelper
 
 `UrlHelper` — утилитарный класс для работы с URL в Scaleum Framework.

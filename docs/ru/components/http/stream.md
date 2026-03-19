@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/stream.md) | [UK](../../../uk/components/http/stream.md) | **RU**
 # Stream
 
 `Stream` — реализация PSR-7 `StreamInterface`, обёртка над ресурсом PHP для работы с потоками. Обеспечивает чтение, запись, позиционирование и получение метаданных.

@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../index.md)
 
+[EN](../../en/classes/callback-instance.md) | [UK](../../uk/classes/callback-instance.md) | **RU**
 # CallbackInstance
 
 **CallbackInstance** — обертка для универсальной работы с callable и вызываемыми структурами.

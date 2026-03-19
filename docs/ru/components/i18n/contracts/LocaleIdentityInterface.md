@@ -1,5 +1,6 @@
 # LocaleIdentityInterface
 
+[EN](../../../../en/components/i18n/contracts/LocaleIdentityInterface.md) | [UK](../../../../uk/components/i18n/contracts/LocaleIdentityInterface.md) | **RU**
 **Пространство имён:** `Scaleum\i18n\Contracts`
 
 Интерфейс описывает простейший объект‑идентификатор локали.  Используется в компонентах I18N для передачи и хранения строки локали (например, `ru_RU`, `en_US`).  Расширяя или реализуя данный интерфейс можно интегрировать собственные объекты локализации с инфраструктурой Scaleum.

@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/outbound-response.md) | [UK](../../../uk/components/http/outbound-response.md) | **RU**
 # OutboundResponse
 
 `OutboundResponse` — класс для формирования и отправки HTTP-ответа клиенту,

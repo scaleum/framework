@@ -1,5 +1,6 @@
-﻿# Оглавление документации
+# Оглавление документации
 
+[EN](../en/index.md) | [UK](../uk/index.md) | **RU**
 ### 1. Введение
 - [Введение](./introduction.md)
 
@@ -14,8 +15,8 @@
 
 ### 5. Работа с ядром
 - [KernelAbstract](./kernel-abstract.md)
-  - [HandlerInterface]() *(в разработке)*
-  - [ResponderInterface]() *(в разработке)*
+  - [HandlerInterface](./handler-interface.md)
+  - [ResponderInterface](./responder-interface.md)
 - [Http\Application](./components/http/application.md)
     - Client
       - [RequesterAbstract](./components/http/client/requester-abstract.md)

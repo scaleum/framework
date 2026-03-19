@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/string-case-helper.md) | [UK](../../uk/helpers/string-case-helper.md) | **RU**
 # StringCaseHelper
 
 `StringCaseHelper` — утилитарный класс для работы с регистрами и преобразованием строк в Scaleum Framework.

@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/classes/attribute-container.md) | [UK](../../uk/classes/attribute-container.md) | **RU**
 # AttributeContainerInterface
 
 `AttributeContainerInterface` — контракт для классов, поддерживающих хранение и управление атрибутами.

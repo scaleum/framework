@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/path-helper.md) | [UK](../../uk/helpers/path-helper.md) | **RU**
 # PathHelper
 
 `PathHelper` — это утилитарный класс для манипуляции файловыми путями.
