@@ -12,6 +12,9 @@ declare (strict_types = 1);
 namespace Scaleum\Config;
 
 use Scaleum\Stdlib\Base\Registry;
+use Scaleum\Stdlib\Helpers\EnvHelper;
+use Scaleum\Stdlib\Exceptions\ENotFoundError;
+use Scaleum\Stdlib\Exceptions\ETypeException;
 
 /**
  * Config
@@ -40,6 +43,101 @@ class Config extends Registry {
         }
         $this->merge($array, $key);
         return $this;
+    }
+
+    /**
+     * Resolves placeholders in all string config values.
+     *
+     * Supported placeholders:
+     * - ${VAR}
+     * - ${VAR:-default}
+     * - ${VAR:?message}
+     */
+    public function resolvePlaceholders(array $options = []): self {
+        $this->setItems(EnvHelper::interpolateArray($this->getItems(), $options));
+        return $this;
+    }
+
+    public function getString(string $key, ?string $default = null): string {
+        $value = $this->resolveValue($key, $default, func_num_args() > 1);
+        if (! is_string($value)) {
+            throw new ETypeException(sprintf(
+                '%s: key `%s` must be string, `%s` provided',
+                __METHOD__,
+                $key,
+                get_debug_type($value)
+            ));
+        }
+
+        return $value;
+    }
+
+    public function getInt(string $key, ?int $default = null): int {
+        $value = $this->resolveValue($key, $default, func_num_args() > 1);
+        if (! is_int($value)) {
+            throw new ETypeException(sprintf(
+                '%s: key `%s` must be int, `%s` provided',
+                __METHOD__,
+                $key,
+                get_debug_type($value)
+            ));
+        }
+
+        return $value;
+    }
+
+    public function getFloat(string $key, ?float $default = null): float {
+        $value = $this->resolveValue($key, $default, func_num_args() > 1);
+        if (! is_float($value)) {
+            throw new ETypeException(sprintf(
+                '%s: key `%s` must be float, `%s` provided',
+                __METHOD__,
+                $key,
+                get_debug_type($value)
+            ));
+        }
+
+        return $value;
+    }
+
+    public function getBool(string $key, ?bool $default = null): bool {
+        $value = $this->resolveValue($key, $default, func_num_args() > 1);
+        if (! is_bool($value)) {
+            throw new ETypeException(sprintf(
+                '%s: key `%s` must be bool, `%s` provided',
+                __METHOD__,
+                $key,
+                get_debug_type($value)
+            ));
+        }
+
+        return $value;
+    }
+
+    public function getArray(string $key, ?array $default = null): array {
+        $value = $this->resolveValue($key, $default, func_num_args() > 1);
+        if (! is_array($value)) {
+            throw new ETypeException(sprintf(
+                '%s: key `%s` must be array, `%s` provided',
+                __METHOD__,
+                $key,
+                get_debug_type($value)
+            ));
+        }
+
+        return $value;
+    }
+
+    private function resolveValue(string $key, mixed $default, bool $hasDefault): mixed {
+        if (! $this->has($key)) {
+            if ($hasDefault) {
+                return $default;
+            }
+
+            throw new ENotFoundError(sprintf('%s: key `%s` not found', __METHOD__, $key));
+        }
+
+        return $this->get($key);
     }
 
     /**
