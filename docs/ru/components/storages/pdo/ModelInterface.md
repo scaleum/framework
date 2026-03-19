@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../../en/components/storages/pdo/ModelInterface.md) | [UK](../../../../uk/components/storages/pdo/ModelInterface.md) | **RU**
 # ModelInterface
 
 `ModelInterface` определяет контракт для активных моделей, работающих поверх `PDO`-хранилищ в **Scaleum**. Интерфейс охватывает полный CRUD-набор, поддержку фильтрации выборок и доступ к метаданным таблицы.

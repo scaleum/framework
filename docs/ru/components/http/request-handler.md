@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/request-handler.md) | [UK](../../../uk/components/http/request-handler.md) | **RU**
 # RequestHandler
 
 `RequestHandler` — класс обработки HTTP-запроса во фреймворке Scaleum,

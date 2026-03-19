@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../en/components/i18n/LocaleIdentityAbstract.md) | [UK](../../../uk/components/i18n/LocaleIdentityAbstract.md) | **RU**
 # LocaleIdentityAbstract
 
 `LocaleIdentityAbstract` — базовый абстрактный класс‑идентификатор локали. Реализует контракт `LocaleIdentityInterface` и наследуется от `Hydrator`, предоставляя ленивое определение и кэширование строки локали.

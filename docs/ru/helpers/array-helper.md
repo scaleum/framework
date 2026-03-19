@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/array-helper.md) | [UK](../../uk/helpers/array-helper.md) | **RU**
 # ArrayHelper
 
 `ArrayHelper` — утилитарный класс для работы с массивами: безопасный доступ, фильтрация, слияние, проверка структуры.

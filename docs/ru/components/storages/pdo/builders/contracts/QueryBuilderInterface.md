@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../../../../index.md)
 
+[EN](../../../../../../en/components/storages/pdo/builders/contracts/QueryBuilderInterface.md) | [UK](../../../../../../uk/components/storages/pdo/builders/contracts/QueryBuilderInterface.md) | **RU**
 # QueryBuilderInterface
 
 `QueryBuilderInterface` описывает контракт SQL-конструктора для работы с `SELECT`, `INSERT`, `UPDATE`, `DELETE`, CTE (`WITH`), объединениями (`UNION`) и условиями фильтрации в PDO-слое Scaleum.

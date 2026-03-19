@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../../../index.md)
+
+[EN](../../../../../en/components/http/client/transport/socket-transport.md) | [UK](../../../../../uk/components/http/client/transport/socket-transport.md) | **RU**
 # SocketTransport
 
 `SocketTransport` — реализация `TransportInterface` на базе сокетов (fsockopen), отвечающая за отправку `OutboundRequest` и получение `InboundResponse` без использования cURL.

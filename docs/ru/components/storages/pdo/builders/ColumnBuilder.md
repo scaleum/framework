@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../../../index.md)
 
+[EN](../../../../../en/components/storages/pdo/builders/ColumnBuilder.md) | [UK](../../../../../uk/components/storages/pdo/builders/ColumnBuilder.md) | **RU**
 # ColumnBuilder
 
 `ColumnBuilder` — класс для декларативного описания столбцов таблицы и генерации соответствующих SQL-операций (создание, добавление, изменение, удаление) в Scaleum. Наследует `BuilderAbstract` и реализует `ColumnBuilderInterface`, предоставляя полный набор методов для настройки параметров столбца.

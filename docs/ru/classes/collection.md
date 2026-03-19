@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/classes/collection.md) | [UK](../../uk/classes/collection.md) | **RU**
 # Collection
 
 **Collection** — универсальный класс для работы с коллекциями данных в стиле массивов и объектов.

@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/type-helper.md) | [UK](../../uk/helpers/type-helper.md) | **RU**
 # TypeHelper
 
 `TypeHelper` — утилитарный класс для определения типов переменных и проверки на соответствие типам в Scaleum Framework.

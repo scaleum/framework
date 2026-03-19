@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/unique-helper.md) | [UK](../../uk/helpers/unique-helper.md) | **RU**
 # UniqueHelper
 
 `UniqueHelper` — утилитарный класс для генерации уникальных идентификаторов в Scaleum Framework.

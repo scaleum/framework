@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/utf8-helper.md) | [UK](../../uk/helpers/utf8-helper.md) | **RU**
 # Utf8Helper
 
 `Utf8Helper` — это утилитарный класс для работы с строками в кодировке UTF-8 в Scaleum Framework.

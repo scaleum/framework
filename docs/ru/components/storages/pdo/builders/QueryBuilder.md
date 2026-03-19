@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../../../index.md)
 
+[EN](../../../../../en/components/storages/pdo/builders/QueryBuilder.md) | [UK](../../../../../uk/components/storages/pdo/builders/QueryBuilder.md) | **RU**
 # QueryBuilder
 
 `QueryBuilder` - основной SQL-конструктор в `Scaleum\Storages\PDO\Builders` для сборки и выполнения `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, CTE (`WITH`) и `UNION`-запросов.

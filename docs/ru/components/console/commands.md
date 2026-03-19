@@ -1,4 +1,6 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/commands.md) | [UK](../../../uk/components/console/commands.md) | **RU**
 # Commands
 
 Класс `Scaleum\Console\DependencyInjection\Commands` — конфигуратор контейнера зависимостей для модуля консольных команд. Регистрирует сервисы и параметры, необходимые для поиска и запуска CLI-команд.

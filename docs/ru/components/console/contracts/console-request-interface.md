@@ -1,4 +1,6 @@
 [Назад](../application.md) | [Вернуться к оглавлению](../../../index.md)
+
+[EN](../../../../en/components/console/contracts/console-request-interface.md) | [UK](../../../../uk/components/console/contracts/console-request-interface.md) | **RU**
 # ConsoleRequestInterface
 
 `ConsoleRequestInterface` — интерфейс для объекта запроса в консольном режиме (CLI) во фреймворке Scaleum. Определяет метод доступа к необработанным аргументам командной строки.

@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../../../index.md)
 
+[EN](../../../../../en/components/storages/pdo/builders/BuilderAbstract.md) | [UK](../../../../../uk/components/storages/pdo/builders/BuilderAbstract.md) | **RU**
 # BuilderAbstract
 
 `BuilderAbstract` — базовый класс‑утилита для всех SQL‑конструкторов (*builders*) в пакете **Scaleum\Storages\PDO\Builders**. Он НЕ хранит имя таблицы либо режимы `CREATE / ALTER / DROP`; эта логика реализуется в конкретных наследниках (например, `SchemaBuilder`, `ColumnBuilder`).  Задача `BuilderAbstract` — предоставить:

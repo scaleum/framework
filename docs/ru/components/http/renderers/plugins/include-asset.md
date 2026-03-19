@@ -1,4 +1,6 @@
 [Назад](../template-renderer.md) | [Вернуться к оглавлению](../../../../index.md)
+
+[EN](../../../../../en/components/http/renderers/plugins/include-asset.md) | [UK](../../../../../uk/components/http/renderers/plugins/include-asset.md) | **RU**
 # Плагин IncludeAsset
 
 `IncludeAsset` — плагин для `TemplateRenderer`, отвечающий за генерацию URL к статическим ресурсам (CSS, JS, изображениям) с автоматическим добавлением параметра версии на основе времени последней модификации файла.

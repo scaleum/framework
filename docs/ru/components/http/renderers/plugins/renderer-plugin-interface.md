@@ -1,4 +1,6 @@
 [Назад](../template-renderer.md) | [Вернуться к оглавлению](../../../../index.md)
+
+[EN](../../../../../en/components/http/renderers/plugins/renderer-plugin-interface.md) | [UK](../../../../../uk/components/http/renderers/plugins/renderer-plugin-interface.md) | **RU**
 # Интерфейс RendererPluginInterface
 
 `RendererPluginInterface` — контракт для всех плагинов рендерера шаблонов во фреймворке Scaleum. Определяет методы для идентификации и регистрации плагина в `TemplateRenderer`.

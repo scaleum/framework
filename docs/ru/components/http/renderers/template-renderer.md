@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../../index.md)
+
+[EN](../../../../en/components/http/renderers/template-renderer.md) | [UK](../../../../uk/components/http/renderers/template-renderer.md) | **RU**
 # TemplateRenderer
 
 `TemplateRenderer` — мощный класс для рендеринга шаблонов во фреймворке Scaleum. Позволяет:

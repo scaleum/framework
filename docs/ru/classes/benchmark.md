@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/classes/benchmark.md) | [UK](../../uk/classes/benchmark.md) | **RU**
 # Benchmark
 
 **Benchmark** — класс для измерения временных интервалов с точностью до микросекунд.

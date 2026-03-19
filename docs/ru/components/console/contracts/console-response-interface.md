@@ -1,4 +1,6 @@
 [Назад](../application.md) | [Вернуться к оглавлению](../../../index.md)
+
+[EN](../../../../en/components/console/contracts/console-response-interface.md) | [UK](../../../../uk/components/console/contracts/console-response-interface.md) | **RU**
 # ConsoleResponseInterface
 
 `ConsoleResponseInterface` — интерфейс для ответа в консольном режиме (CLI), расширяющий `ResponderInterface` и определяющий код возврата и контент вывода.

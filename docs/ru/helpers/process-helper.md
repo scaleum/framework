@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/process-helper.md) | [UK](../../uk/helpers/process-helper.md) | **RU**
 # ProcessHelper
 
 `ProcessHelper` — это утилитарный класс для работы с системными процессами.

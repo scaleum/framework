@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/time-helper.md) | [UK](../../uk/helpers/time-helper.md) | **RU**
 # TimeHelper
 
 `TimeHelper` — утилитарный класс для работы со временем в Scaleum Framework.

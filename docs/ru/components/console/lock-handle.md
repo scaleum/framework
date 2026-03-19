@@ -1,4 +1,6 @@
 [Назад](./application.md) | [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/console/lock-handle.md) | [UK](../../../uk/components/console/lock-handle.md) | **RU**
 # LockHandle
 
 `LockHandle` — вспомогательный класс для управления блокировками процессов в CLI-приложениях Scaleum. Сохраняет информацию о файловом дескрипторе, имени процесса и пути к lock-файлу.

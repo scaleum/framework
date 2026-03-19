@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/components/config.md) | [UK](../../uk/components/config.md) | **RU**
 # Config
 
 Компонент `Config` в Scaleum обеспечивает удобную загрузку, объединение и управление конфигурациями приложения.

@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../../en/components/storages/pdo/RecordsetAbstract.md) | [UK](../../../../uk/components/storages/pdo/RecordsetAbstract.md) | **RU**
 # RecordsetAbstract
 
 `RecordsetAbstract` — базовый класс для коллекций записей в PDO-слое Scaleum.

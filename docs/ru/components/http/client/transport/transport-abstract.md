@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../../../index.md)
+
+[EN](../../../../../en/components/http/client/transport/transport-abstract.md) | [UK](../../../../../uk/components/http/client/transport/transport-abstract.md) | **RU**
 # TransportAbstract
 
 `TransportAbstract` — базовый абстрактный класс для реализации транспортных механизмов в HTTP-клиенте Scaleum. Расширяет `Hydrator`, хранит общие настройки (таймаут, количество редиректов) и предоставляет вспомогательные утилиты.

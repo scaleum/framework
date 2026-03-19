@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/stream-trait.md) | [UK](../../../uk/components/http/stream-trait.md) | **RU**
 # StreamTrait
 
 `StreamTrait` — вспомогательный трейд для подготовки заголовков и тела HTTP-сообщения. Используется в классах `OutboundRequest` и `OutboundResponse` для конвертации различных типов данных в PSR-7 `StreamInterface` и автоматической установки необходимых заголовков.

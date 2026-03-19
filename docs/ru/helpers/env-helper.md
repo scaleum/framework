@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/env-helper.md) | [UK](../../uk/helpers/env-helper.md) | **RU**
 # EnvHelper
 
 `EnvHelper` — утилитарный класс для безопасной работы с переменными окружения (`environment variables`).

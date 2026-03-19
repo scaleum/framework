@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../../index.md)
+
+[EN](../../../../en/components/i18n/loaders/Ini.md) | [UK](../../../../uk/components/i18n/loaders/Ini.md) | **RU**
 # Ini
 
 Класс‑загрузчик переводов из `.ini`‑файлов. Наследует `TranslationLoaderAbstract` и использует `parse_ini_file` для преобразования данных в `ArrayObject`.

@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../en/components/i18n/LoaderDispatcher.md) | [UK](../../../uk/components/i18n/LoaderDispatcher.md) | **RU**
 # LoaderDispatcher
 
 `LoaderDispatcher` — это *Service Locator* для загрузчиков переводов. Наследует `ServiceManager` и предоставляет готовую регистрацию трёх реализованных загрузчиков (`Gettext`, `Ini`, `PhpArray`). Позволяет получить нужный загрузчик по его алиасу без прямого создания объектов.

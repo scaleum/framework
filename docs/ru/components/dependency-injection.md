@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/components/dependency-injection.md) | [UK](../../uk/components/dependency-injection.md) | **RU**
 # Dependency Injection
 
 Компонент `DependencyInjection\Container` — это мощный контейнер управления зависимостями, реализующий стандарт `Psr\Container\ContainerInterface`.  

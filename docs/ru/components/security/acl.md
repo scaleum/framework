@@ -1,4 +1,6 @@
-﻿[Вернуться к оглавлению](../../index.md)
+[Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/security/acl.md) | [UK](../../../uk/components/security/acl.md) | **RU**
 # Security ACL
 
 Компонент `Security ACL` отвечает за проверку прав доступа на уровне конкретной записи (Record ACL).

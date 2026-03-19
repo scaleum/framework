@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../../index.md)
 
+[EN](../../../../en/components/http/client/requester-abstract.md) | [UK](../../../../uk/components/http/client/requester-abstract.md) | **RU**
 # RequesterAbstract
 
 `RequesterAbstract` — базовый абстрактный класс для отправки исходящих HTTP-запросов через различные транспортные механизмы (например, cURL), расширяющий `Hydrator` и предоставляющий общий интерфейс для настройки соединения.

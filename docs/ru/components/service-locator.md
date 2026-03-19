@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/components/service-locator.md) | [UK](../../uk/components/service-locator.md) | **RU**
 # Service Manager
 
 Компонент фреймворка Scaleum для управления сервисами состоит из двух частей:

@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
+
+[EN](../../../en/components/http/message.md) | [UK](../../../uk/components/http/message.md) | **RU**
 # Message
 
 `Message` — базовый класс PSR-7 для HTTP-сообщений, реализующий `MessageInterface`. Служит основой для запросов и ответов, управляя заголовками, телом и версией протокола.

@@ -1,5 +1,6 @@
 [Вернуться к оглавлению](../../index.md)
 
+[EN](../../../../en/components/storages/pdo/DatabaseProvider.md) | [UK](../../../../uk/components/storages/pdo/DatabaseProvider.md) | **RU**
 # DatabaseProvider
 
 `DatabaseProvider` — стандартная реализация `DatabaseProviderInterface` из пространства имён `Scaleum\Storages\PDO`. Класс упрощает получение подключения к БД через сервис‑локатор и позволяет переопределять подключение в рантайме.

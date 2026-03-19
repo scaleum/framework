@@ -1,4 +1,6 @@
 [Назад](../application.md) | [Вернуться к оглавлению](../../../index.md)
+
+[EN](../../../../en/components/console/contracts/command-interface.md) | [UK](../../../../uk/components/console/contracts/command-interface.md) | **RU**
 # CommandInterface
 
 `CommandInterface` — интерфейс для CLI-команд во фреймворке Scaleum. Определяет базовый контракт, которому должны соответствовать все команды.

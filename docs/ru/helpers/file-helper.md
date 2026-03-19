@@ -1,4 +1,6 @@
 [Вернуться к оглавлению](../index.md)
+
+[EN](../../en/helpers/file-helper.md) | [UK](../../uk/helpers/file-helper.md) | **RU**
 # FileHelper
 
 `FileHelper` — утилитарный класс для работы с файлами и директориями в Scaleum Framework.

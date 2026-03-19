@@ -1,37 +1,78 @@
 ![Latest Release](https://img.shields.io/github/v/release/scaleum/framework?include_prereleases)  
 
 # Scaleum
-**Scaleum Framework** — это модульный PHP-фреймворк, созданный для построения масштабируемых, расширяемых и строго организованных приложений. Он не навязывает архитектуру, но предоставляет чёткие механизмы для её реализации.   
-Подробнее смотри [тут](./docs/ru/introduction.md).
 
-## Структура
+[EN](#english-version) | [UK](#українська-версія) | [RU](#русская-версия)
 
-- `src/` — исходники проекта
-- `docs/` — документация  
-  - `ru/*`
+### English version
 
-## Документация
+**Scaleum Framework** is a modular PHP framework for building scalable, extensible, and well-structured applications.
 
-- [Русский](docs/ru/index.md)
-- [English]() *(в разработке)*
+Documentation:
+- Overview: [docs/en/index.md](docs/en/index.md)
+- Introduction: [docs/en/introduction.md](docs/en/introduction.md)
+- Installation: [docs/en/installation.md](docs/en/installation.md)
 
-## Требования
-
+Requirements:
 - PHP 8.1+
 - Composer
-- Web-сервер (Apache/Nginx)
+- Web server (Apache/Nginx)
 
-
-## Установка и запуск
-
+Quick start:
 ```bash
 git clone https://github.com/scaleum/framework.git
 cd scaleum-framework
 composer install
 ```
-Подробнее смотри [тут](./docs/ru/installation.md).
 
-## Лицензия
+License: [LICENSE](LICENSE.md)
 
-Исходный код распространяется на условиях [Scaleum Framework License](LICENSE) с ограничением на коммерческое использование.  
-Чтобы получить коммерческую лицензию — напишите на **kirichenko.maxim@gmail.com**.
+---
+
+### Українська версія
+
+**Scaleum Framework** - це модульний PHP-фреймворк для побудови масштабованих, розширюваних і добре структурованих застосунків.
+
+Документація:
+- Огляд: [docs/uk/index.md](docs/uk/index.md)
+- Вступ: [docs/uk/introduction.md](docs/uk/introduction.md)
+- Встановлення: [docs/uk/installation.md](docs/uk/installation.md)
+
+Вимоги:
+- PHP 8.1+
+- Composer
+- Веб-сервер (Apache/Nginx)
+
+Швидкий старт:
+```bash
+git clone https://github.com/scaleum/framework.git
+cd scaleum-framework
+composer install
+```
+
+Ліцензія: [LICENSE](LICENSE.md)
+
+---
+
+### Русская версия
+
+**Scaleum Framework** - модульный PHP-фреймворк для построения масштабируемых, расширяемых и строго организованных приложений.
+
+Документация:
+- Обзор: [docs/ru/index.md](docs/ru/index.md)
+- Введение: [docs/ru/introduction.md](docs/ru/introduction.md)
+- Установка: [docs/ru/installation.md](docs/ru/installation.md)
+
+Требования:
+- PHP 8.1+
+- Composer
+- Веб-сервер (Apache/Nginx)
+
+Быстрый старт:
+```bash
+git clone https://github.com/scaleum/framework.git
+cd scaleum-framework
+composer install
+```
+
+Лицензия: [LICENSE](LICENSE.md)
