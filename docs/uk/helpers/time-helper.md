@@ -19,6 +19,19 @@
 | Метод | Призначення |
 |:------|:-----------|
 | `getEndOfDayTimestamp(int $offset = 0)` | Отримання часової мітки кінця поточного дня |
+| `getBeginOfDayTimestamp(int $offset = 0)` | Отримання часової мітки початку поточного дня |
+| `getUnixtimeWithOffset(int $unixtime, string $interval)` | Зсув Unix-мітки на відносний інтервал |
+| `getTimestampDiff(int $fromTimestamp, int $toTimestamp, string $unit = 'second', bool $absolute = true): int` | Різниця між двома мітками часу в обраній одиниці |
+
+## Підтримувані одиниці для `getTimestampDiff`
+
+- `year`, `years`, `y`
+- `month`, `months`, `mo`
+- `week`, `weeks`, `w`
+- `day`, `days`, `d`
+- `hour`, `hours`, `h`
+- `minute`, `minutes`, `m`
+- `second`, `seconds`, `s`
 
 ## Приклади використання
 
@@ -34,6 +47,26 @@ $timestamp = TimeHelper::getEndOfDayTimestamp();
 ```php
 $timestamp = TimeHelper::getEndOfDayTimestamp(TimeHelper::Day);
 // час завтрашнього 23:59:59
+```
+
+### Різниця між двома мітками часу в годинах
+
+```php
+$from = strtotime('2026-01-01 12:00:00');
+$to = strtotime('2026-01-01 10:00:00');
+
+$diff = TimeHelper::getTimestampDiff($from, $to, 'hour', false);
+// поверне -2
+```
+
+### Різниця між двома мітками часу в місяцях
+
+```php
+$from = strtotime('2026-01-15 00:00:00');
+$to = strtotime('2026-04-15 00:00:00');
+
+$diff = TimeHelper::getTimestampDiff($from, $to, 'month');
+// поверне 3
 ```
 
 [Вернутися до змісту](../index.md)
