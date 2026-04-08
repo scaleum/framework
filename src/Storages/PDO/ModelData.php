@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
@@ -43,8 +44,8 @@ class ModelData extends AttributeContainer
         }
 
         // included ModelAbstract
-        if($value instanceof ModelAbstract) {
-            return $value->getData()->toArray();
+        if ($value instanceof ModelAbstract) {
+            return $value->toArray($value->getRelationships());
         }
 
         // anything with toArray() method
