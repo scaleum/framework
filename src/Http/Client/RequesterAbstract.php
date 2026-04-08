@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
@@ -12,10 +13,9 @@ declare(strict_types=1);
 namespace Scaleum\Http\Client;
 
 use Scaleum\Http\Client\Transport\TransportInterface;
-use Scaleum\Http\OutboundRequest;
 use Scaleum\Http\InboundResponse;
+use Scaleum\Http\OutboundRequest;
 use Scaleum\Stdlib\Base\Hydrator;
-
 
 /**
  * RequesterAbstract
@@ -24,9 +24,9 @@ use Scaleum\Stdlib\Base\Hydrator;
  */
 abstract class RequesterAbstract extends Hydrator
 {
-    protected int $port = 80;
-    protected string $host = 'localhost';
-    protected string $protocol = 'http';
+    protected int $port                      = 80;
+    protected string $host                   = 'localhost';
+    protected string $protocol               = 'http';
     protected ?TransportInterface $transport = null;
 
     protected function getDefaultClient(): TransportInterface
@@ -34,13 +34,12 @@ abstract class RequesterAbstract extends Hydrator
         return new Transport\CurlTransport();
     }
 
-
     /**
      * Retrieves the protocol used for the request.
      *
      * @return string The protocol used for the request.
      */
-    public function getProtocol():string
+    public function getProtocol(): string
     {
         if (empty($this->protocol)) {
             $this->protocol = 'http';
@@ -57,19 +56,18 @@ abstract class RequesterAbstract extends Hydrator
      */
     public function setProtocol(string $value): self
     {
-        $value = strtolower(strtr($value, ['-' => '', '_' => '', ' ' => '', '\\' => '', '/' => '', ':' => '']));
+        $value          = strtolower(strtr($value, ['-' => '', '_' => '', ' ' => '', '\\' => '', '/' => '', ':' => '']));
         $this->protocol = $value;
 
         return $this;
     }
-
 
     /**
      * Retrieves the host of the request.
      *
      * @return string The host of the request.
      */
-    public function getHost():string
+    public function getHost(): string
     {
         if (empty($this->host)) {
             $this->host = 'localhost';
@@ -86,19 +84,18 @@ abstract class RequesterAbstract extends Hydrator
      */
     public function setHost(mixed $value): self
     {
-        $this->host = (string)$value;
+        $this->host = (string) $value;
         return $this;
     }
-    
 
     /**
      * Retrieves the port number for the request.
      *
      * @return int The port number.
      */
-    public function getPort():int
+    public function getPort(): int
     {
-        $result = (int)$this->port;
+        $result = (int) $this->port;
         if (empty($result) || $result < 1) {
             $result = 80;
         }
@@ -114,7 +111,7 @@ abstract class RequesterAbstract extends Hydrator
      */
     public function setPort(mixed $value): self
     {
-        $this->port = (int)$value;
+        $this->port = (int) $value;
         return $this;
     }
 
@@ -124,15 +121,15 @@ abstract class RequesterAbstract extends Hydrator
      * @param string $url The URL to append to the base URL.
      * @return string The complete request URL.
      */
-    public function getRequestUrl(string $url = '')
+    public function getRequestUrl(string $url = ''): string
     {
         $result = $this->getProtocol() . '://' . $this->getHost();
 
-        if ((string)($port = $this->getPort()) != '80') {
+        if ((string) ($port = $this->getPort()) != '80') {
             $result .= ":$port";
         }
 
-        if (!empty($url)) {
+        if (! empty($url)) {
             $result .= '/' . trim($url, '/');
         }
 
