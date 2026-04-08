@@ -33,3 +33,4 @@ vendor
 
 # Testing
 # Keep tests tracked in VCS.
+tests/integration/
