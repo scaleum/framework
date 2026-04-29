@@ -257,6 +257,7 @@ $sql = (new QueryBuilder($db))
 
 * [BuilderAbstract](./BuilderAbstract.md)
 * [ColumnBuilder](./ColumnBuilder.md)
+* [SchemaBuilder](./SchemaBuilder.md)
 * [QueryBuilderInterface](./contracts/QueryBuilderInterface.md)
 * [DatabaseProvider](../DatabaseProvider.md)
 * [DatabaseProviderInterface](../DatabaseProviderInterface.md)

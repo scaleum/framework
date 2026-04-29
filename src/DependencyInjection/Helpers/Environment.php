@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Scaleum\DependencyInjection\Helpers;
 
+use Scaleum\Stdlib\Helpers\EnvHelper;
+
 /**
  * Environment
  *
@@ -30,6 +32,6 @@ class Environment extends EntityAbstract
 
     public function resolve(): mixed
     {
-        return $_ENV[$this->key] ?? getenv($this->key) ?: $this->default;
+        return EnvHelper::get($this->key, $this->default);
     }
 }

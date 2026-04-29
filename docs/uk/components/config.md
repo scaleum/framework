@@ -28,7 +28,9 @@
 - Завантаження та об'єднання кількох файлів (`fromFiles`)
 - Автоматична підстановка конфігурацій оточення
 - Уніфікований доступ до параметрів через `get()` і `set()`
+- Строгий типізований доступ через `getString()`, `getInt()`, `getFloat()`, `getBool()`, `getArray()`
 - Використання вкладених ключів з роздільником (`.`)
+- Явна інтерполяція плейсхолдерів через `resolvePlaceholders()`
 
 
 ## Приклади використання
@@ -53,6 +55,9 @@ $config->fromFiles([
 ```php
 $dbHost = $config->get('database.host');
 $config->set('app.debug', true);
+
+$port = $config->getInt('database.port', 5432);
+$debug = $config->getBool('app.debug', false);
 ```
 
 #### Завантаження конфігурацій з директорії
@@ -70,6 +75,44 @@ $config = new Config([], '.', $resolver);
 $config->fromFile('/config/database.php');
 ```
 
+## Інтерполяція env-плейсхолдерів (`resolvePlaceholders`)
+`resolvePlaceholders()` — це явний opt-in крок, який обробляє плейсхолдери у рядкових значеннях після завантаження/об'єднання конфігурації.
+
+Підтримуваний синтаксис:
+- `${VAR}` — обов'язкова змінна
+- `${VAR:-default}` — взяти `default`, якщо змінна відсутня
+- `${VAR:?message}` — кинути виключення з `message`, якщо змінна відсутня
+
+```php
+$config = (new Config([], '.'))
+    ->fromFiles([
+        '/config/app.php',
+        '/config/database.php',
+    ])
+    ->resolvePlaceholders([
+        'strict' => true,
+        'allowEmpty' => false,
+        'preserveUnknown' => false,
+    ]);
+```
+
+Приклад у PHP-файлі конфігурації:
+```php
+return [
+    'database' => [
+        'host' => '${DB_HOST}',
+        'port' => '${DB_PORT:-5432}',
+        'user' => '${DB_USER:?DB_USER is required}',
+    ],
+];
+```
+
+Опції `resolvePlaceholders()`:
+- `strict` (bool): якщо `true`, `${VAR}` без значення викликає виключення
+- `allowEmpty` (bool): якщо `false`, порожні env-значення вважаються відсутніми
+- `preserveUnknown` (bool): якщо `true`, нерозв'язані плейсхолдери залишаються як є
+- `variables` (array|null): передача мапи змінних плейсхолдерів (рекомендовано)
+
 ## Структура завантаження
 1. `LoaderResolver`
     - Визначає тип файлу за розширенням.
@@ -86,9 +129,15 @@ $config->fromFile('/config/database.php');
 |:------|:-----------|
 `fromFile(string $filename, ?string $key = null): self` | Завантаження конфігурації з файлу
 `fromFiles(array $files, ?string $key = null): self` | Завантаження та об'єднання кількох файлів
+`resolvePlaceholders(array $options = []): self` | Інтерполяція плейсхолдерів у рядкових значеннях
+`getString(string $key, ?string $default = null): string` | Отримати обов'язкове/типізоване рядкове значення
+`getInt(string $key, ?int $default = null): int` | Отримати обов'язкове/типізоване цілочисельне значення
+`getFloat(string $key, ?float $default = null): float` | Отримати обов'язкове/типізоване float-значення
+`getBool(string $key, ?bool $default = null): bool` | Отримати обов'язкове/типізоване bool-значення
+`getArray(string $key, ?array $default = null): array` | Отримати обов'язкове/типізоване значення масиву
 `setResolver(LoaderResolver $resolver): self` | Призначити завантажувач конфігурацій
 `getResolver(): LoaderResolver` | Отримати поточний завантажувач
-Успадковується від `Registry` | get(), set(), has(), delete(), merge()
+Успадковується від `Registry` | get(), set(), has(), unset(), merge()
 
 ## Приклад повного використання
 ```php
@@ -118,5 +167,7 @@ $dbHost = $config->get('database.host');
 Виключення | Умова
 |:------|:-----------|
 `ERuntimeError` | Спроба завантажити непідтримуваний тип файлу
+`ENotFoundError` | Обов'язковий ключ не знайдено (типізований getter без default)
+`ETypeException` | Тип значення не відповідає типізованому getter
 
 [Повернутись до змісту](../index.md)

@@ -438,7 +438,7 @@ class Database extends Hydrator {
     private function afterExecute() {
         if ($this->logging) {
             $this->execTimeEnd = microtime(true);
-            $this->debug(sprintf('Database query #%d: "%s" executed in %s sec.', $this->queryCounter, $this->getQuery(), number_format($this->execTimeEnd - $this->execTimeStart, 4)));
+            $this->debug("Database query({$this->queryCounter}): \"{$this->getQuery()}\" executed in " . number_format($this->execTimeEnd - $this->execTimeStart, 4) . ' sec.');
         }
     }
 

@@ -18,8 +18,11 @@
 
 | Метод | Призначення |
 |:------|:-----------|
+| `has(string $key): bool` | Перевірити, чи існує змінна оточення |
 | `get(string $key, mixed $default = null): mixed` | Отримати значення змінної оточення |
 | `set(string $key, mixed $value): void` | Встановити значення змінної оточення |
+| `interpolateArray(array $items, array $options = []): array` | Рекурсивно інтерполювати плейсхолдери у масиві |
+| `interpolateString(string $value, array $options = []): string` | Інтерполювати плейсхолдери у рядку |
 
 ---
 
@@ -37,6 +40,27 @@ $databaseHost = EnvHelper::get('DB_HOST', 'localhost');
 EnvHelper::set('APP_DEBUG', true);
 ```
 
+### Перевірити наявність змінної
+```php
+if (EnvHelper::has('APP_DEBUG')) {
+	// змінна існує, навіть якщо значення — порожній рядок
+}
+```
+
+### Інтерполювати плейсхолдери в конфігу
+```php
+$config = [
+	'db' => [
+		'host' => '${DB_HOST}',
+		'port' => '${DB_PORT:-5432}',
+	],
+];
+
+$resolved = EnvHelper::interpolateArray($config, [
+	'variables' => ['DB_HOST' => 'localhost'],
+]);
+```
+
 ### Отримати значення змінної
 ```php
 $isDebug = EnvHelper::get('APP_DEBUG', false);
@@ -45,8 +69,11 @@ $isDebug = EnvHelper::get('APP_DEBUG', false);
 
 ## Особливості
 - Використовує функції `getenv()` і `putenv()`
+- Також використовує `$_ENV` для узгодженого доступу під час виконання
 - Значення автоматично конвертуються у рядок при встановленні
-- Повертає значення або дефолт без помилок
+- Зберігає значення `''` і `'0'` (не підміняє їх дефолтом)
+- Повертає дефолт тільки якщо змінна дійсно відсутня
+- Підтримує синтаксис плейсхолдерів: `${VAR}`, `${VAR:-default}`, `${VAR:?message}`
 - Підтримує просту роботу без залежності від додаткових бібліотек
 
 [Повернутись до змісту](../index.md)
