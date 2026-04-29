@@ -36,7 +36,16 @@ class Schema extends SchemaBuilder {
 
     protected function makeAlterTableName(string $fromTable, string $toTable): string {
         return sprintf('sp_rename %s, %s;', $this->protectIdentifiers($fromTable), $this->protectIdentifiers($toTable));
-    }    
+    }
+
+    protected function makeAlterColumnName(string $tableName, string $fromColumn, string $toColumn): string {
+        return sprintf(
+            "sp_rename '%s.%s', '%s', 'COLUMN';",
+            $tableName,
+            $fromColumn,
+            $toColumn
+        );
+    }
 
     protected function makeShowTables(?string $database = null): string {
         return "SELECT TABLE_NAME FROM sysibm.tables";

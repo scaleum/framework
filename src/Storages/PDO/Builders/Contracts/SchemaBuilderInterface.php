@@ -19,8 +19,8 @@ namespace Scaleum\Storages\PDO\Builders\Contracts;
  */
 interface SchemaBuilderInterface
 {
-    public function addColumn($column): mixed;
-    public function addIndex($key): mixed;
+    public function addColumn(array|ColumnBuilderInterface $column): mixed;
+    public function addIndex(array|IndexBuilderInterface $index): mixed;
     public function columnBigInt(?int $length = null): ColumnBuilderInterface;
     public function columnBigPk(?int $length = null): ColumnBuilderInterface;
     public function columnBinary(?int $length = null): ColumnBuilderInterface;
@@ -58,6 +58,7 @@ interface SchemaBuilderInterface
     public function indexUnique(array|string $column, ?string $indexName = null): IndexBuilderInterface;
     public function indexForeign(array|string $column, ?string $indexName = null): IndexBuilderInterface;
     public function updateColumn(mixed $column, string $tableName): mixed;
+    public function renameColumn(string $tableName, string $fromColumn, string $toColumn): mixed;
     public function primaryKey(mixed $column): IndexBuilderInterface;
     public function renameTable(string $fromTable, string $toTable): mixed;
     public function showDatabases(): mixed;

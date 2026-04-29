@@ -33,12 +33,12 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
     protected array $columns = [];
     protected array $keys    = [];
 
-    public function addColumn($column): mixed {
+    public function addColumn(array | ColumnBuilderInterface $column): mixed {
         return $this->createColumn($column);
     }
 
-    public function addIndex($key): mixed {
-        return $this->createIndex($key);
+    public function addIndex(array | IndexBuilderInterface $index): mixed {
+        return $this->createIndex($index);
     }
 
     public function columnBigInt(?int $length = null): ColumnBuilderInterface {
@@ -294,6 +294,12 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         return $this->execute($sql);
     }
 
+    public function renameColumn(string $tableName, string $fromColumn, string $toColumn): mixed {
+        $sql = $this->makeAlterColumnName($tableName, $fromColumn, $toColumn);
+
+        return $this->execute($sql);
+    }
+
     public function showDatabases(): mixed {
         $sql = $this->makeShowDatabases();
 
@@ -405,6 +411,15 @@ class SchemaBuilder extends BuilderAbstract implements SchemaBuilderInterface {
         $sql = sprintf('ALTER TABLE %s RENAME TO %s;', $this->protectIdentifiers($fromTable), $this->protectIdentifiers($toTable));
 
         return $sql;
+    }
+
+    protected function makeAlterColumnName(string $tableName, string $fromColumn, string $toColumn): string {
+        return sprintf(
+            'ALTER TABLE %s RENAME COLUMN %s TO %s;',
+            $this->protectIdentifiers($tableName),
+            $this->protectIdentifiers($fromColumn),
+            $this->protectIdentifiers($toColumn)
+        );
     }
 
     protected function makeCreateDatabase(string $database, bool $ifNotExists = true, ?string $charSet = null, ?string $collate = null): string {
