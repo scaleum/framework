@@ -25,6 +25,22 @@ use Scaleum\Stdlib\Helpers\StringHelper;
 class ExceptionOutputHttp extends ExceptionOutputAbstarct {
     protected int $statusCode = 500;
 
+    protected function getExceptionMessage(
+        \Throwable $exception,
+        ?string $fallback = 'Unknown error'
+    ): string {
+        $message = trim((string) $exception->getMessage());
+        if ($message === '') {
+            return (string) $fallback;
+        }
+
+        if (($position = stripos($message, 'Stack trace:')) !== false) {
+            $message = rtrim(substr($message, 0, $position));
+        }
+
+        return $message;
+    }
+
     public function render(\Throwable $exception): void {
         HttpHelper::setHeader('Content-Type', sprintf('%s; charset=utf-8', HttpHelper::getAllowedMimeType($format = HttpHelper::getAcceptFormat())));
         HttpHelper::setStatusHeader(
@@ -40,7 +56,7 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
             $format = HttpHelper::getAcceptFormat();
         }
 
-        $result = $exception->getMessage();
+        $result = $this->getExceptionMessage($exception);
         switch ($format) {
         case HttpHelper::FORMAT_JSON:
         case HttpHelper::FORMAT_JSONP:
@@ -96,7 +112,7 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
 
         $result = "<!DOCTYPE html><html><head><title>HTTP Error {$statusCode} - {$statusMessage}</title></head><body>";
         $result .= "<h2>HTTP Error {$statusCode} - {$statusMessage}</h2>";
-        $result .= '<h3 style="color:red">' . $exception->getMessage() . '</h3>';
+        $result .= '<h3 style="color:red">' . htmlspecialchars($this->getExceptionMessage($exception, $statusMessage)) . '</h3>';
         if ($this->includeDetails) {
             $result .= '<div>' . $encode($this->errorToArray($exception)) . '</div>';
         }
@@ -108,7 +124,7 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
         # Prepare result
         $result = [
             'class'   => StringHelper::className($exception, ! $this->allowFullnamespace) . '(' . $exception->getCode() . ')',
-            'message' => $exception->getMessage(),
+            'message' => $this->getExceptionMessage($exception),
             'file'    => PathHelper::overlapPath($exception->getFile(), $this->basePath) . ':' . $exception->getLine(),
         ];
 
