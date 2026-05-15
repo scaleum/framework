@@ -23,20 +23,6 @@ use Scaleum\Stdlib\Helpers\StringHelper;
  */
 class ExceptionOutputConsole extends ExceptionOutputAbstarct
 {
-    protected function getExceptionMessage(\Throwable $exception, ?string $fallback = 'Unknown error'): string
-    {
-        $message = trim((string) $exception->getMessage());
-        if ($message === '') {
-            return (string) $fallback;
-        }
-
-        if (($position = stripos($message, 'Stack trace:')) !== false) {
-            $message = rtrim(substr($message, 0, $position));
-        }
-
-        return $message;
-    }
-
     public function render(\Throwable $exception): void
     {
         $console = @fopen("php://stdout", "w");

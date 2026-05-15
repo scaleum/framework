@@ -27,20 +27,6 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct
 {
     protected int $statusCode = 500;
 
-    protected function getExceptionMessage(\Throwable $exception, ?string $fallback = 'Unknown error'): string
-    {
-        $message = trim((string) $exception->getMessage());
-        if ($message === '') {
-            return (string) $fallback;
-        }
-
-        if (($position = stripos($message, 'Stack trace:')) !== false) {
-            $message = rtrim(substr($message, 0, $position));
-        }
-
-        return $message;
-    }
-
     public function render(\Throwable $exception): void
     {
         HttpHelper::setHeader('Content-Type', sprintf('%s; charset=utf-8', HttpHelper::getAllowedMimeType($format = HttpHelper::getAcceptFormat())));
