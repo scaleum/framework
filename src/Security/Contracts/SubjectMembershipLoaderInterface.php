@@ -15,9 +15,9 @@ namespace Scaleum\Security\Contracts;
 interface SubjectMembershipLoaderInterface
 {
     /**
-     * Loads direct membership ids for a typed member.
+     * Loads direct membership ids for a user.
      *
      * @return list<int>
      */
-    public function loadDirectMembershipIds(int $memberType, int $memberId): array;
+    public function loadDirectMembershipIds(int $userId): array;
 }

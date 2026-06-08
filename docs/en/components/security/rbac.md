@@ -25,7 +25,7 @@ RBAC rules are aggregated by subject (`user`, `group`, `role`) and checked throu
 | `Security/SubjectType` | Subject record type (`USER`, `GROUP`, `ROLE`) |
 | `Security/Contracts/RbacResourceInterface` | Resource contract with `getId(): string` |
 | `Security/Contracts/RbacLoaderInterface` | Contract for lazy loading of RBAC records |
-| `Security/Contracts/SubjectMembershipLoaderInterface` | Contract for loading direct membership IDs for `(member_type, member_id)` |
+| `Security/Contracts/SubjectMembershipLoaderInterface` | Contract for loading direct membership IDs for `user_id` |
 | `Security/Contracts/SubjectMembershipHierarchyLoaderInterface` | Contract for loading parent membership IDs |
 | `Security/Contracts/SubjectIdsResolverInterface` | Unified contract for resolving IDs (groups/roles) |
 | `Security/Services/SubjectMembershipIdsResolver` | Resolver of direct + inherited membership IDs |
@@ -81,7 +81,6 @@ Effective group set for `321`: `743, 800, 900, 1000`.
 ```php
 use Scaleum\Security\Contracts\SubjectMembershipHierarchyLoaderInterface;
 use Scaleum\Security\Contracts\SubjectMembershipLoaderInterface;
-use Scaleum\Security\SubjectType;
 use Scaleum\Storages\PDO\Database;
 
 final class PdoGroupMembershipLoader implements SubjectMembershipLoaderInterface
@@ -90,17 +89,13 @@ final class PdoGroupMembershipLoader implements SubjectMembershipLoaderInterface
     {
     }
 
-    public function loadDirectMembershipIds(int $memberType, int $memberId): array
+    public function loadDirectMembershipIds(int $userId): array
     {
-        if ($memberType !== SubjectType::USER) {
-            return [];
-        }
-
         $rows = $this->database
             ->getQueryBuilder()
             ->select(['group_id'])
             ->from('user_group_memberships')
-            ->where('user_id', $memberId)
+            ->where('user_id', $userId)
             ->rows();
 
         if (! is_array($rows)) {

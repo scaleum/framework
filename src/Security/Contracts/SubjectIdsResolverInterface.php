@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Scaleum\Security\Contracts;
 
 /**
- * Resolves ids for a typed subject member.
+ * Resolves ids for a user identity.
  */
 interface SubjectIdsResolverInterface
 {
@@ -21,5 +21,5 @@ interface SubjectIdsResolverInterface
      * @param list<int> $seedIds Caller-provided ids that should be included in result.
      * @return list<int>
      */
-    public function resolve(int $memberType, int $memberId, array $seedIds = []): array;
+    public function resolve(int $userId, array $seedIds = []): array;
 }

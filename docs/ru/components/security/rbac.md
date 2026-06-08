@@ -25,7 +25,7 @@ RBAC-правила агрегируются по субъекту (`user`, `gro
 | `Security/SubjectType` | Тип субъекта записи (`USER`, `GROUP`, `ROLE`) |
 | `Security/Contracts/RbacResourceInterface` | Контракт ресурса с `getId(): string` |
 | `Security/Contracts/RbacLoaderInterface` | Контракт lazy-загрузки RBAC-записей |
-| `Security/Contracts/SubjectMembershipLoaderInterface` | Контракт загрузки прямых membership-id для `(member_type, member_id)` |
+| `Security/Contracts/SubjectMembershipLoaderInterface` | Контракт загрузки прямых membership-id для `user_id` |
 | `Security/Contracts/SubjectMembershipHierarchyLoaderInterface` | Контракт загрузки родительских membership-id |
 | `Security/Contracts/SubjectIdsResolverInterface` | Унифицированный контракт резолва ID (группы/роли) |
 | `Security/Services/SubjectMembershipIdsResolver` | Резолв прямых + унаследованных membership-id |
@@ -81,7 +81,6 @@ INSERT INTO groups (group_id, parent_group_id) VALUES
 ```php
 use Scaleum\Security\Contracts\SubjectMembershipHierarchyLoaderInterface;
 use Scaleum\Security\Contracts\SubjectMembershipLoaderInterface;
-use Scaleum\Security\SubjectType;
 use Scaleum\Storages\PDO\Database;
 
 final class PdoGroupMembershipLoader implements SubjectMembershipLoaderInterface
@@ -90,17 +89,13 @@ final class PdoGroupMembershipLoader implements SubjectMembershipLoaderInterface
     {
     }
 
-    public function loadDirectMembershipIds(int $memberType, int $memberId): array
+    public function loadDirectMembershipIds(int $userId): array
     {
-        if ($memberType !== SubjectType::USER) {
-            return [];
-        }
-
         $rows = $this->database
             ->getQueryBuilder()
             ->select(['group_id'])
             ->from('user_group_memberships')
-            ->where('user_id', $memberId)
+            ->where('user_id', $userId)
             ->rows();
 
         if (! is_array($rows)) {

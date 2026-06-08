@@ -15,7 +15,6 @@ namespace Scaleum\Security\Services;
 use Scaleum\Security\Contracts\SubjectHydratorInterface;
 use Scaleum\Security\Contracts\SubjectIdsResolverInterface;
 use Scaleum\Security\Subject;
-use Scaleum\Security\SubjectType;
 use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
 
 final class SubjectHydrator implements SubjectHydratorInterface {
@@ -24,17 +23,7 @@ final class SubjectHydrator implements SubjectHydratorInterface {
         SubjectIdsResolverInterface $resolver,
         array $seedIds = []
     ): void {
-        $this->hydrateGroupIdsForMember($subject, $resolver, SubjectType::USER, $subject->getUserId(), $seedIds);
-    }
-
-    public function hydrateGroupIdsForMember(
-        Subject $subject,
-        SubjectIdsResolverInterface $resolver,
-        int $memberType,
-        int $memberId,
-        array $seedIds = []
-    ): void {
-        $ids = $this->resolveIds($subject, $resolver, $memberType, $memberId, $seedIds);
+        $ids = $this->resolveIds($subject, $resolver, $seedIds);
         $subject->setGroupIds($ids);
     }
 
@@ -43,17 +32,7 @@ final class SubjectHydrator implements SubjectHydratorInterface {
         SubjectIdsResolverInterface $resolver,
         array $seedIds = []
     ): void {
-        $this->hydrateRoleIdsForMember($subject, $resolver, SubjectType::USER, $subject->getUserId(), $seedIds);
-    }
-
-    public function hydrateRoleIdsForMember(
-        Subject $subject,
-        SubjectIdsResolverInterface $resolver,
-        int $memberType,
-        int $memberId,
-        array $seedIds = []
-    ): void {
-        $ids = $this->resolveIds($subject, $resolver, $memberType, $memberId, $seedIds);
+        $ids = $this->resolveIds($subject, $resolver, $seedIds);
         $subject->setRoleIds($ids);
     }
 
@@ -64,8 +43,6 @@ final class SubjectHydrator implements SubjectHydratorInterface {
     private function resolveIds(
         Subject $subject,
         SubjectIdsResolverInterface $resolver,
-        int $memberType,
-        int $memberId,
         array $seedIds = []
     ): array {
         $userId = $subject->getUserId();
@@ -74,15 +51,7 @@ final class SubjectHydrator implements SubjectHydratorInterface {
             throw new EInvalidArgumentException(sprintf('User id must be a positive integer, got %d.', $userId));
         }
 
-        if ($memberType <= 0) {
-            throw new EInvalidArgumentException(sprintf('Member type must be a positive integer, got %d.', $memberType));
-        }
-
-        if ($memberId <= 0) {
-            throw new EInvalidArgumentException(sprintf('Member id must be a positive integer, got %d.', $memberId));
-        }
-
-        return $this->normalizeIds($resolver->resolve($memberType, $memberId, $seedIds));
+        return $this->normalizeIds($resolver->resolve($userId, $seedIds));
     }
 
     /**

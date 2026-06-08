@@ -10,7 +10,6 @@ use Scaleum\Security\Contracts\SubjectMembershipLoaderInterface;
 use Scaleum\Security\Services\SubjectMembershipIdsResolver;
 use Scaleum\Security\Services\SubjectHydrator;
 use Scaleum\Security\Subject;
-use Scaleum\Security\SubjectType;
 use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
 use Scaleum\Storages\PDO\Builders\Adapters\SQLite\Query as SQLiteQueryBuilder;
 use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
@@ -19,31 +18,31 @@ use Scaleum\Storages\PDO\Database;
 final class SubjectGroupsTest extends TestCase {
     public function testResolverReturnsDirectGroupIdsWhenHierarchyLoaderIsNotProvided(): void {
         $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
-            public function loadDirectMembershipIds(int $memberType, int $memberId): array {
+            public function loadDirectMembershipIds(int $userId): array {
                 return [4, 4, 2, '6', 0, -1];
             }
         };
 
         $resolver = new SubjectMembershipIdsResolver($membershipLoader);
 
-        $this->assertSame([2, 4, 6], $resolver->resolve(SubjectType::USER, 10));
+        $this->assertSame([2, 4, 6], $resolver->resolve(10));
     }
 
     public function testResolverMergesSeedIdsWithLoadedDirectGroups(): void {
         $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
-            public function loadDirectMembershipIds(int $memberType, int $memberId): array {
+            public function loadDirectMembershipIds(int $userId): array {
                 return [4, 2];
             }
         };
 
         $resolver = new SubjectMembershipIdsResolver($membershipLoader);
 
-        $this->assertSame([2, 4, 7], $resolver->resolve(SubjectType::USER, 10, [7, 2]));
+        $this->assertSame([2, 4, 7], $resolver->resolve(10, [7, 2]));
     }
 
     public function testResolverExpandsInheritedGroupsAndSkipsCycles(): void {
         $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
-            public function loadDirectMembershipIds(int $memberType, int $memberId): array {
+            public function loadDirectMembershipIds(int $userId): array {
                 return [10];
             }
         };
@@ -62,12 +61,12 @@ final class SubjectGroupsTest extends TestCase {
 
         $resolver = new SubjectMembershipIdsResolver($membershipLoader, $hierarchyLoader);
 
-        $this->assertSame([10, 20, 30], $resolver->resolve(SubjectType::USER, 99));
+        $this->assertSame([10, 20, 30], $resolver->resolve(99));
     }
 
-    public function testResolverThrowsForInvalidMemberIdentityTuple(): void {
+    public function testResolverThrowsForInvalidUserId(): void {
         $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
-            public function loadDirectMembershipIds(int $memberType, int $memberId): array {
+            public function loadDirectMembershipIds(int $userId): array {
                 return [];
             }
         };
@@ -75,18 +74,18 @@ final class SubjectGroupsTest extends TestCase {
         $resolver = new SubjectMembershipIdsResolver($membershipLoader);
 
         $this->expectException(EInvalidArgumentException::class);
-        $resolver->resolve(0, 10);
+        $resolver->resolve(0);
     }
 
     public function testHydratorCreatesSubjectForUserUsingResolvedGroupsAndSeedRoles(): void {
         $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
-            public function loadDirectMembershipIds(int $memberType, int $memberId): array {
-                return $memberType === SubjectType::USER && $memberId === 15 ? [2, 8] : [];
+            public function loadDirectMembershipIds(int $userId): array {
+                return $userId === 15 ? [2, 8] : [];
             }
         };
 
         $roleResolver = new class() implements SubjectIdsResolverInterface {
-            public function resolve(int $memberType, int $memberId, array $seedIds = []): array {
+            public function resolve(int $userId, array $seedIds = []): array {
                 return $seedIds;
             }
         };
@@ -103,44 +102,40 @@ final class SubjectGroupsTest extends TestCase {
         $this->assertSame([3, 7], $subject->getRoleIds());
     }
 
-    public function testHydratorCreatesSubjectForTypedMember(): void {
+    public function testHydratorCreatesSubjectForUserWithSeedRoles(): void {
         $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
-            public function loadDirectMembershipIds(int $memberType, int $memberId): array {
-                if ($memberType === SubjectType::ROLE && $memberId === 50) {
-                    return [100];
-                }
-
-                return [];
+            public function loadDirectMembershipIds(int $userId): array {
+                return $userId === 50 ? [100] : [];
             }
         };
 
         $resolver     = new SubjectMembershipIdsResolver($membershipLoader);
         $roleResolver = new class() implements SubjectIdsResolverInterface {
-            public function resolve(int $memberType, int $memberId, array $seedIds = []): array {
+            public function resolve(int $userId, array $seedIds = []): array {
                 return $seedIds;
             }
         };
 
         $hydrator = new SubjectHydrator();
-        $subject  = new Subject(1);
+        $subject  = new Subject(50);
 
-        $hydrator->hydrateGroupIdsForMember($subject, $resolver, SubjectType::ROLE, 50);
-        $hydrator->hydrateRoleIdsForMember($subject, $roleResolver, SubjectType::ROLE, 50, [9]);
+        $hydrator->hydrateGroupIdsForUser($subject, $resolver);
+        $hydrator->hydrateRoleIdsForUser($subject, $roleResolver, [9]);
 
-        $this->assertSame(1, $subject->getUserId());
+        $this->assertSame(50, $subject->getUserId());
         $this->assertSame([100], $subject->getGroupIds());
         $this->assertSame([9], $subject->getRoleIds());
     }
 
     public function testHydratorCanResolveEffectiveRolesViaRoleResolver(): void {
         $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
-            public function loadDirectMembershipIds(int $memberType, int $memberId): array {
+            public function loadDirectMembershipIds(int $userId): array {
                 return [5];
             }
         };
 
         $roleResolver = new class() implements SubjectIdsResolverInterface {
-            public function resolve(int $memberType, int $memberId, array $seedIds = []): array {
+            public function resolve(int $userId, array $seedIds = []): array {
                 return array_merge($seedIds, [20, 10, 20]);
             }
         };
@@ -158,13 +153,8 @@ final class SubjectGroupsTest extends TestCase {
 
     public function testHydratorBuildsSubjectForUser321WithDefaultGroup743AndThreeNestedLevels(): void {
         $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
-            public function loadDirectMembershipIds(int $memberType, int $memberId): array {
-                if ($memberType === SubjectType::USER && $memberId === 321) {
-                    // Default user group loaded from persistence layer.
-                    return [743];
-                }
-
-                return [];
+            public function loadDirectMembershipIds(int $userId): array {
+                return $userId === 321 ? [743] : [];
             }
         };
 
@@ -196,7 +186,7 @@ final class SubjectGroupsTest extends TestCase {
         $query = $this->createMock(QueryBuilderInterface::class);
         $query->expects($this->once())->method('select')->with('group_id', true)->willReturnSelf();
         $query->expects($this->once())->method('from')->with('security_group_membership')->willReturnSelf();
-        $query->expects($this->exactly(2))->method('where')->willReturnSelf();
+        $query->expects($this->once())->method('where')->willReturnSelf();
         $query->expects($this->once())->method('rows')->willReturn([
             ['group_id' => 743],
             ['group_id' => '800'],
@@ -211,12 +201,11 @@ final class SubjectGroupsTest extends TestCase {
                 $this->query = $query;
             }
 
-            public function resolve(int $memberType, int $memberId, array $seedIds = []): array {
+            public function resolve(int $userId, array $seedIds = []): array {
                 $rows = $this->query
                     ->select('group_id')
                     ->from('security_group_membership')
-                    ->where('member_type', $memberType, false)
-                    ->where('member_id', $memberId, false)
+                    ->where('member_id', $userId, false)
                     ->rows();
 
                 $ids = $seedIds;
@@ -289,19 +278,17 @@ final class SubjectGroupsTest extends TestCase {
                 $this->pdo = $pdo;
             }
 
-            public function resolve(int $memberType, int $memberId, array $seedIds = []): array {
+            public function resolve(int $userId, array $seedIds = []): array {
                 $cteSql = sprintf(
                     "SELECT g.group_id, g.parent_group_id\n"
                     . "FROM security_group_membership gm\n"
                     . "INNER JOIN security_groups g ON g.group_id = gm.group_id\n"
-                    . "WHERE gm.member_type = %d\n"
-                    . "  AND gm.member_id = %d\n"
+                    . "WHERE gm.member_id = %d\n"
                     . "UNION ALL\n"
                     . "SELECT p.group_id, p.parent_group_id\n"
                     . "FROM security_groups p\n"
                     . "INNER JOIN group_tree gt ON gt.parent_group_id = p.group_id",
-                    $memberType,
-                    $memberId
+                    $userId
                 );
 
                 $this->lastSql = (string) $this->query
@@ -360,16 +347,13 @@ final class SubjectGroupsTest extends TestCase {
 
     private function seedHierarchyFixture(\PDO $pdo): void {
         $pdo->exec('CREATE TABLE security_groups (group_id INTEGER PRIMARY KEY, parent_group_id INTEGER NULL, name TEXT)');
-        $pdo->exec('CREATE TABLE security_group_membership (member_type INTEGER NOT NULL, member_id INTEGER NOT NULL, group_id INTEGER NOT NULL)');
+        $pdo->exec('CREATE TABLE security_group_membership (member_id INTEGER NOT NULL, group_id INTEGER NOT NULL)');
 
         $pdo->exec("INSERT INTO security_groups (group_id, parent_group_id, name) VALUES (743, 800, 'G743')");
         $pdo->exec("INSERT INTO security_groups (group_id, parent_group_id, name) VALUES (800, 900, 'G800')");
         $pdo->exec("INSERT INTO security_groups (group_id, parent_group_id, name) VALUES (900, 1000, 'G900')");
         $pdo->exec("INSERT INTO security_groups (group_id, parent_group_id, name) VALUES (1000, NULL, 'G1000')");
 
-        $pdo->exec(sprintf(
-            'INSERT INTO security_group_membership (member_type, member_id, group_id) VALUES (%d, 321, 743)',
-            SubjectType::USER
-        ));
+        $pdo->exec('INSERT INTO security_group_membership (member_id, group_id) VALUES (321, 743)');
     }
 }

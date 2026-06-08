@@ -31,19 +31,15 @@ final class SubjectMembershipIdsResolver implements SubjectIdsResolverInterface
         $this->hierarchyLoader  = $hierarchyLoader;
     }
 
-    public function resolve(int $memberType, int $memberId, array $seedIds = []): array
+    public function resolve(int $userId, array $seedIds = []): array
     {
-        if ($memberType <= 0) {
-            throw new EInvalidArgumentException(sprintf('Member type must be a positive integer, got %d.', $memberType));
-        }
-
-        if ($memberId <= 0) {
-            throw new EInvalidArgumentException(sprintf('Member id must be a positive integer, got %d.', $memberId));
+        if ($userId <= 0) {
+            throw new EInvalidArgumentException(sprintf('User id must be a positive integer, got %d.', $userId));
         }
 
         $directIds = $this->normalizeIds(array_merge(
             $seedIds,
-            $this->membershipLoader->loadDirectMembershipIds($memberType, $memberId)
+            $this->membershipLoader->loadDirectMembershipIds($userId)
         ));
 
         if ($this->hierarchyLoader === null || empty($directIds)) {

@@ -28,19 +28,6 @@ interface SubjectHydratorInterface
     ): void;
 
     /**
-     * Hydrates subject group ids for typed identity tuple (member_type, member_id).
-     *
-     * @param list<int> $seedIds
-     */
-    public function hydrateGroupIdsForMember(
-        Subject $subject,
-        SubjectIdsResolverInterface $resolver,
-        int $memberType,
-        int $memberId,
-        array $seedIds = []
-    ): void;
-
-    /**
      * Hydrates subject role ids for default USER-based identity.
      *
      * @param list<int> $seedIds
@@ -48,19 +35,6 @@ interface SubjectHydratorInterface
     public function hydrateRoleIdsForUser(
         Subject $subject,
         SubjectIdsResolverInterface $resolver,
-        array $seedIds = []
-    ): void;
-
-    /**
-     * Hydrates subject role ids for typed identity tuple (member_type, member_id).
-     *
-     * @param list<int> $seedIds
-     */
-    public function hydrateRoleIdsForMember(
-        Subject $subject,
-        SubjectIdsResolverInterface $resolver,
-        int $memberType,
-        int $memberId,
         array $seedIds = []
     ): void;
 }
