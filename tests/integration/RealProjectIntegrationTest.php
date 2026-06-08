@@ -158,7 +158,7 @@ final class RealProjectIntegrationTest extends TestCase
             2 => ['pipe', 'w'],
         ];
 
-        $process = proc_open($command, $descriptors, $pipes, $cwd);
+        $process = @proc_open($command, $descriptors, $pipes, $cwd);
 
         if (!is_resource($process)) {
             return [1, 'Could not start process.'];

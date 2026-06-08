@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use Scaleum\Stdlib\Helper\JsonHelper;
+use Scaleum\Stdlib\Helpers\JsonHelper;
 
 class JsonHelperTest extends TestCase
 {

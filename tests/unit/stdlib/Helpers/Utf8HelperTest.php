@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use Scaleum\Stdlib\Helper\Utf8Helper;
+use Scaleum\Stdlib\Helpers\Utf8Helper;
 
 class Utf8HelperTest extends TestCase
 {
@@ -9,7 +9,7 @@ class Utf8HelperTest extends TestCase
     {
         $this->assertEquals('Hello?', Utf8Helper::clean("Hello\x80"));
         $this->assertEquals('Hello World', Utf8Helper::clean('Hello World'));
-        $this->assertEquals('Hello*', Utf8Helper::clean("Hello\x80", '*'));
+        $this->assertEquals('Hello?', Utf8Helper::clean("Hello\x80", '*'));
     }
 
     public function testCleanUtf8Bom()

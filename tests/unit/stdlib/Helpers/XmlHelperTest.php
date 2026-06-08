@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use Scaleum\Stdlib\Helper\XmlHelper;
+use Scaleum\Stdlib\Helpers\XmlHelper;
 
 class XmlHelperTest extends TestCase
 {

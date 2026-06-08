@@ -13,6 +13,8 @@ use Scaleum\Logger\LoggerManager;
 use Scaleum\Services\ServiceLocator;
 
 class RecordsetTest extends TestCase {
+    public const TABLE = 'recordset_users';
+
     private Database $database;
 
     protected function printLine(string $line) {
@@ -53,13 +55,13 @@ class RecordsetTest extends TestCase {
                 $schema->columnString(255)->setColumn('email')->setNotNull(),
                 $schema->columnTimestamp()->setColumn('created_at')->setNotNull()->setDefaultValue('CURRENT_TIMESTAMP', FALSE),
             ])
-            ->createTable('users', true);
+            ->createTable(self::TABLE, true);
     }
 
     public function testAddRecords(): void {
         $recordset = new Recordset($this->database);
         for ($i = 1; $i <= 100; $i++) {
-            $recordset->add((new UserModel($this->database))->load([
+            $recordset->add((new RecordsetUserModel($this->database))->load([
                 'username' => 'user' . $i,
                 'email'    => 'user' . $i . '@example.com',
             ]));
@@ -108,22 +110,22 @@ class RecordsetTest extends TestCase {
     }
 
     public function testRemoveRecords(): void {
-        $this->database->setQuery('DELETE FROM users')->execute();
+        $this->database->setQuery('DELETE FROM ' . self::TABLE)->execute();
     }
 }
 
 class Recordset extends RecordsetAbstract {
     public function __construct(Database $database) {
-        parent::__construct($database, UserModel::class);
+        parent::__construct($database, RecordsetUserModel::class);
     }
 
     protected function getQuery(): string {
-        return 'SELECT * FROM users LIMIT :limit OFFSET :offset';
+        return 'SELECT * FROM ' . RecordsetTest::TABLE . ' LIMIT :limit OFFSET :offset';
     }
 }
 
-class UserModel extends ModelAbstract {
-    protected ?string $table     = 'users';
+class RecordsetUserModel extends ModelAbstract {
+    protected ?string $table     = RecordsetTest::TABLE;
     protected string $primaryKey = 'id';
 }
 

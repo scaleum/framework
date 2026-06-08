@@ -15,6 +15,7 @@
         </testsuite>
         <testsuite name="Integration Tests">
             <directory>tests/integration</directory>
+            <exclude>tests/integration/demo/vendor</exclude>
         </testsuite>
     </testsuites>
     <php>
