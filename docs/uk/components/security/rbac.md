@@ -530,6 +530,100 @@ $outdated = $registry->getOutdatedInOther($legacyRegistry);
 // Ресурси, які є в legacy-реєстрі, але більше не оголошені в поточному коді.
 ```
 
+### Зберігання/завантаження реєстру ресурсів з БД (важливо про `permissions`)
+
+Для каталогу ресурсів зручно мати окрему таблицю:
+
+```sql
+CREATE TABLE rbac_resources (
+    resource_id VARCHAR(64) NOT NULL,
+    resource_name VARCHAR(128) NOT NULL,
+    description TEXT NULL,
+    permissions_json TEXT NOT NULL,
+    PRIMARY KEY (resource_id)
+);
+```
+
+Приклад даних:
+
+```sql
+INSERT INTO rbac_resources (resource_id, resource_name, description, permissions_json) VALUES
+('document', 'Document', 'Документи', '[1,2,4]'),
+('report', 'Report', 'Звіти', '[1]');
+```
+
+Ключовий момент: у `RbacResourceRegistry::registerDefinitions(...)` поле `permissions`
+очікується як `list<int>` (список бітів), а не як єдина OR-маска.
+
+Тобто:
+
+- коректно: `permissions => [1, 2, 4]`
+- некоректно: `permissions => 7`
+
+Приклад завантаження з БД:
+
+```php
+use Scaleum\Security\Services\RbacResourceRegistry;
+use Scaleum\Storages\PDO\Database;
+
+final class PdoRbacResourceRegistryLoader
+{
+    public function __construct(private Database $database)
+    {
+    }
+
+    public function loadInto(RbacResourceRegistry $registry): void
+    {
+        $rows = $this->database
+            ->getQueryBuilder()
+            ->select(['resource_id', 'resource_name', 'description', 'permissions_json'])
+            ->from('rbac_resources')
+            ->rows();
+
+        if (! is_array($rows)) {
+            return;
+        }
+
+        $definitions = array_map(static function (array $row): array {
+            $decoded = json_decode((string) ($row['permissions_json'] ?? '[]'), true);
+            $permissions = is_array($decoded) ? array_values(array_map('intval', $decoded)) : [];
+
+            return [
+                'id' => (string) $row['resource_id'],
+                'name' => (string) $row['resource_name'],
+                'description' => isset($row['description']) ? (string) $row['description'] : null,
+                'permissions' => $permissions,
+            ];
+        }, $rows);
+
+        $registry->registerDefinitions($definitions);
+    }
+}
+```
+
+Якщо в БД зберігаєте маску (`7`) замість масиву (`[1,2,4]`), перед реєстрацією
+її потрібно розкласти у список бітів, інакше контракт `registerDefinitions` буде порушено.
+
+Мінімальний варіант перетворення маски у список бітів:
+
+```php
+function permissionsMaskToList(int $mask): array
+{
+    $bits = [];
+
+    for ($i = 0; $i < 31; $i++) {
+        $bit = 1 << $i;
+        if (($mask & $bit) !== 0) {
+            $bits[] = $bit;
+        }
+    }
+
+    return $bits;
+}
+
+// permissionsMaskToList(7) => [1, 2, 4]
+```
+
 Наглядний приклад "було -> стало -> різниця":
 
 ```php
