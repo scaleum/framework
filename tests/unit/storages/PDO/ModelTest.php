@@ -6,6 +6,10 @@ use Scaleum\Storages\PDO\Database;
 use Scaleum\Storages\PDO\ModelAbstract;
 
 class ModelTest extends TestCase {
+    public const TABLE_USERS = 'model_users';
+    public const TABLE_PROFILES = 'model_profiles';
+    public const TABLE_COMMENTS = 'model_comments';
+
     private Database $database;
 
     protected function setUp(): void {
@@ -23,6 +27,10 @@ class ModelTest extends TestCase {
             'multiple_commands' => true,
         ]);
 
+        $this->database->setQuery('DROP TABLE IF EXISTS ' . self::TABLE_COMMENTS)->execute();
+        $this->database->setQuery('DROP TABLE IF EXISTS ' . self::TABLE_PROFILES)->execute();
+        $this->database->setQuery('DROP TABLE IF EXISTS ' . self::TABLE_USERS)->execute();
+
         $schema = $this->database->getSchemaBuilder();
         $schema
             ->prepare(value: false)
@@ -34,7 +42,7 @@ class ModelTest extends TestCase {
                 $schema->columnTimestamp()->setColumn('created_at')->setNotNull()->setDefaultValue('CURRENT_TIMESTAMP', FALSE),
             ])
             // ->addIndex($schema->indexUnique(['name'], 'key_name'))
-            ->createTable('users', true);
+            ->createTable(self::TABLE_USERS, true);
 
         // $this->printSection("Create table: users", (string) $this->database->getQuery());
 
@@ -48,8 +56,8 @@ class ModelTest extends TestCase {
                 $schema->columnString(255)->setColumn('city')->setNotNull(),
                 $schema->columnString(255)->setColumn('bio')->setNotNull(),
             ])
-            ->addIndex($schema->indexForeign('user_id', 'fk_users_profile')->reference('users', 'id', 'CASCADE'))
-            ->createTable('profiles', true);
+            ->addIndex($schema->indexForeign('user_id', 'fk_model_users_profile')->reference(self::TABLE_USERS, 'id', 'CASCADE'))
+            ->createTable(self::TABLE_PROFILES, true);
 
         // $this->printSection("Create table: profiles", (string) $this->database->getQuery());
 
@@ -63,8 +71,8 @@ class ModelTest extends TestCase {
                 $schema->columnString(255)->setColumn('text')->setNotNull(),
                 $schema->columnTimestamp()->setColumn('created_at')->setNotNull()->setDefaultValue('CURRENT_TIMESTAMP', FALSE),
             ])
-            ->addIndex($schema->indexForeign('user_id', 'fk_users_comments')->reference('users', 'id', 'CASCADE'))
-            ->createTable('comments', true);
+            ->addIndex($schema->indexForeign('user_id', 'fk_model_users_comments')->reference(self::TABLE_USERS, 'id', 'CASCADE'))
+            ->createTable(self::TABLE_COMMENTS, true);
 
         // $this->printSection("Create table: comments", (string) $this->database->getQuery());
 
@@ -137,7 +145,22 @@ class ModelTest extends TestCase {
     }
 
     public function testUserModelFind(): void {
-        $user = (new UserModel($this->database))->find(1);
+        $seed = new UserModel($this->database);
+        $seed->load([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'profile' => [
+                'city' => 'Toronto',
+                'bio' => 'Web Developer',
+            ],
+            'comments' => [
+                ['text' => 'Первый комментарий'],
+                ['text' => 'Второй комментарий'],
+            ],
+        ])->insert();
+
+        $user = (new UserModel($this->database))->find((int) $seed->id);
+        $this->assertNotNull($user);
         // $this->printSection("users->find(id)", (string) $this->database->getQuery());
 
         $this->printLine("\n");
@@ -187,7 +210,7 @@ class ModelTest extends TestCase {
 }
 
 class UserModel extends ModelAbstract {
-    protected ?string $table     = 'users';
+    protected ?string $table     = ModelTest::TABLE_USERS;
     protected string $primaryKey = 'id';
 
     protected function getRelations(): array {
@@ -211,7 +234,7 @@ class UserModel extends ModelAbstract {
 }
 
 class ProfileModel extends ModelAbstract {
-    protected ?string $table     = 'profiles';
+    protected ?string $table     = ModelTest::TABLE_PROFILES;
     protected string $primaryKey = 'id';
 
     public function findByUserId(mixed $userId): ?self {
@@ -220,7 +243,7 @@ class ProfileModel extends ModelAbstract {
 }
 
 class CommentModel extends ModelAbstract {
-    protected ?string $table     = 'comments';
+    protected ?string $table     = ModelTest::TABLE_COMMENTS;
     protected string $primaryKey = 'id';
 
     public function findByUserId(mixed $userId): array {

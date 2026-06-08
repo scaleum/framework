@@ -8,6 +8,11 @@ use Scaleum\Storages\PDO\Database;
 
 class ColumnBuilderTest extends TestCase {
     private Database $database;
+
+    private function normalizeSql(string $sql): string {
+        return (string) preg_replace('/\s+/', ' ', trim($sql));
+    }
+
     protected function setUp(): void {
         $this->database = new Database([
             'dsn'      => 'mysql:host=localhost;dbname=test',
@@ -28,7 +33,7 @@ class ColumnBuilderTest extends TestCase {
         fwrite(STDOUT, (string) $sql);
         fwrite(STDOUT, "\n");
 
-        $this->assertEquals("`id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Primary key'", (string) $sql);
+        $this->assertEquals("`id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Primary key'", $this->normalizeSql((string) $sql));
     }
 
     public function testColumnString(): void {
@@ -44,7 +49,7 @@ class ColumnBuilderTest extends TestCase {
         fwrite(STDOUT, (string) $sql);
         fwrite(STDOUT, "\n");
 
-        $this->assertEquals("`str` varchar(32) NOT NULL DEFAULT 'default' COMMENT 'Some field'", (string)$sql);
+        $this->assertEquals("`str` varchar(32) NOT NULL DEFAULT 'default' COMMENT 'Some field'", $this->normalizeSql((string) $sql));
     }
 
     public function testColumnText(): void {
@@ -59,7 +64,7 @@ class ColumnBuilderTest extends TestCase {
         fwrite(STDOUT, (string) $sql);
         fwrite(STDOUT, "\n");
 
-        $this->assertEquals("`text` text NULL COMMENT 'Some text field'", (string)$sql);
+        $this->assertEquals("`text` text NULL COMMENT 'Some text field'", $this->normalizeSql((string) $sql));
     }
     
     public function testColumnInt(): void {
@@ -74,7 +79,7 @@ class ColumnBuilderTest extends TestCase {
         fwrite(STDOUT, (string) $sql);
         fwrite(STDOUT, "\n");
 
-        $this->assertEquals("`int` int(11) NOT NULL DEFAULT 123", (string)$sql);
+        $this->assertEquals("`int` int(11) NOT NULL DEFAULT 123", $this->normalizeSql((string) $sql));
     }
     
     public function testColumnTinyInt(): void {
@@ -89,7 +94,7 @@ class ColumnBuilderTest extends TestCase {
         fwrite(STDOUT, (string) $sql);
         fwrite(STDOUT, "\n");
 
-        $this->assertEquals("`tinyint` tinyint(5) NOT NULL DEFAULT 12345", (string)$sql);
+        $this->assertEquals("`tinyint` tinyint(5) NOT NULL DEFAULT 12345", $this->normalizeSql((string) $sql));
     }
 
     public function testColumnFloat(): void {
@@ -104,7 +109,7 @@ class ColumnBuilderTest extends TestCase {
         fwrite(STDOUT, (string) $sql);
         fwrite(STDOUT, "\n");
 
-        $this->assertEquals("`float` float(10,2) NOT NULL DEFAULT 123.45", (string)$sql);
+        $this->assertEquals("`float` float(10,2) NOT NULL DEFAULT 123.45", $this->normalizeSql((string) $sql));
     }
     
     public function testColumnTimestamp(): void {
@@ -119,6 +124,6 @@ class ColumnBuilderTest extends TestCase {
         fwrite(STDOUT, (string) $sql);
         fwrite(STDOUT, "\n");
 
-        $this->assertEquals("`date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP", (string)$sql);
+        $this->assertEquals("`date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP", $this->normalizeSql((string) $sql));
     }     
 }

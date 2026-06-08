@@ -1,5 +1,6 @@
 <?php
-declare (strict_types = 1);
+
+declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -20,8 +21,10 @@ use Scaleum\Stdlib\Helpers\StringHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ExceptionOutputConsole extends ExceptionOutputAbstarct {
-    public function render(\Throwable $exception): void {
+class ExceptionOutputConsole extends ExceptionOutputAbstarct
+{
+    public function render(\Throwable $exception): void
+    {
         $console = @fopen("php://stdout", "w");
         @fwrite($console, $this->formatException($exception));
         @fclose($console);
@@ -33,12 +36,13 @@ class ExceptionOutputConsole extends ExceptionOutputAbstarct {
      * @param \Throwable $exception The exception to be formalized.
      * @return string The formalized string representation of the exception.
      */
-    public function formatException(\Throwable $exception, ?int $level = 0): string {
+    public function formatException(\Throwable $exception, ?int $level = 0): string
+    {
 
-        $result = PHP_EOL;
+        $result  = PHP_EOL;
         $result .= str_pad($level ? "[Previous {$level}]" : "[Error]", 64, '-', STR_PAD_RIGHT) . PHP_EOL;
         $result .= str_pad("Class: ", 10, ' ', STR_PAD_RIGHT) . StringHelper::className($exception, ! $this->allowFullnamespace) . '(' . $exception->getCode() . ')' . PHP_EOL;
-        $result .= str_pad("Message: ", 10, ' ', STR_PAD_RIGHT) . $exception->getMessage() . PHP_EOL;
+        $result .= str_pad("Message: ", 10, ' ', STR_PAD_RIGHT) . $this->getExceptionMessage($exception) . PHP_EOL;
         if ($this->includeDetails) {
             $result .= str_pad("File: ", 10, ' ', STR_PAD_RIGHT) . PathHelper::overlapPath($exception->getFile(), $this->basePath) . ':' . $exception->getLine() . PHP_EOL;
         }
@@ -52,7 +56,7 @@ class ExceptionOutputConsole extends ExceptionOutputAbstarct {
             $result .= $this->formatException($previous, ++$level);
         }
 
-        return $result.PHP_EOL;
+        return $result . PHP_EOL;
     }
 
     /**
@@ -61,7 +65,8 @@ class ExceptionOutputConsole extends ExceptionOutputAbstarct {
      * @param array $trace The trace array to be formalized.
      * @return string The formalized trace.
      */
-    public function formatTrace(array $trace): string {
+    public function formatTrace(array $trace): string
+    {
         $result = "";
         $pad    = count($trace) + 1;
         foreach ($trace as $key => $value) {

@@ -1,7 +1,6 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 use Scaleum\Stdlib\Base\Hydrator;
 
 class AutoInitializedTest extends TestCase

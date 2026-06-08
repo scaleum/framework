@@ -1,7 +1,6 @@
 <?php
 declare (strict_types = 1);
 
-use \PDO;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Scaleum\Cache\Cache;

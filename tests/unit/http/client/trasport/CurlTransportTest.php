@@ -13,6 +13,16 @@ use Scaleum\Stdlib\Exceptions\EHttpException;
 use Scaleum\Stdlib\Exceptions\ERuntimeError;
 
 class CurlTransportTest extends TestCase {
+    private function isLocalTestServerAvailable(): bool {
+        $connection = @fsockopen('127.0.0.1', 8080, $errorCode, $errorMessage, 0.2);
+        if (!is_resource($connection)) {
+            return false;
+        }
+
+        fclose($connection);
+        return true;
+    }
+
     public function testGetAndSetAuthType() {
         $transport = new CurlTransport();
         $transport->setAuthType('BASIC');
@@ -98,6 +108,10 @@ class CurlTransportTest extends TestCase {
     }
 
     public function testSendRequestToLocal() {
+        if (!$this->isLocalTestServerAvailable()) {
+            $this->markTestSkipped('Local test server is not available at http://localhost:8080');
+        }
+
         $transport = new CurlTransport([
             'timeout' => 5,
             'redirectsCount' => 10
@@ -115,6 +129,10 @@ class CurlTransportTest extends TestCase {
     }
 
     public function testSendArray() {
+        if (!$this->isLocalTestServerAvailable()) {
+            $this->markTestSkipped('Local test server is not available at http://localhost:8080');
+        }
+
         $transport = new CurlTransport([
             'timeout' => 5,
             'redirectsCount' => 10

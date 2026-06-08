@@ -1,5 +1,6 @@
 <?php
-declare (strict_types = 1);
+
+declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -22,10 +23,12 @@ use Scaleum\Stdlib\Helpers\StringHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class ExceptionOutputHttp extends ExceptionOutputAbstarct {
+class ExceptionOutputHttp extends ExceptionOutputAbstarct
+{
     protected int $statusCode = 500;
 
-    public function render(\Throwable $exception): void {
+    public function render(\Throwable $exception): void
+    {
         HttpHelper::setHeader('Content-Type', sprintf('%s; charset=utf-8', HttpHelper::getAllowedMimeType($format = HttpHelper::getAcceptFormat())));
         HttpHelper::setStatusHeader(
             $this->statusCode = HttpHelper::isStatusCode(
@@ -35,45 +38,50 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
         echo $this->formatException($exception, $format);
     }
 
-    protected function formatException(\Throwable $exception, ?string $format = null): string {
+    protected function formatException(\Throwable $exception, ?string $format = null): string
+    {
         if ($format == null) {
             $format = HttpHelper::getAcceptFormat();
         }
 
-        $result = $exception->getMessage();
+        $result = $this->getExceptionMessage($exception);
         switch ($format) {
-        case HttpHelper::FORMAT_JSON:
-        case HttpHelper::FORMAT_JSONP:
-            $result = $this->formatAsJson($exception);
-            break;
-        case HttpHelper::FORMAT_SERIALIZED:
-            $result = $this->formatAsSerializable($exception);
-            break;
-        case HttpHelper::FORMAT_XML:
-            $result = $this->formatAsXml($exception);
-            break;
-        case HttpHelper::FORMAT_PHP:
-        case HttpHelper::FORMAT_HTML:
-        case HttpHelper::FORMAT_HTM:
-        default:
-            $result = $this->formatAsHtml($exception);
+            case HttpHelper::FORMAT_JSON:
+            case HttpHelper::FORMAT_JSONP:
+                $result = $this->formatAsJson($exception);
+                break;
+            case HttpHelper::FORMAT_SERIALIZED:
+                $result = $this->formatAsSerializable($exception);
+                break;
+            case HttpHelper::FORMAT_XML:
+                $result = $this->formatAsXml($exception);
+                break;
+            case HttpHelper::FORMAT_PHP:
+            case HttpHelper::FORMAT_HTML:
+            case HttpHelper::FORMAT_HTM:
+            default:
+                $result = $this->formatAsHtml($exception);
         }
         return $result;
     }
 
-    protected function formatAsSerializable(\Throwable $exception): string {
+    protected function formatAsSerializable(\Throwable $exception): string
+    {
         return ArrayHelper::castToSerialize($this->errorToArray($exception));
     }
 
-    protected function formatAsJson(\Throwable $exception): string {
+    protected function formatAsJson(\Throwable $exception): string
+    {
         return json_encode($this->errorToArray($exception), JSON_PRETTY_PRINT);
     }
 
-    protected function formatAsXml(\Throwable $exception): string {
+    protected function formatAsXml(\Throwable $exception): string
+    {
         return ArrayHelper::castToXml($this->errorToArray($exception), 'exception');
     }
 
-    protected function formatAsHtml(\Throwable $exception): string {
+    protected function formatAsHtml(\Throwable $exception): string
+    {
         $statusCode    = $this->statusCode;
         $statusMessage = HttpHelper::getStatusMessage($statusCode);
 
@@ -94,9 +102,9 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
             return $result;
         };
 
-        $result = "<!DOCTYPE html><html><head><title>HTTP Error {$statusCode} - {$statusMessage}</title></head><body>";
+        $result  = "<!DOCTYPE html><html><head><title>HTTP Error {$statusCode} - {$statusMessage}</title></head><body>";
         $result .= "<h2>HTTP Error {$statusCode} - {$statusMessage}</h2>";
-        $result .= '<h3 style="color:red">' . $exception->getMessage() . '</h3>';
+        $result .= '<h3 style="color:red">' . htmlspecialchars($this->getExceptionMessage($exception, $statusMessage)) . '</h3>';
         if ($this->includeDetails) {
             $result .= '<div>' . $encode($this->errorToArray($exception)) . '</div>';
         }
@@ -104,11 +112,12 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
         return $result;
     }
 
-    protected function errorToArray(\Throwable $exception): array {
+    protected function errorToArray(\Throwable $exception): array
+    {
         # Prepare result
         $result = [
             'class'   => StringHelper::className($exception, ! $this->allowFullnamespace) . '(' . $exception->getCode() . ')',
-            'message' => $exception->getMessage(),
+            'message' => $this->getExceptionMessage($exception),
             'file'    => PathHelper::overlapPath($exception->getFile(), $this->basePath) . ':' . $exception->getLine(),
         ];
 
@@ -125,9 +134,10 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
         return $result;
     }
 
-    protected function errorTraceToArray(array $trace): array {
+    protected function errorTraceToArray(array $trace): array
+    {
         return array_map(function ($item) {
-            $result = '';
+            $result  = '';
             $result .= $item['class'] ? StringHelper::className($item['class'], ! $this->allowFullnamespace) : '';
             $result .= $item['type'] ?: "";
             $result .= $item['function'] ? "{$item['function']}()" : '';
@@ -136,6 +146,5 @@ class ExceptionOutputHttp extends ExceptionOutputAbstarct {
             return $result;
         }, $trace);
     }
-
 }
 /** End of RenderHttp **/

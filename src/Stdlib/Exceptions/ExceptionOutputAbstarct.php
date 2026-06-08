@@ -46,5 +46,21 @@ abstract class ExceptionOutputAbstarct extends Hydrator implements ExceptionRend
      * @var bool $allowFullnamespace
      */
     protected bool $allowFullnamespace = false;
+
+    protected function getExceptionMessage(
+        \Throwable $exception,
+        ?string $fallback = 'Unknown error'
+    ): string {
+        $message = trim((string) $exception->getMessage());
+        if ($message === '') {
+            return (string) $fallback;
+        }
+
+        if (($position = stripos($message, 'Stack trace:')) !== false) {
+            $message = rtrim(substr($message, 0, $position));
+        }
+
+        return $message;
+    }
 }
 /** End of ExceptionOutputAbstarct **/

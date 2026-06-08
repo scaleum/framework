@@ -1,6 +1,6 @@
 <?php
 use PHPUnit\Framework\TestCase;
-use Scaleum\Stdlib\Helper\BytesHelper;
+use Scaleum\Stdlib\Helpers\BytesHelper;
 
 class BytesHelperTest extends TestCase
 {

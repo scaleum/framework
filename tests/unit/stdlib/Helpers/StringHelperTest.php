@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use Scaleum\Stdlib\Helper\StringHelper;
+use Scaleum\Stdlib\Helpers\StringHelper;
 
 class StringHelperTest extends TestCase
 {
@@ -17,11 +17,11 @@ class StringHelperTest extends TestCase
         $this->assertFalse(StringHelper::isAscii('Héllo Wörld'));
     }
 
-    public function testClearInvisibleChars()
+    public function testCleanInvisibleChars()
     {
-        $this->assertEquals('HelloWorld', StringHelper::clearInvisibleChars("Hello\x00World"));
-        $this->assertEquals('Hello World', StringHelper::clearInvisibleChars('Hello World'));
-        $this->assertEquals('HelloWorld', StringHelper::clearInvisibleChars('Hello%00World', true));
+        $this->assertEquals('HelloWorld', StringHelper::cleanInvisibleChars("Hello\x00World"));
+        $this->assertEquals('Hello World', StringHelper::cleanInvisibleChars('Hello World'));
+        $this->assertEquals('HelloWorld', StringHelper::cleanInvisibleChars('Hello%00World', true));
     }
 
     public function testClearNewLines()
@@ -35,9 +35,9 @@ class StringHelperTest extends TestCase
     public function testClassName()
     {
         $this->assertEquals('StringHelper', StringHelper::className(new StringHelper(), true));
-        $this->assertEquals('Scaleum\Stdlib\Helper\StringHelper', StringHelper::className(new StringHelper()));
-        $this->assertEquals('StringHelper', StringHelper::className('Scaleum\Stdlib\Helper\StringHelper', true));
-        $this->assertEquals('Scaleum\Stdlib\Helper\StringHelper', StringHelper::className('Scaleum\Stdlib\Helper\StringHelper'));
+        $this->assertEquals('Scaleum\Stdlib\Helpers\StringHelper', StringHelper::className(new StringHelper()));
+        $this->assertEquals('StringHelper', StringHelper::className('Scaleum\Stdlib\Helpers\StringHelper', true));
+        $this->assertEquals('Scaleum\Stdlib\Helpers\StringHelper', StringHelper::className('Scaleum\Stdlib\Helpers\StringHelper'));
     }
 
     public function testNormalizeName()

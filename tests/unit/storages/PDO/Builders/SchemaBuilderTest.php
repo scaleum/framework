@@ -8,8 +8,8 @@ use Scaleum\Storages\PDO\Database;
 class SchemaBuilderTest extends TestCase {
     private Database $database;
 
-    protected string $table_1 = 'users';
-    protected string $table_2 = 'users_posts';
+    protected string $table_1 = 'schema_builder_users';
+    protected string $table_2 = 'schema_builder_users_posts';
 
     protected function setUp(): void {
         $file           = __DIR__ . '/test.sqlite';
@@ -87,7 +87,7 @@ class SchemaBuilderTest extends TestCase {
             ->prepare(false)
             ->optimize(false)
             ->createIndex([
-                $schema->indexForeign('user_id', 'fk_users_posts')->reference('users', 'user_id'), // Not supported in: SQLite
+                $schema->indexForeign('user_id', 'fk_users_posts')->reference($this->table_1, 'user_id'), // Not supported in: SQLite
             ], $this->table_2);
 
         $this->console('Add index', (string) $this->database->getQuery());

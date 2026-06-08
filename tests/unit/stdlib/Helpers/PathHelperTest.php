@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use Scaleum\Stdlib\Helper\PathHelper;
+use Scaleum\Stdlib\Helpers\PathHelper;
 
 class PathHelperTest extends TestCase
 {
