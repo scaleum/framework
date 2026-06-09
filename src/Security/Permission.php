@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -46,9 +46,8 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
  * - can be increased up to 63 bits on 64-bit platforms
  * - use `Permission::setMaxBits(63)` when your storage/runtime supports it
  */
-class Permission implements PermissionInterface
-{
-    public const DEFAULT_MAX_BITS = 31;
+class Permission implements PermissionInterface {
+    public const DEFAULT_MAX_BITS  = 31;
     public const ABSOLUTE_MAX_BITS = 63;
 
     public const NONE = PermissionInterface::NONE;
@@ -57,7 +56,7 @@ class Permission implements PermissionInterface
     public const WRITE   = PermissionInterface::WRITE;
     public const DELETE  = PermissionInterface::DELETE;
     public const EXECUTE = PermissionInterface::EXECUTE;
-    public const PRINT   = PermissionInterface::PRINT;
+    public const PRINT   = PermissionInterface::PRINT ;
     public const EXPORT  = PermissionInterface::EXPORT;
     public const IMPORT  = PermissionInterface::IMPORT;
     public const SHARE   = PermissionInterface::SHARE;
@@ -66,13 +65,13 @@ class Permission implements PermissionInterface
     // In subclasses prefer static::all() to avoid manual synchronization.
     public const BASE_ALL =
     self::READ |
-        self::WRITE |
-        self::DELETE |
-        self::EXECUTE |
-        self::PRINT  |
-        self::EXPORT |
-        self::IMPORT |
-        self::SHARE;
+    self::WRITE |
+    self::DELETE |
+    self::EXECUTE |
+    self::PRINT  |
+    self::EXPORT |
+    self::IMPORT |
+    self::SHARE;
 
     /**
      * Base labels for framework-level permissions.
@@ -115,8 +114,7 @@ class Permission implements PermissionInterface
      * Returns true when $mask contains ALL bits of $permission.
      * For NONE checks whether $mask itself is 0.
      */
-    public static function has(int $mask, int $permission): bool
-    {
+    public static function has(int $mask, int $permission): bool {
         if ($permission === self::NONE) {
             return $mask === self::NONE;
         }
@@ -127,8 +125,7 @@ class Permission implements PermissionInterface
     /**
      * Returns true when $mask contains AT LEAST ONE bit of $permission.
      */
-    public static function hasAny(int $mask, int $permission): bool
-    {
+    public static function hasAny(int $mask, int $permission): bool {
         return ($mask & $permission) !== 0;
     }
 
@@ -136,8 +133,7 @@ class Permission implements PermissionInterface
      * Returns the human-readable label for a single permission bit,
      * or null when the bit is not registered.
      */
-    public static function label(int $permission): ?string
-    {
+    public static function label(int $permission): ?string {
         static::assertPermissionRegistryWithinLimit();
         return static::$perms[$permission] ?? null;
     }
@@ -145,8 +141,7 @@ class Permission implements PermissionInterface
     /**
      * Gets the current soft limit for allowed permission bits.
      */
-    public static function getMaxBits(): int
-    {
+    public static function getMaxBits(): int {
         return static::$maxBits;
     }
 
@@ -157,8 +152,7 @@ class Permission implements PermissionInterface
      * - 31 (default): bits 0..30
      * - 63: bits 0..62 (on 64-bit platforms)
      */
-    public static function setMaxBits(int $maxBits): void
-    {
+    public static function setMaxBits(int $maxBits): void {
         $platformMaxBits = min(self::ABSOLUTE_MAX_BITS, (PHP_INT_SIZE * 8) - 1);
         if ($maxBits < 1 || $maxBits > $platformMaxBits) {
             throw new EInvalidArgumentException(
@@ -173,8 +167,7 @@ class Permission implements PermissionInterface
      * Returns a full permission mask based on the current permission registry.
      * Uses late static binding — subclass registries are respected.
      */
-    public static function all(): int
-    {
+    public static function all(): int {
         static::assertPermissionRegistryWithinLimit();
 
         $mask = self::NONE;
@@ -193,8 +186,7 @@ class Permission implements PermissionInterface
      *
      * @return array<int, string>  [bit => label, ...]
      */
-    public static function labels(int $mask): array
-    {
+    public static function labels(int $mask): array {
         static::assertPermissionRegistryWithinLimit();
 
         $result = [];
@@ -210,8 +202,7 @@ class Permission implements PermissionInterface
     /**
      * Ensures all registered permission bits fit within the configured limit.
      */
-    protected static function assertPermissionRegistryWithinLimit(): void
-    {
+    protected static function assertPermissionRegistryWithinLimit(): void {
         foreach (array_keys(static::$perms) as $bit) {
             $bit = (int) $bit;
 
@@ -241,8 +232,7 @@ class Permission implements PermissionInterface
     /**
      * Returns zero-based bit index for a single-bit positive integer.
      */
-    protected static function bitIndex(int $bit): int
-    {
+    protected static function bitIndex(int $bit): int {
         $index = 0;
         while ($bit > 1) {
             $bit >>= 1;

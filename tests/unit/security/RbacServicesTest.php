@@ -102,4 +102,27 @@ final class RbacServicesTest extends TestCase
         $this->assertTrue($resolver->isAllowed('obj-4', $subjectB, Permission::WRITE));
         $this->assertFalse($resolver->isAllowed('obj-4', $subjectB, Permission::READ));
     }
+
+    public function testGetStateReturnsCurrentObjectsAndPermissionMasks(): void
+    {
+        $subject = new Subject(10, [2], []);
+
+        $resolver = new RbacAccessResolver();
+        $resolver->seed('obj-state', [
+            ['subject_type' => SubjectType::USER, 'subject_id' => 10, 'permissions' => Permission::READ],
+            ['subject_type' => SubjectType::GROUP, 'subject_id' => 2, 'permissions' => Permission::WRITE],
+        ]);
+
+        $this->assertTrue($resolver->isAllowed('obj-state', $subject, Permission::READ | Permission::WRITE));
+
+        $state = $resolver->getState();
+
+        $this->assertArrayHasKey('objects', $state);
+        $this->assertArrayHasKey('permissions', $state);
+        $this->assertArrayHasKey('loaded', $state);
+        $this->assertSame(['obj-state'], $state['loaded']);
+        $this->assertArrayHasKey('obj-state', $state['objects']);
+        $this->assertArrayHasKey('obj-state', $state['permissions']);
+        $this->assertNotEmpty($state['permissions']['obj-state']);
+    }
 }
