@@ -12,46 +12,92 @@ declare(strict_types=1);
 
 namespace Scaleum\Security;
 
-final class Subject
+use Scaleum\Stdlib\Base\AttributeContainer;
+
+final class Subject extends AttributeContainer
 {
-    protected int $userId;
-
-    protected array $groupIds;
-
-    protected array $roleIds;
-
-    public function __construct(
-        int $userId,
-        array $groupIds = [],
-        array $roleIds = []
-    ) {
-        $this->userId   = $userId;
-        $this->groupIds = $groupIds;
-        $this->roleIds  = $roleIds;
-    }
-
+    /**
+     * @return int
+     */
     public function getUserId(): int
     {
-        return $this->userId;
+        return $this->getAttribute('user_id', 0);
     }
 
+    /**
+     * @param int $userId User identity id.
+     * @return void
+     */
+    public function setUserId(int $userId): void
+    {
+        $this->setAttribute('user_id', $userId);
+    }
+
+    /**
+     * @return int
+     */
+    public function getGroupId(): int
+    {
+        return $this->getAttribute('group_id', 0);
+    }
+
+    /**
+     * @param int $groupId Group id.
+     * @return void
+     */
+    public function setGroupId(int $groupId): void
+    {
+        $this->setAttribute('group_id', $groupId);
+    }
+
+    /**
+     * @return list<int>
+     */
     public function getGroupIds(): array
     {
-        return $this->groupIds;
+        return (array) $this->getAttribute('group_ids', []);
     }
 
+    /**
+     * @param list<int> $groupIds Group ids.
+     * @return void
+     */
     public function setGroupIds(array $groupIds): void
     {
-        $this->groupIds = $groupIds;
+        $this->setAttribute('group_ids', $groupIds);
     }
 
+    /**
+     * @return int
+     */
+    public function getRoleId(): int
+    {
+        return $this->getAttribute('role_id', 0);
+    }
+
+    /**
+     * @param int $roleId Role id.
+     * @return void
+     */
+    public function setRoleId(int $roleId): void
+    {
+        $this->setAttribute('role_id', $roleId);
+    }
+
+    /**
+     * @return list<int>
+     */
     public function getRoleIds(): array
     {
-        return $this->roleIds;
+        return (array) $this->getAttribute('role_ids', []);
     }
 
+    /**
+     * @param list<int> $roleIds Role ids.
+     * @return void
+     */
     public function setRoleIds(array $roleIds): void
     {
-        $this->roleIds = $roleIds;
+        $this->setAttribute('role_ids', $roleIds);
     }
 }

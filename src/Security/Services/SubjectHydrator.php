@@ -13,11 +13,21 @@ declare (strict_types = 1);
 namespace Scaleum\Security\Services;
 
 use Scaleum\Security\Contracts\SubjectHydratorInterface;
+use Scaleum\Security\Contracts\SubjectIdResolverInterface;
 use Scaleum\Security\Contracts\SubjectIdsResolverInterface;
 use Scaleum\Security\Subject;
 use Scaleum\Stdlib\Exceptions\EInvalidArgumentException;
 
 final class SubjectHydrator implements SubjectHydratorInterface {
+
+    public function hydrateGroupIdForUser(
+        Subject $subject,
+        SubjectIdResolverInterface $resolver
+    ): void{
+        $id = $resolver->resolve($subject->getUserId());
+        $subject->setGroupId($id);
+    }
+    
     public function hydrateGroupIdsForUser(
         Subject $subject,
         SubjectIdsResolverInterface $resolver,
@@ -26,6 +36,14 @@ final class SubjectHydrator implements SubjectHydratorInterface {
         $ids = $this->resolveIds($subject, $resolver, $seedIds);
         $subject->setGroupIds($ids);
     }
+
+    public function hydrateRoleIdForUser(
+        Subject $subject,
+        SubjectIdResolverInterface $resolver
+    ): void{
+        $id = $resolver->resolve($subject->getUserId());
+        $subject->setRoleId($id);
+    }    
 
     public function hydrateRoleIdsForUser(
         Subject $subject,
