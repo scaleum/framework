@@ -48,7 +48,12 @@ class LoggerGateway {
     }
 
     public static function getLogger(string $channel): ?LoggerInterface {
-        return self::getProvider()?->getLogger($channel) ?? null;
+        $provider = self::getProvider();
+        if ($provider === null || ! $provider->hasLogger($channel)) {
+            return null;
+        }
+
+        return $provider->getLogger($channel);
     }
 
     public static function hasLogger(string $channel): bool {
