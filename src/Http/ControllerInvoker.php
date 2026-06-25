@@ -22,9 +22,14 @@ use Scaleum\Stdlib\Exceptions\ERuntimeError;
  */
 class ControllerInvoker {
     public function invoke(object $controller, array $routeInfo): ResponderInterface {
+        if ($controller instanceof PreActionResponseInterface && ($response = $controller->getPreActionResponse()) instanceof ResponderInterface){
+            return $response;
+        }
+
         if ($callback = $routeInfo['callback']) {
             $method = $callback['method'] ?? null;
             $args   = $callback['args'] ?? [];
+            
             if ($method === null) {
                 throw new ERuntimeError('Controller method is not defined');
             }
@@ -39,8 +44,9 @@ class ControllerInvoker {
                 }
             }
 
-            return call_user_func_array([$controller, $method], [ ...$args]);
+            return $controller->{$method}(...$args);
         }
+
         throw new ERuntimeError('Controller callback is not defined');
     }
 }
