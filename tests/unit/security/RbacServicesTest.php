@@ -14,7 +14,7 @@ final class RbacServicesTest extends TestCase
 {
     public function testAssertAllowedThrowsWhenPermissionsAreMissing(): void
     {
-        $subject = new Subject(10, [], []);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [], 'role_ids' => []]);
 
         $resolver = new RbacAccessResolver();
         $resolver->seed('obj-assert-1', [
@@ -29,7 +29,7 @@ final class RbacServicesTest extends TestCase
 
     public function testAssertAllowedAnyDoesNotThrowWhenAnyPermissionMatches(): void
     {
-        $subject = new Subject(10, [], []);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [], 'role_ids' => []]);
 
         $resolver = new RbacAccessResolver();
         $resolver->seed('obj-assert-2', [
@@ -43,7 +43,7 @@ final class RbacServicesTest extends TestCase
 
     public function testResolverMergesPermissionsFromUserGroupAndRole(): void
     {
-        $subject = new Subject(10, [2], [7]);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2], 'role_ids' => [7]]);
 
         $resolver = new RbacAccessResolver();
         $resolver->seed('obj-1', [
@@ -57,7 +57,7 @@ final class RbacServicesTest extends TestCase
 
     public function testIsAllowedRequiresAllPermissions(): void
     {
-        $subject = new Subject(10, [2], []);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2], 'role_ids' => []]);
 
         $resolver = new RbacAccessResolver();
         $resolver->seed('obj-2', [
@@ -69,7 +69,7 @@ final class RbacServicesTest extends TestCase
 
     public function testIsAllowedAnyMatchesAtLeastOnePermission(): void
     {
-        $subject = new Subject(10, [2], []);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2], 'role_ids' => []]);
 
         $resolver = new RbacAccessResolver();
         $resolver->seed('obj-3', [
@@ -81,8 +81,8 @@ final class RbacServicesTest extends TestCase
 
     public function testResolverUsesLazyLoadOncePerObjectIdAndSupportsMultipleSubjects(): void
     {
-        $subjectA = new Subject(10, [], []);
-        $subjectB = new Subject(11, [], []);
+        $subjectA = new Subject(['user_id' => 10, 'group_ids' => [], 'role_ids' => []]);
+        $subjectB = new Subject(['user_id' => 11, 'group_ids' => [], 'role_ids' => []]);
 
         /** @var MockObject&RbacLoaderInterface $loader */
         $loader = $this->createMock(RbacLoaderInterface::class);
@@ -105,7 +105,7 @@ final class RbacServicesTest extends TestCase
 
     public function testGetStateReturnsCurrentObjectsAndPermissionMasks(): void
     {
-        $subject = new Subject(10, [2], []);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2], 'role_ids' => []]);
 
         $resolver = new RbacAccessResolver();
         $resolver->seed('obj-state', [
