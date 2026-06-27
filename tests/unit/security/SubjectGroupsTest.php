@@ -109,7 +109,7 @@ final class SubjectGroupsTest extends TestCase {
         };
 
         $hierarchyLoader = new class() implements \Scaleum\Security\Contracts\SubjectMembershipHierarchyLoaderInterface {
-            public function loadParentMembershipIds(int $membershipId): array {
+            public function loadMembershipIds(int $membershipId): array {
                 $groupId = $membershipId;
                 return match ($groupId) {
                     10      => [20],
@@ -243,7 +243,7 @@ final class SubjectGroupsTest extends TestCase {
         };
 
         $hierarchyLoader = new class() implements \Scaleum\Security\Contracts\SubjectMembershipHierarchyLoaderInterface {
-            public function loadParentMembershipIds(int $membershipId): array {
+            public function loadMembershipIds(int $membershipId): array {
                 $groupId = $membershipId;
                 return match ($groupId) {
                     743     => [800],

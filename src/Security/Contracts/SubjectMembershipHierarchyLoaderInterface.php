@@ -15,9 +15,9 @@ namespace Scaleum\Security\Contracts;
 interface SubjectMembershipHierarchyLoaderInterface
 {
     /**
-     * Loads parent membership ids for a child membership id.
+     * Loads parent|descendant membership ids for a child membership id.
      *
      * @return list<int>
      */
-    public function loadParentMembershipIds(int $membershipId): array;
+    public function loadMembershipIds(int $membershipId): array;
 }

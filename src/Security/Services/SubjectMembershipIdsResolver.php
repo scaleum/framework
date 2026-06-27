@@ -55,7 +55,7 @@ final class SubjectMembershipIdsResolver implements SubjectIdsResolverInterface
 
         while (! empty($queue)) {
             $id = (int) array_shift($queue);
-            $parentIds = $this->normalizeIds($this->hierarchyLoader->loadParentMembershipIds($id));
+            $parentIds = $this->normalizeIds($this->hierarchyLoader->loadMembershipIds($id));
 
             foreach ($parentIds as $parentId) {
                 if (isset($visited[$parentId])) {
