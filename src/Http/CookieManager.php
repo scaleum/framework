@@ -28,12 +28,14 @@ class CookieManager extends Hydrator
     protected bool $httpOnly   = false;
     protected string $sameSite = 'Lax';
     protected string $salt     = '7987a1d4c9cd4076b6d855f2d7c5fdb4';
+
     public function set(string $name, mixed $value, ?int $expire = null): bool
     {
         if (headers_sent()) {
             return false;
         }
 
+        $names         = $this->resolveCookieNames($name);
         $preparedValue = $this->prepareForStorage($value);
 
         $success = $this->upsertCookieHeader(
@@ -48,7 +50,9 @@ class CookieManager extends Hydrator
         );
 
         if ($success) {
-            $_COOKIE[$name] = $preparedValue;
+            foreach ($names as $key) {
+                $_COOKIE[$key] = $preparedValue;
+            }
         }
 
         return $success;
@@ -56,16 +60,19 @@ class CookieManager extends Hydrator
 
     public function get(string $name, mixed $default = null): mixed
     {
-        if (! isset($_COOKIE[$name])) {
+        $key = $this->resolveRuntimeCookieKey($name);
+        if ($key === null || ! isset($_COOKIE[$key])) {
             return $default;
         }
 
-        return $this->restoreFromStorage($_COOKIE[$name]) ?? $default;
+        return $this->restoreFromStorage($_COOKIE[$key]) ?? $default;
     }
 
     public function has(string $name): bool
     {
-        return isset($_COOKIE[$name]);
+        $key = $this->resolveRuntimeCookieKey($name);
+
+        return $key !== null && isset($_COOKIE[$key]);
     }
 
     public function delete(string $name): bool
@@ -74,19 +81,33 @@ class CookieManager extends Hydrator
             return false;
         }
 
-        $success = $this->upsertCookieHeader(
-            $name,
-            '',
-            time() - 3600,
-            $this->getPath(),
-            $this->getDomain(),
-            $this->isSecure(),
-            $this->isHttpOnly(),
-            $this->getSameSite(),
-        );
+        $expires  = time() - 3600;
+        $path     = $this->getPath();
+        $domain   = $this->getDomain();
+        $secure   = $this->isSecure();
+        $httpOnly = $this->isHttpOnly();
+        $sameSite = $this->getSameSite();
+        $names    = $this->resolveCookieNames($name);
+        $cookies  = [];
 
+        foreach ($names as $key) {
+            $cookies[] = [
+                'name'     => $key,
+                'value'    => '',
+                'expires'  => $expires,
+                'path'     => $path,
+                'domain'   => $domain,
+                'secure'   => $secure,
+                'httpOnly' => $httpOnly,
+                'sameSite' => $sameSite,
+            ];
+        }
+
+        $success = $this->upsertCookieHeaders($cookies);
         if ($success) {
-            unset($_COOKIE[$name]);
+            foreach ($names as $key) {
+                unset($_COOKIE[$key]);
+            }
         }
 
         return $success;
@@ -130,7 +151,27 @@ class CookieManager extends Hydrator
         return JsonHelper::isJson($value) ? json_decode($value, true) : $value;
     }
 
-    protected function upsertCookieHeader(string $name,string $value,int $expires,string $path,string $domain,bool $secure,bool $httpOnly,string $sameSite): bool {
+    protected function upsertCookieHeader(string $name, string $value, int $expires, string $path, string $domain, bool $secure, bool $httpOnly, string $sameSite): bool
+    {
+        return $this->upsertCookieHeaders([
+            [
+                'name'     => $name,
+                'value'    => $value,
+                'expires'  => $expires,
+                'path'     => $path,
+                'domain'   => $domain,
+                'secure'   => $secure,
+                'httpOnly' => $httpOnly,
+                'sameSite' => $sameSite,
+            ],
+        ]);
+    }
+
+    /**
+     * @param array<int,array{name:string,value:string,expires:int,path:string,domain:string,secure:bool,httpOnly:bool,sameSite:string}> $cookies
+     */
+    protected function upsertCookieHeaders(array $cookies): bool
+    {
         $headers       = headers_list();
         $rawCookieRows = [];
 
@@ -156,7 +197,18 @@ class CookieManager extends Hydrator
             $deduplicated[$cookieKey] = $cookieHeader;
         }
 
-        $deduplicated[$this->buildCookieKey($name, $path, $domain)] = $this->buildCookieHeader($name,$value,$expires,$path,$domain,$secure,$httpOnly,$sameSite);
+        foreach ($cookies as $cookie) {
+            $deduplicated[$this->buildCookieKey($cookie['name'], $cookie['path'], $cookie['domain'])] = $this->buildCookieHeader(
+                $cookie['name'],
+                $cookie['value'],
+                $cookie['expires'],
+                $cookie['path'],
+                $cookie['domain'],
+                $cookie['secure'],
+                $cookie['httpOnly'],
+                $cookie['sameSite'],
+            );
+        }
 
         header_remove('Set-Cookie');
 
@@ -215,7 +267,8 @@ class CookieManager extends Hydrator
         return "{$normalizedName}|{$normalizedPath}|{$normalizedDomain}";
     }
 
-    protected function buildCookieHeader(string $name,string $value,int $expires,string $path,string $domain,bool $secure,bool $httpOnly,string $sameSite): string {
+    protected function buildCookieHeader(string $name, string $value, int $expires, string $path, string $domain, bool $secure, bool $httpOnly, string $sameSite): string
+    {
         $encodedValue = rawurlencode($value);
         $segments     = ["{$name}={$encodedValue}"];
 
@@ -339,7 +392,7 @@ class CookieManager extends Hydrator
         return $this->salt;
     }
 
-    public function setSalt($salt): static
+    public function setSalt(string $salt): static
     {
         $this->salt = $salt;
         return $this;
@@ -357,5 +410,28 @@ class CookieManager extends Hydrator
             'sameSite' => $this->getSameSite(),
             'salt'     => $this->getSalt(),
         ];
+    }
+
+    private function normalizeIncomingName(string $name): string
+    {
+        return str_replace(['.', ' '], '_', $name);
+    }
+
+    private function resolveCookieNames(string $name): array
+    {
+        $normalizedName = $this->normalizeIncomingName($name);
+
+        return $name === $normalizedName ? [$name] : [$name, $normalizedName];
+    }
+
+    private function resolveRuntimeCookieKey(string $name): ?string
+    {
+        foreach ($this->resolveCookieNames($name) as $key) {
+            if (array_key_exists($key, $_COOKIE)) {
+                return $key;
+            }
+        }
+
+        return null;
     }
 }
