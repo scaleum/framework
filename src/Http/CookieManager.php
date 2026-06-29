@@ -113,6 +113,55 @@ class CookieManager extends Hydrator
         return $success;
     }
 
+    public function setToResponse(OutboundResponse $response, string $name, mixed $value, ?int $expires = null, ?int $maxAge = null): void
+    {
+        $this->upsertResponseCookieHeaders($response, [
+            [
+                'name'     => $name,
+                'value'    => $this->prepareForStorage($value),
+                'expires'  => $expires,
+                'maxAge'   => $maxAge,
+                'path'     => $this->getPath(),
+                'domain'   => $this->getDomain(),
+                'secure'   => $this->isSecure(),
+                'httpOnly' => $this->isHttpOnly(),
+                'sameSite' => $this->getSameSite(),
+            ],
+        ]);
+    }
+
+    public function deleteFromResponse(OutboundResponse $response, string $name, string $value = ''): void
+    {
+        $expires  = time() - 3600;
+        $path     = $this->getPath();
+        $domain   = $this->getDomain();
+        $secure   = $this->isSecure();
+        $httpOnly = $this->isHttpOnly();
+        $sameSite = $this->getSameSite();
+        $cookies  = [];
+
+        foreach ($this->resolveCookieNames($name) as $key) {
+            $cookies[] = [
+                'name'     => $key,
+                'value'    => $value,
+                'expires'  => $expires,
+                'maxAge'   => 0,
+                'path'     => $path,
+                'domain'   => $domain,
+                'secure'   => $secure,
+                'httpOnly' => $httpOnly,
+                'sameSite' => $sameSite,
+            ];
+        }
+
+        $this->upsertResponseCookieHeaders($response, $cookies);
+    }
+
+    public function restore(string $value, mixed $default = null): mixed
+    {
+        return $this->restoreFromStorage($value) ?? $default;
+    }
+
     protected function prepareForStorage(mixed $value): string
     {
         $value = ! is_scalar($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : $value;
@@ -223,6 +272,42 @@ class CookieManager extends Hydrator
         return true;
     }
 
+    /**
+     * @param array<int,array{name:string,value:string,expires:?int,maxAge:?int,path:string,domain:string,secure:bool,httpOnly:bool,sameSite:string}> $cookies
+     */
+    protected function upsertResponseCookieHeaders(OutboundResponse $response, array $cookies): void
+    {
+        $deduplicated = [];
+        $unparsed     = [];
+
+        foreach ($response->getHeader('Set-Cookie') as $cookieHeader) {
+            $cookieKey = $this->resolveCookieKeyFromHeader($cookieHeader);
+
+            if ($cookieKey === null) {
+                $unparsed[] = $cookieHeader;
+                continue;
+            }
+
+            $deduplicated[$cookieKey] = $cookieHeader;
+        }
+
+        foreach ($cookies as $cookie) {
+            $deduplicated[$this->buildCookieKey($cookie['name'], $cookie['path'], $cookie['domain'])] = $this->buildCookieHeader(
+                $cookie['name'],
+                $cookie['value'],
+                $cookie['expires'],
+                $cookie['path'],
+                $cookie['domain'],
+                $cookie['secure'],
+                $cookie['httpOnly'],
+                $cookie['sameSite'],
+                $cookie['maxAge'],
+            );
+        }
+
+        $response->setHeader('Set-Cookie', [...$unparsed, ...array_values($deduplicated)]);
+    }
+
     protected function resolveCookieKeyFromHeader(string $cookieHeader): ?string
     {
         $parts = array_map('trim', explode(';', $cookieHeader));
@@ -267,14 +352,18 @@ class CookieManager extends Hydrator
         return "{$normalizedName}|{$normalizedPath}|{$normalizedDomain}";
     }
 
-    protected function buildCookieHeader(string $name, string $value, int $expires, string $path, string $domain, bool $secure, bool $httpOnly, string $sameSite): string
+    protected function buildCookieHeader(string $name, string $value, ?int $expires, string $path, string $domain, bool $secure, bool $httpOnly, string $sameSite, ?int $maxAge = null): string
     {
         $encodedValue = rawurlencode($value);
         $segments     = ["{$name}={$encodedValue}"];
 
-        if ($expires > 0) {
+        if ($expires !== null) {
             $expireDate = gmdate('D, d M Y H:i:s', $expires);
             $segments[] = "Expires={$expireDate} GMT";
+        }
+
+        if ($maxAge !== null) {
+            $segments[] = "Max-Age={$maxAge}";
         }
 
         if ($path !== '') {
