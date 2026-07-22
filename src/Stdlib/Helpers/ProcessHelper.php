@@ -1,5 +1,6 @@
 <?php
-declare (strict_types = 1);
+
+declare(strict_types=1);
 /**
  * This file is part of Scaleum\Stdlib.
  *
@@ -11,14 +12,16 @@ declare (strict_types = 1);
 
 namespace Scaleum\Stdlib\Helpers;
 
-class ProcessHelper {
+class ProcessHelper
+{
     /**
      * Executes a command.
      *
      * @param string $command The command to execute.
      * @return void
      */
-    public static function execute(string $command) {
+    public static function execute(string $command)
+    {
         if (self::isWinOS()) {
             pclose(popen('start "Run command..." /MIN cmd.exe /C "' . $command . '"', FileHelper::FOPEN_READ));
         } else {
@@ -26,7 +29,8 @@ class ProcessHelper {
         }
     }
 
-    public static function getInterpreter() {
+    public static function getInterpreter()
+    {
         $result = 'php.exe';
         if (self::isUnixOS()) {
             $result = '/usr/bin/env php';
@@ -35,22 +39,29 @@ class ProcessHelper {
         return $result;
     }
 
-    public static function getStarted(): array {
+    public static function getStarted(): array
+    {
         $result = [];
 
         if (self::isWinOS()) {
-            $output = `tasklist /FO "CSV" /NH`;
-            if (preg_match_all('/"[^"]+","(\d+)"/', $output, $matches)) {
+            $output = shell_exec('tasklist /FO "CSV" /NH');
+            $output = is_string($output) ? $output : '';
+            if ($output !== '' && preg_match_all('/"[^"]+","(\d+)"/', $output, $matches)) {
                 $result = array_map('intval', $matches[1]); // Приводим PID к числу
             }
         } else {
-            $result = array_map('intval', explode(PHP_EOL, trim(`ps -e -o pid=`)));
+            $output = shell_exec('ps -e -o pid=');
+            $output = is_string($output) ? trim($output) : '';
+            if ($output !== '') {
+                $result = array_map('intval', preg_split('/\R+/', $output) ?: []);
+            }
         }
 
         return $result;
     }
 
-    public static function isStarted(int $pid = null): bool {
+    public static function isStarted(int $pid = null): bool
+    {
         if ($pid === null) {
             $pid = getmypid();
         }
@@ -58,7 +69,8 @@ class ProcessHelper {
         return in_array((int) $pid, self::getStarted(), true);
     }
 
-    public static function isPhpProcess(int $pid): bool {
+    public static function isPhpProcess(int $pid): bool
+    {
         if (! self::isStarted($pid)) {
             return false;
         }
@@ -80,7 +92,8 @@ class ProcessHelper {
      * Return TRUE if OS is *nix
      * @return bool
      */
-    public static function isUnixOS() {
+    public static function isUnixOS()
+    {
         return self::isWinOS() === false;
     }
 
@@ -88,7 +101,8 @@ class ProcessHelper {
      * Return TRUE if OS is Windows
      * @return bool
      */
-    public static function isWinOS() {
+    public static function isWinOS()
+    {
         return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
     }
 }

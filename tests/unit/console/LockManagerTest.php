@@ -49,6 +49,42 @@ class LockManagerTest extends TestCase {
         $this->assertFalse($this->lockManager->isLocked($processName));
     }
 
+    public function testReleaseCanBeCalledMoreThanOnce(): void {
+        $processName = 'testProcess';
+        $lockHandle = $this->lockManager->lock($processName);
+
+        $this->assertNotNull($lockHandle);
+        $this->lockManager->release($lockHandle);
+        $this->lockManager->release($lockHandle);
+
+        $this->assertNull($lockHandle->fileHandle);
+        $this->assertFileDoesNotExist($this->lockDir . $processName . '.lock');
+    }
+
+    public function testLockReplacesStaleLockOwnedByNonPhpProcess(): void {
+        $processName = 'testProcess';
+        $nonPhpPid = null;
+
+        foreach (ProcessHelper::getStarted() as $pid) {
+            if (! ProcessHelper::isPhpProcess($pid)) {
+                $nonPhpPid = $pid;
+                break;
+            }
+        }
+
+        if ($nonPhpPid === null) {
+            $this->markTestSkipped('No active non-PHP process was found');
+        }
+
+        file_put_contents($this->lockDir . $processName . '.lock', (string) $nonPhpPid);
+        $lockHandle = $this->lockManager->lock($processName);
+
+        $this->assertNotNull($lockHandle);
+        $this->assertSame((string) getmypid(), file_get_contents($this->lockDir . $processName . '.lock'));
+
+        $this->lockManager->release($lockHandle);
+    }
+
     public function testCleanupRemovesStaleLocks(): void {
         $processName = 'testProcess';
         $lockHandle = $this->lockManager->lock($processName);

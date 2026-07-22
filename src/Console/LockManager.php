@@ -1,5 +1,6 @@
 <?php
-declare (strict_types = 1);
+
+declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -21,10 +22,12 @@ use Scaleum\Stdlib\Helpers\ProcessHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class LockManager extends Hydrator {
+class LockManager extends Hydrator
+{
     protected ?string $lockDir = null;
 
-    public function __construct(string $lockDir = null) {
+    public function __construct(string $lockDir = null)
+    {
         $this->lockDir = FileHelper::prepPath($lockDir ?? __DIR__ . '/locks/', false);
 
         if (! is_dir($this->lockDir)) {
@@ -38,7 +41,8 @@ class LockManager extends Hydrator {
      * @param string $processName The name(some ID) of the process to lock.
      * @return mixed The result of the lock operation.
      */
-    public function lock(string $processName): mixed {
+    public function lock(string $processName): mixed
+    {
         $lockFile = $this->getFilename($processName);
         // Check if the directory is writable
         if (! is_writable(dirname($lockFile))) {
@@ -59,15 +63,15 @@ class LockManager extends Hydrator {
 
             // If the process is active, the lock remains
             if ($pid && ProcessHelper::isStarted((int) $pid)) {
-                if (! ProcessHelper::isPhpProcess((int) $pid)) {
-                    // It's not our process, remove the lock
-                    fclose($fp);
-                    unlink($lockFile);
-                } else {
+                if (ProcessHelper::isPhpProcess((int) $pid)) {
                     // It's our process, keep the lock
                     fclose($fp);
                     return null;
                 }
+
+                // PID is occupied by a non-PHP process, so the lock is stale
+                ftruncate($fp, 0);
+                rewind($fp);
             }
 
             // Clear the file before writing
@@ -87,16 +91,15 @@ class LockManager extends Hydrator {
         return null; // Process is already locked
     }
 
-    public function release(LockHandle $handle): void {
-        if($this->isLocked($handle->processName)) {
-            if (!is_resource($handle->fileHandle)) {
-                return;
-            }
-            
+    public function release(LockHandle $handle): void
+    {
+        if (is_resource($handle->fileHandle)) {
             fclose($handle->fileHandle);
-            if (file_exists($handle->lockFile)) {
-                unlink($handle->lockFile);
-            }
+            $handle->fileHandle = null;
+        }
+
+        if (is_file($handle->lockFile)) {
+            unlink($handle->lockFile);
         }
     }
 
@@ -106,7 +109,8 @@ class LockManager extends Hydrator {
      * @param LockHandle|null $lockHandle The lock handle to release, or null if no lock handle is provided.
      * @return void
      */
-    public function cleanup(): void {
+    public function cleanup(): void
+    {
         foreach (glob($this->getFilename("*")) as $lockFile) {
             $fp  = fopen($lockFile, 'r');
             $pid = trim(fread($fp, filesize($lockFile) ?: 1)); // Read only 1 byte
@@ -125,7 +129,8 @@ class LockManager extends Hydrator {
      * @param string $processName The name of the process to check.
      * @return bool Returns true if the process is locked, false otherwise.
      */
-    public function isLocked(string $processName): bool {
+    public function isLocked(string $processName): bool
+    {
         $lockFile = $this->getFilename($processName);
         if (! file_exists($lockFile)) {
             return false;
@@ -135,7 +140,8 @@ class LockManager extends Hydrator {
         return $pid !== '' && ProcessHelper::isStarted((int) $pid) && ProcessHelper::isPhpProcess((int) $pid);
     }
 
-    protected function getFilename(string $basename): string {
+    protected function getFilename(string $basename): string
+    {
         return "{$this->lockDir}$basename.lock";
     }
 }
