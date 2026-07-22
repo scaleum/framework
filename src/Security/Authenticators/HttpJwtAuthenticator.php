@@ -1,5 +1,6 @@
 <?php
-declare (strict_types = 1);
+
+declare(strict_types=1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -25,7 +26,8 @@ use Scaleum\Stdlib\SAPI\SapiMode;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class HttpJwtAuthenticator extends ReportableAbstract implements AuthenticatorInterface {
+class HttpJwtAuthenticator extends ReportableAbstract implements AuthenticatorInterface
+{
 
     public function __construct(
         private TokenResolver $tokenResolver,
@@ -33,9 +35,10 @@ class HttpJwtAuthenticator extends ReportableAbstract implements AuthenticatorIn
         private UserRepositoryInterface $userRepository
     ) {}
 
-    public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface {
+    public function attempt(array $credentials, array $headers = []): ?AuthenticatableInterface
+    {
         if (($mode = Explorer::getTypeFamily()) !== SapiMode::HTTP) {
-            $this->addReport('debug', sprintf("Unsupported SAPI mode: `%s`",$mode->getName()),'INVALID_MODE');
+            $this->addReport('debug', sprintf("Unsupported SAPI mode: `%s`", $mode->getName()), 'INVALID_MODE');
             return null;
         }
 
@@ -48,19 +51,24 @@ class HttpJwtAuthenticator extends ReportableAbstract implements AuthenticatorIn
         $token = $credentials['token'] ?? $this->tokenResolver->resolve($_GET, $_POST, $headers, $_COOKIE);
 
         if (! $token) {
-            $this->addReport('debug', 'Token credentials not found','INVALID_CREDENTIALS');
+            $this->addReport('debug', 'Token credentials not found', 'INVALID_CREDENTIALS');
             return null;
         }
 
         $payload = $this->jwtService->verify($token);
-        if ($payload && $payload->getUserId()) {
-            return $this->userRepository->findById($payload->getUserId());
-        } else {
-            $this->addReport('error', $this->jwtService->getLastError() ?? 'Invalid token', 'INVALID_TOKEN');
+        if (! $payload) {
+            $error = trim($this->jwtService->getLastError());
+            $this->addReport('error', $error !== '' ? $error : 'Invalid token', 'INVALID_TOKEN');
+            return null;
         }
 
-        return null;
-    }
+        $userId = $payload->getUserId();
+        if ($userId <= 0) {
+            $this->addReport('error', sprintf('Token has invalid user_id: %d', $userId), 'INVALID_USER_ID');
+            return null;
+        }
 
+        return $this->userRepository->findById($userId);
+    }
 }
 /** End of JwtAuthenticator **/

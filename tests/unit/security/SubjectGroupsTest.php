@@ -5,8 +5,8 @@ declare (strict_types = 1);
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Scaleum\Security\Contracts\SubjectIdsResolverInterface;
-use Scaleum\Security\Contracts\SubjectMembershipHierarchyLoaderInterface;
 use Scaleum\Security\Contracts\SubjectMembershipLoaderInterface;
+use Scaleum\Security\Services\SubjectMembershipIdResolver;
 use Scaleum\Security\Services\SubjectMembershipIdsResolver;
 use Scaleum\Security\Services\SubjectHydrator;
 use Scaleum\Security\Subject;
@@ -16,10 +16,63 @@ use Scaleum\Storages\PDO\Builders\Contracts\QueryBuilderInterface;
 use Scaleum\Storages\PDO\Database;
 
 final class SubjectGroupsTest extends TestCase {
+    public function testSingleResolverReturnsFirstNormalizedGroupId(): void {
+        $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
+            public function loadDirectMembershipIds(int $userId): array {
+                return [9, 9, 3, '7', 0, -1];
+            }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return 3;
+            }
+        };
+
+        $resolver = new SubjectMembershipIdResolver($membershipLoader);
+
+        $this->assertSame(3, $resolver->resolve(10));
+    }
+
+    public function testSingleResolverReturnsZeroWhenUserHasNoGroups(): void {
+        $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
+            public function loadDirectMembershipIds(int $userId): array {
+                return [];
+            }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return 0;
+            }
+        };
+
+        $resolver = new SubjectMembershipIdResolver($membershipLoader);
+
+        $this->assertSame(0, $resolver->resolve(10));
+    }
+
+    public function testSingleResolverThrowsForInvalidUserId(): void {
+        $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
+            public function loadDirectMembershipIds(int $userId): array {
+                return [];
+            }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return 0;
+            }
+        };
+
+        $resolver = new SubjectMembershipIdResolver($membershipLoader);
+
+        $this->expectException(EInvalidArgumentException::class);
+        $resolver->resolve(0);
+    }
+
     public function testResolverReturnsDirectGroupIdsWhenHierarchyLoaderIsNotProvided(): void {
         $membershipLoader = new class() implements SubjectMembershipLoaderInterface {
             public function loadDirectMembershipIds(int $userId): array {
                 return [4, 4, 2, '6', 0, -1];
+            }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return 2;
             }
         };
 
@@ -33,6 +86,10 @@ final class SubjectGroupsTest extends TestCase {
             public function loadDirectMembershipIds(int $userId): array {
                 return [4, 2];
             }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return 2;
+            }
         };
 
         $resolver = new SubjectMembershipIdsResolver($membershipLoader);
@@ -45,10 +102,14 @@ final class SubjectGroupsTest extends TestCase {
             public function loadDirectMembershipIds(int $userId): array {
                 return [10];
             }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return 10;
+            }
         };
 
-        $hierarchyLoader = new class() implements SubjectMembershipHierarchyLoaderInterface {
-            public function loadParentMembershipIds(int $membershipId): array {
+        $hierarchyLoader = new class() implements \Scaleum\Security\Contracts\SubjectMembershipHierarchyLoaderInterface {
+            public function loadMembershipIds(int $membershipId): array {
                 $groupId = $membershipId;
                 return match ($groupId) {
                     10      => [20],
@@ -69,6 +130,10 @@ final class SubjectGroupsTest extends TestCase {
             public function loadDirectMembershipIds(int $userId): array {
                 return [];
             }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return 0;
+            }
         };
 
         $resolver = new SubjectMembershipIdsResolver($membershipLoader);
@@ -82,6 +147,10 @@ final class SubjectGroupsTest extends TestCase {
             public function loadDirectMembershipIds(int $userId): array {
                 return $userId === 15 ? [2, 8] : [];
             }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return $userId === 15 ? 2 : 0;
+            }
         };
 
         $roleResolver = new class() implements SubjectIdsResolverInterface {
@@ -92,7 +161,8 @@ final class SubjectGroupsTest extends TestCase {
 
         $resolver = new SubjectMembershipIdsResolver($membershipLoader);
         $hydrator = new SubjectHydrator();
-        $subject  = new Subject(15);
+        $subject  = new Subject();
+        $subject->setUserId(15);
 
         $hydrator->hydrateGroupIdsForUser($subject, $resolver);
         $hydrator->hydrateRoleIdsForUser($subject, $roleResolver, [7, 7, 3]);
@@ -107,6 +177,10 @@ final class SubjectGroupsTest extends TestCase {
             public function loadDirectMembershipIds(int $userId): array {
                 return $userId === 50 ? [100] : [];
             }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return $userId === 50 ? 100 : 0;
+            }
         };
 
         $resolver     = new SubjectMembershipIdsResolver($membershipLoader);
@@ -117,7 +191,8 @@ final class SubjectGroupsTest extends TestCase {
         };
 
         $hydrator = new SubjectHydrator();
-        $subject  = new Subject(50);
+        $subject  = new Subject();
+        $subject->setUserId(50);
 
         $hydrator->hydrateGroupIdsForUser($subject, $resolver);
         $hydrator->hydrateRoleIdsForUser($subject, $roleResolver, [9]);
@@ -132,6 +207,10 @@ final class SubjectGroupsTest extends TestCase {
             public function loadDirectMembershipIds(int $userId): array {
                 return [5];
             }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return 5;
+            }
         };
 
         $roleResolver = new class() implements SubjectIdsResolverInterface {
@@ -142,7 +221,8 @@ final class SubjectGroupsTest extends TestCase {
 
         $groupResolver = new SubjectMembershipIdsResolver($membershipLoader);
         $hydrator      = new SubjectHydrator();
-        $subject       = new Subject(33);
+        $subject       = new Subject();
+        $subject->setUserId(33);
 
         $hydrator->hydrateGroupIdsForUser($subject, $groupResolver);
         $hydrator->hydrateRoleIdsForUser($subject, $roleResolver, [30, 10]);
@@ -156,10 +236,14 @@ final class SubjectGroupsTest extends TestCase {
             public function loadDirectMembershipIds(int $userId): array {
                 return $userId === 321 ? [743] : [];
             }
+
+            public function loadDirectMembershipId(int $userId): int {
+                return $userId === 321 ? 743 : 0;
+            }
         };
 
-        $hierarchyLoader = new class() implements SubjectMembershipHierarchyLoaderInterface {
-            public function loadParentMembershipIds(int $membershipId): array {
+        $hierarchyLoader = new class() implements \Scaleum\Security\Contracts\SubjectMembershipHierarchyLoaderInterface {
+            public function loadMembershipIds(int $membershipId): array {
                 $groupId = $membershipId;
                 return match ($groupId) {
                     743     => [800],
@@ -172,7 +256,8 @@ final class SubjectGroupsTest extends TestCase {
 
         $groupResolver = new SubjectMembershipIdsResolver($membershipLoader, $hierarchyLoader);
         $hydrator      = new SubjectHydrator();
-        $subject       = new Subject(321);
+        $subject       = new Subject();
+        $subject->setUserId(321);
 
         $hydrator->hydrateGroupIdsForUser($subject, $groupResolver);
 
@@ -221,7 +306,8 @@ final class SubjectGroupsTest extends TestCase {
             }
         };
 
-        $subject  = new Subject(321);
+        $subject  = new Subject();
+        $subject->setUserId(321);
         $hydrator = new SubjectHydrator();
 
         $hydrator->hydrateGroupIdsForUser($subject, $resolver, [900]);
@@ -246,7 +332,8 @@ final class SubjectGroupsTest extends TestCase {
         $query = new SQLiteQueryBuilder($database);
         $resolver = $this->createHierarchicalQueryBuilderResolver($query, $pdo);
 
-        $subject  = new Subject(321);
+        $subject  = new Subject();
+        $subject->setUserId(321);
         $hydrator = new SubjectHydrator();
 
         $hydrator->hydrateGroupIdsForUser($subject, $resolver, [700, 900, 9999]);

@@ -12,12 +12,14 @@ declare(strict_types=1);
 
 namespace Scaleum\Security\Contracts;
 
-interface SubjectMembershipHierarchyLoaderInterface
+/**
+ * Resolves ids for a user identity.
+ */
+interface SubjectIdResolverInterface
 {
     /**
-     * Loads parent|descendant membership ids for a child membership id.
-     *
-     * @return list<int>
+     * @param int $userId User identity id.
+     * @return int
      */
-    public function loadMembershipIds(int $membershipId): array;
+    public function resolve(int $userId): int;
 }

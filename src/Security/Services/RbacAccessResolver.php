@@ -83,12 +83,29 @@ final class RbacAccessResolver
         }
     }
 
-    private function isAllowedInternal(
-        string $objectId,
-        Subject $subject,
-        int $permission,
-        bool $requireAllPermissions
-    ): bool {
+    /**
+     * Returns current in-memory state of resolver caches.
+     *
+     * @return array{
+     *   objects:array<string, array<int, array{subject_type:int,subject_id:int,permissions:int}>>,
+     *   permissions:array<string, array<string, int>>,
+     *   loaded:array<int, string>
+     * }
+     */
+    public function getState(): array
+    {
+        $loaded = array_map('strval', array_keys($this->loaded));
+        sort($loaded);
+
+        return [
+            'objects'     => $this->entriesCache,
+            'permissions' => $this->subjectMaskCache,
+            'loaded'      => $loaded,
+        ];
+    }
+
+    private function isAllowedInternal(string $objectId, Subject $subject, int $permission, bool $requireAllPermissions): bool
+    {
         $mask = $this->resolveEffectiveMask($objectId, $subject);
 
         if ($requireAllPermissions) {

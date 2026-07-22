@@ -17,9 +17,24 @@ use Scaleum\Security\Subject;
 interface SubjectHydratorInterface
 {
     /**
-     * Hydrates subject group ids for default USER-based identity.
+     * Hydrates one group id for a user subject.
      *
-     * @param list<int> $seedIds
+     * @param Subject $subject User subject.
+     * @param SubjectIdResolverInterface $resolver Group id resolver.
+     * @return void
+     */
+    public function hydrateGroupIdForUser(
+        Subject $subject,
+        SubjectIdResolverInterface $resolver
+    ): void;
+
+    /**
+     * Hydrates group ids for a user subject.
+     *
+     * @param Subject $subject User subject.
+     * @param SubjectIdsResolverInterface $resolver Group ids resolver.
+     * @param list<int> $seedIds Caller-provided ids that should be included in result.
+     * @return void
      */
     public function hydrateGroupIdsForUser(
         Subject $subject,
@@ -28,9 +43,24 @@ interface SubjectHydratorInterface
     ): void;
 
     /**
-     * Hydrates subject role ids for default USER-based identity.
+     * Hydrates one role id for a user subject.
      *
-     * @param list<int> $seedIds
+     * @param Subject $subject User subject.
+     * @param SubjectIdResolverInterface $resolver Role id resolver.
+     * @return void
+     */
+    public function hydrateRoleIdForUser(
+        Subject $subject,
+        SubjectIdResolverInterface $resolver
+    ): void;
+
+    /**
+     * Hydrates role ids for a user subject.
+     *
+     * @param Subject $subject User subject.
+     * @param SubjectIdsResolverInterface $resolver Role ids resolver.
+     * @param list<int> $seedIds Caller-provided ids that should be included in result.
+     * @return void
      */
     public function hydrateRoleIdsForUser(
         Subject $subject,

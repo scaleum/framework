@@ -119,7 +119,7 @@ final class AclServicesTest extends TestCase
 
     public function testResolverSupportsAllAndAnyPermissionModes(): void
     {
-        $subject = new Subject(10, [2]);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2]]);
 
         /** @var MockObject&QueryBuilderInterface $queryBuilder */
         $queryBuilder = $this->createMock(QueryBuilderInterface::class);
@@ -161,7 +161,7 @@ final class AclServicesTest extends TestCase
 
     public function testResolverUsesPreloadedAclDataWithoutDatabaseQuery(): void
     {
-        $subject = new Subject(10, [2]);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2]]);
 
         /** @var MockObject&SchemaBuilderInterface $schemaBuilder */
         $schemaBuilder = $this->createMock(SchemaBuilderInterface::class);
@@ -196,7 +196,7 @@ final class AclServicesTest extends TestCase
 
     public function testResolverFallsBackToDatabaseWhenPreloadedAclHasNullGroupId(): void
     {
-        $subject = new Subject(10, [2]);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2]]);
 
         /** @var MockObject&QueryBuilderInterface $queryBuilder */
         $queryBuilder = $this->createMock(QueryBuilderInterface::class);
@@ -245,7 +245,7 @@ final class AclServicesTest extends TestCase
 
     public function testResolverFallsBackToDatabaseWhenAclDataIsEmpty(): void
     {
-        $subject = new Subject(10, [2]);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2]]);
 
         /** @var MockObject&QueryBuilderInterface $queryBuilder */
         $queryBuilder = $this->createMock(QueryBuilderInterface::class);
@@ -288,7 +288,7 @@ final class AclServicesTest extends TestCase
 
     public function testQueryApplierBuildsAnyConditions(): void
     {
-        $subject = new Subject(10, [2]);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2]]);
 
         /** @var MockObject&QueryBuilderInterface $query */
         $query = $this->createMock(QueryBuilderInterface::class);
@@ -323,7 +323,7 @@ final class AclServicesTest extends TestCase
 
     public function testQueryApplierAcceptsAclTableAsString(): void
     {
-        $subject = new Subject(10, [2]);
+        $subject = new Subject(['user_id' => 10, 'group_ids' => [2]]);
 
         /** @var MockObject&QueryBuilderInterface $query */
         $query = $this->createMock(QueryBuilderInterface::class);
@@ -347,7 +347,7 @@ final class AclServicesTest extends TestCase
 
     public function testQueryApplierBuildsSqlWithOrBetweenOwnerAndOtherBranches(): void
     {
-        $subject = new Subject(3, []);
+        $subject = new Subject(['user_id' => 3, 'group_ids' => []]);
 
         /** @var MockObject&SchemaBuilderInterface $schemaBuilder */
         $schemaBuilder = $this->createMock(SchemaBuilderInterface::class);
@@ -380,7 +380,7 @@ final class AclServicesTest extends TestCase
 
     public function testQueryApplierKeepsValidAndPrefixWithExistingWhereClauses(): void
     {
-        $subject = new Subject(3, [25, 23]);
+        $subject = new Subject(['user_id' => 3, 'group_ids' => [25, 23]]);
 
         /** @var MockObject&SchemaBuilderInterface $schemaBuilder */
         $schemaBuilder = $this->createMock(SchemaBuilderInterface::class);

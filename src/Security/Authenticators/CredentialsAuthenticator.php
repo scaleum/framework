@@ -32,6 +32,7 @@ class CredentialsAuthenticator extends ReportableAbstract implements Authenticat
         $password = $credentials['password'] ?? null;
 
         if (! $identity || ! $password) {
+            $this->addReport('error', 'Identity and password are required', 'MISSING_CREDENTIALS');
             return null;
         }
 
