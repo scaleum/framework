@@ -3,8 +3,18 @@ declare (strict_types = 1);
 
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Scaleum\Stdlib\Exceptions\EDatabaseError;
+use Scaleum\Storages\PDO\Builders\Adapters\MySQL\Query as MySQLQueryBuilder;
+use Scaleum\Storages\PDO\Builders\Adapters\PostgreSQL\Query as PostgreSQLQueryBuilder;
+use Scaleum\Storages\PDO\Builders\Adapters\SQLite\Query as SQLiteQueryBuilder;
 use Scaleum\Storages\PDO\Database;
 
+/**
+ * QueryBuilderTest
+ *
+ * @version 1.0
+ * @updated 2026-07-28
+ */
 class QueryBuilderTest extends TestCase {
     private Database $database;
 
@@ -28,6 +38,148 @@ class QueryBuilderTest extends TestCase {
             return $sql;
         };
         $this->assertEquals($normalize($expected), $normalize($actual));
+    }
+
+    public function testMySqlSelectForUpdate(): void {
+        $sql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->where('wallet_id', 10)
+            ->forUpdate()
+            ->row();
+
+        $this->assertSqlEqualsNormalized("SELECT *\nFROM `wallets`\nWHERE `wallet_id` = 10\nFOR UPDATE", $sql);
+    }
+
+    public function testPostgreSqlSelectForUpdate(): void {
+        $sql = (new PostgreSQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->where('wallet_id', 10)
+            ->forUpdate()
+            ->row();
+
+        $this->assertSqlEqualsNormalized("SELECT *\nFROM \"wallets\"\nWHERE \"wallet_id\" = 10\nFOR UPDATE", $sql);
+    }
+
+    public function testForUpdateIsDisabledByDefault(): void {
+        $sql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->row();
+
+        $this->assertStringNotContainsString('FOR UPDATE', $sql);
+    }
+
+    public function testForUpdateFalseDisablesLocking(): void {
+        $sql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->forUpdate()
+            ->forUpdate(false)
+            ->row();
+
+        $this->assertStringNotContainsString('FOR UPDATE', $sql);
+    }
+
+    public function testFlushClearsForUpdateState(): void {
+        $query = new MySQLQueryBuilder($this->database);
+        $query->forUpdate()->flush();
+
+        $sql = $query
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->row();
+
+        $this->assertStringNotContainsString('FOR UPDATE', $sql);
+    }
+
+    public function testMaterializedSelectClearsForUpdateForBuilderReuse(): void {
+        $query = new MySQLQueryBuilder($this->database);
+
+        $lockedSql = $query
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->forUpdate()
+            ->row();
+        $unlockedSql = $query
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->row();
+
+        $this->assertStringContainsString('FOR UPDATE', $lockedSql);
+        $this->assertStringNotContainsString('FOR UPDATE', $unlockedSql);
+    }
+
+    public function testSqliteRejectsForUpdate(): void {
+        $this->expectException(EDatabaseError::class);
+        $this->expectExceptionMessage('SQLite does not support row-level FOR UPDATE locking');
+
+        (new SQLiteQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->forUpdate()
+            ->row();
+    }
+
+    public function testForUpdateDoesNotAffectWriteQueries(): void {
+        $insertSql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->forUpdate()
+            ->insert('wallets', ['wallet_id' => 10]);
+        $updateSql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->forUpdate()
+            ->where('wallet_id', 10)
+            ->update('wallets', ['balance' => 100]);
+        $deleteSql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->forUpdate()
+            ->where('wallet_id', 10)
+            ->delete('wallets');
+        $truncateSql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->forUpdate()
+            ->truncate('wallets');
+
+        $this->assertStringNotContainsString('FOR UPDATE', $insertSql);
+        $this->assertStringNotContainsString('FOR UPDATE', $updateSql);
+        $this->assertStringNotContainsString('FOR UPDATE', $deleteSql);
+        $this->assertStringNotContainsString('FOR UPDATE', $truncateSql);
+    }
+
+    public function testLimitAndOffsetPrecedeForUpdate(): void {
+        $sql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->limit(10)
+            ->offset(5)
+            ->forUpdate()
+            ->row();
+
+        $this->assertSqlEqualsNormalized("SELECT *\nFROM `wallets`\nLIMIT 10 OFFSET 5\nFOR UPDATE", $sql);
+    }
+
+    public function testForUpdateRejectsUnion(): void {
+        $this->expectException(EDatabaseError::class);
+        $this->expectExceptionMessage('FOR UPDATE cannot be combined with UNION or UNION ALL');
+
+        (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('wallet_id')
+            ->from('wallets')
+            ->union('SELECT `wallet_id` FROM `archived_wallets`')
+            ->forUpdate()
+            ->rows();
     }
 
     public function testSelect(): void {

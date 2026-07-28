@@ -18,9 +18,15 @@ use Scaleum\Storages\PDO\Builders\QueryBuilder;
  * Query 
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
+ * @version 1.0
+ * @updated 2026-07-28
  */
 class Query extends QueryBuilder
 {
+    protected function makeForUpdate(string $sql): string {
+        return $sql . "\nFOR UPDATE";
+    }
+
     protected function makeLimit(string $sql, int $limit, int $offset): string {
         $queryParts = [];
         if ($limit > 0) {

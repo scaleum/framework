@@ -15,11 +15,14 @@ namespace Scaleum\Storages\PDO\Builders\Contracts;
  * QueryBuilderInterface
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
+ * @version 1.0
+ * @updated 2026-07-28
  */
 interface QueryBuilderInterface {
     public function delete(array | string $table = null, array | string $where = null, ?int $limit = null): mixed;
     public function execute(string $sql, array $params = [], string $method = 'execute', array $args = []): mixed;
     public function flush(): self;
+    public function forUpdate(bool $value = true): self;
     public function from(array | string $from): self;
     public function groupBy(array | string $field): self;
     public function having(array | string $field, mixed $value = null, bool $quoting = true): self;

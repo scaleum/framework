@@ -21,6 +21,8 @@ use Scaleum\Storages\PDO\Exceptions\ESQLError;
  * QueryBuilder
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
+ * @version 1.0
+ * @updated 2026-07-28
  */
 class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInterface
 {
@@ -54,6 +56,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected array $ctes             = [];
     protected bool $cteRecursive      = false;
     protected array $unions           = [];
+    protected bool $forUpdate         = false;
 
     protected function cache(): self
     {
@@ -153,6 +156,14 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         $this->ctes           = [];
         $this->cteRecursive   = false;
         $this->unions         = [];
+        $this->forUpdate      = false;
+
+        return $this;
+    }
+
+    public function forUpdate(bool $value = true): self
+    {
+        $this->forUpdate = $value;
 
         return $this;
     }
@@ -827,6 +838,11 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $sql;
     }
 
+    protected function makeForUpdate(string $sql): string
+    {
+        throw new EDatabaseError('The current database driver does not support row-level FOR UPDATE locking');
+    }
+
     protected function makeSelect(): string
     {
         $sql  = $this->makeWith();
@@ -906,6 +922,14 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
             $sql .= $union['all']
                 ? "\n UNION ALL " . $union['sql']
                 : "\n UNION " . $union['sql'];
+        }
+
+        if ($this->forUpdate) {
+            if (count($this->unions) > 0) {
+                throw new EDatabaseError('FOR UPDATE cannot be combined with UNION or UNION ALL');
+            }
+
+            $sql = $this->makeForUpdate($sql);
         }
 
         return $sql;
