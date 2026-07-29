@@ -19,15 +19,15 @@ use Scaleum\Storages\PDO\Builders\QueryBuilder;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  * @version 1.0
- * @updated 2026-07-28
+ * @updated 2026-07-29
  */
 class Query extends QueryBuilder
 {
     protected string $identifierQuoteLeft  = '"';
     protected string $identifierQuoteRight = '"';
 
-    protected function makeForUpdate(string $sql): string {
-        return $sql . "\nFOR UPDATE";
+    protected function makeForUpdate(string $sql, bool $skipLocked = false): string {
+        return $sql . "\nFOR UPDATE" . ($skipLocked ? ' SKIP LOCKED' : '');
     }
     
     protected function makeLimit(string $sql, int $limit, int $offset): string {

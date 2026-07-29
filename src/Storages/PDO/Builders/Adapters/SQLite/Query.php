@@ -20,14 +20,14 @@ use Scaleum\Storages\PDO\Builders\QueryBuilder;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  * @version 1.0
- * @updated 2026-07-28
+ * @updated 2026-07-29
  */
 class Query extends QueryBuilder
 {
     protected string $identifierQuoteLeft  = '"';
     protected string $identifierQuoteRight = '"';
 
-    protected function makeForUpdate(string $sql): string {
+    protected function makeForUpdate(string $sql, bool $skipLocked = false): string {
         throw new EDatabaseError('SQLite does not support row-level FOR UPDATE locking');
     }
     

@@ -11,16 +11,23 @@ declare (strict_types = 1);
 
 namespace Scaleum\Storages\PDO\Builders\Adapters\SQLServer;
 
+use Scaleum\Stdlib\Exceptions\EDatabaseError;
 use Scaleum\Storages\PDO\Builders\QueryBuilder;
 
 /**
  * Query
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
+ * @version 1.0
+ * @updated 2026-07-29
  */
 class Query extends QueryBuilder {
     protected string $identifierQuoteLeft  = "[";
     protected string $identifierQuoteRight = "]";    
+    protected function makeForUpdate(string $sql, bool $skipLocked = false): string {
+        throw new EDatabaseError('SQLServer adapter does not support FOR UPDATE locking semantics');
+    }
+
     protected function makeLimit(string $sql, int $limit, int $offset): string {
         $normalizedSql = strtoupper(preg_replace('/\s+/', ' ', trim($sql)));
         if (preg_match('/^(UPDATE|DELETE|INSERT)\s/i', $normalizedSql, $matches)){

@@ -22,7 +22,7 @@ use Scaleum\Storages\PDO\Exceptions\ESQLError;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  * @version 1.0
- * @updated 2026-07-28
+ * @updated 2026-07-29
  */
 class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInterface
 {
@@ -57,6 +57,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
     protected bool $cteRecursive      = false;
     protected array $unions           = [];
     protected bool $forUpdate         = false;
+    protected bool $skipLocked        = false;
 
     protected function cache(): self
     {
@@ -157,6 +158,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         $this->cteRecursive   = false;
         $this->unions         = [];
         $this->forUpdate      = false;
+        $this->skipLocked     = false;
 
         return $this;
     }
@@ -482,6 +484,13 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                 $this->select[$identifier] = $quoting;
             }
         }
+
+        return $this;
+    }
+
+    public function skipLocked(bool $value = true): self
+    {
+        $this->skipLocked = $value;
 
         return $this;
     }
@@ -838,13 +847,17 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
         return $sql;
     }
 
-    protected function makeForUpdate(string $sql): string
+    protected function makeForUpdate(string $sql, bool $skipLocked = false): string
     {
         throw new EDatabaseError('The current database driver does not support row-level FOR UPDATE locking');
     }
 
     protected function makeSelect(): string
     {
+        if ($this->skipLocked && ! $this->forUpdate) {
+            throw new EDatabaseError('SKIP LOCKED requires FOR UPDATE');
+        }
+
         $sql  = $this->makeWith();
         $sql .= "\nSELECT ";
         if (count($this->modifiers)) {
@@ -929,7 +942,7 @@ class QueryBuilder extends BuilderAbstract implements Contracts\QueryBuilderInte
                 throw new EDatabaseError('FOR UPDATE cannot be combined with UNION or UNION ALL');
             }
 
-            $sql = $this->makeForUpdate($sql);
+            $sql = $this->makeForUpdate($sql, $this->skipLocked);
         }
 
         return $sql;

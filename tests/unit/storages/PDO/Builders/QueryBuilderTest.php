@@ -7,13 +7,14 @@ use Scaleum\Stdlib\Exceptions\EDatabaseError;
 use Scaleum\Storages\PDO\Builders\Adapters\MySQL\Query as MySQLQueryBuilder;
 use Scaleum\Storages\PDO\Builders\Adapters\PostgreSQL\Query as PostgreSQLQueryBuilder;
 use Scaleum\Storages\PDO\Builders\Adapters\SQLite\Query as SQLiteQueryBuilder;
+use Scaleum\Storages\PDO\Builders\Adapters\SQLServer\Query as SQLServerQueryBuilder;
 use Scaleum\Storages\PDO\Database;
 
 /**
  * QueryBuilderTest
  *
  * @version 1.0
- * @updated 2026-07-28
+ * @updated 2026-07-29
  */
 class QueryBuilderTest extends TestCase {
     private Database $database;
@@ -62,6 +63,58 @@ class QueryBuilderTest extends TestCase {
             ->row();
 
         $this->assertSqlEqualsNormalized("SELECT *\nFROM \"wallets\"\nWHERE \"wallet_id\" = 10\nFOR UPDATE", $sql);
+    }
+
+    public function testMySqlSelectForUpdateSkipLocked(): void {
+        $sql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->limit(10)
+            ->forUpdate()
+            ->skipLocked()
+            ->rows();
+
+        $this->assertSqlEqualsNormalized("SELECT *\nFROM `wallets`\nLIMIT 10\nFOR UPDATE SKIP LOCKED", $sql);
+    }
+
+    public function testPostgreSqlSelectForUpdateSkipLocked(): void {
+        $sql = (new PostgreSQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->limit(10)
+            ->forUpdate()
+            ->skipLocked()
+            ->rows();
+
+        $this->assertSqlEqualsNormalized("SELECT *\nFROM \"wallets\"\nLIMIT 10\nFOR UPDATE SKIP LOCKED", $sql);
+    }
+
+    public function testSkipLockedRequiresForUpdate(): void {
+        $this->expectException(EDatabaseError::class);
+        $this->expectExceptionMessage('SKIP LOCKED requires FOR UPDATE');
+
+        (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->skipLocked()
+            ->rows();
+    }
+
+    public function testSkipLockedFalseDisablesClause(): void {
+        $sql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->forUpdate()
+            ->skipLocked()
+            ->skipLocked(false)
+            ->rows();
+
+        $this->assertStringContainsString('FOR UPDATE', $sql);
+        $this->assertStringNotContainsString('SKIP LOCKED', $sql);
     }
 
     public function testForUpdateIsDisabledByDefault(): void {
@@ -118,6 +171,27 @@ class QueryBuilderTest extends TestCase {
         $this->assertStringNotContainsString('FOR UPDATE', $unlockedSql);
     }
 
+    public function testMaterializedSelectClearsSkipLockedForBuilderReuse(): void {
+        $query = new MySQLQueryBuilder($this->database);
+
+        $lockedSql = $query
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->forUpdate()
+            ->skipLocked()
+            ->rows();
+        $unlockedSql = $query
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->rows();
+
+        $this->assertStringContainsString('FOR UPDATE SKIP LOCKED', $lockedSql);
+        $this->assertStringNotContainsString('FOR UPDATE', $unlockedSql);
+        $this->assertStringNotContainsString('SKIP LOCKED', $unlockedSql);
+    }
+
     public function testSqliteRejectsForUpdate(): void {
         $this->expectException(EDatabaseError::class);
         $this->expectExceptionMessage('SQLite does not support row-level FOR UPDATE locking');
@@ -128,6 +202,19 @@ class QueryBuilderTest extends TestCase {
             ->from('wallets')
             ->forUpdate()
             ->row();
+    }
+
+    public function testSqlServerRejectsForUpdateSkipLocked(): void {
+        $this->expectException(EDatabaseError::class);
+        $this->expectExceptionMessage('SQLServer adapter does not support FOR UPDATE locking semantics');
+
+        (new SQLServerQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('*')
+            ->from('wallets')
+            ->forUpdate()
+            ->skipLocked()
+            ->rows();
     }
 
     public function testForUpdateDoesNotAffectWriteQueries(): void {
@@ -156,6 +243,36 @@ class QueryBuilderTest extends TestCase {
         $this->assertStringNotContainsString('FOR UPDATE', $truncateSql);
     }
 
+    public function testSkipLockedDoesNotAffectWriteQueries(): void {
+        $insertSql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->forUpdate()
+            ->skipLocked()
+            ->insert('wallets', ['wallet_id' => 10]);
+        $updateSql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->forUpdate()
+            ->skipLocked()
+            ->where('wallet_id', 10)
+            ->update('wallets', ['balance' => 100]);
+        $deleteSql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->forUpdate()
+            ->skipLocked()
+            ->where('wallet_id', 10)
+            ->delete('wallets');
+        $truncateSql = (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->forUpdate()
+            ->skipLocked()
+            ->truncate('wallets');
+
+        foreach ([$insertSql, $updateSql, $deleteSql, $truncateSql] as $sql) {
+            $this->assertStringNotContainsString('FOR UPDATE', $sql);
+            $this->assertStringNotContainsString('SKIP LOCKED', $sql);
+        }
+    }
+
     public function testLimitAndOffsetPrecedeForUpdate(): void {
         $sql = (new MySQLQueryBuilder($this->database))
             ->prepare(true)
@@ -179,6 +296,20 @@ class QueryBuilderTest extends TestCase {
             ->from('wallets')
             ->union('SELECT `wallet_id` FROM `archived_wallets`')
             ->forUpdate()
+            ->rows();
+    }
+
+    public function testSkipLockedWithForUpdateRejectsUnionAll(): void {
+        $this->expectException(EDatabaseError::class);
+        $this->expectExceptionMessage('FOR UPDATE cannot be combined with UNION or UNION ALL');
+
+        (new MySQLQueryBuilder($this->database))
+            ->prepare(true)
+            ->select('wallet_id')
+            ->from('wallets')
+            ->unionAll('SELECT `wallet_id` FROM `archived_wallets`')
+            ->forUpdate()
+            ->skipLocked()
             ->rows();
     }
 

@@ -16,7 +16,7 @@ namespace Scaleum\Storages\PDO\Builders\Contracts;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  * @version 1.0
- * @updated 2026-07-28
+ * @updated 2026-07-29
  */
 interface QueryBuilderInterface {
     public function delete(array | string $table = null, array | string $where = null, ?int $limit = null): mixed;
@@ -59,6 +59,7 @@ interface QueryBuilderInterface {
     public function select(array | string $select = '*', bool $quoting = true): self;
     public function set(array | string $field, mixed $value = null, bool $quoting = true, bool $isBatch = false): self;
     public function setAsBatch(array $field, mixed $value = null, bool $quoting = true): self;
+    public function skipLocked(bool $value = true): self;
     public function truncate(?string $table = null): mixed;
     public function union(callable | string | self $query): self;
     public function unionAll(callable | string | self $query): self;
