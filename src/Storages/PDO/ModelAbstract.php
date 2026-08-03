@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -22,8 +22,7 @@ use Scaleum\Stdlib\Helpers\ArrayHelper;
  * @method static resetAttribute(string $key, mixed $value = null)
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
-{
+abstract class ModelAbstract extends DatabaseProvider implements ModelInterface {
     public const ON_INSERT   = 0x01;
     public const ON_UPDATE   = 0x02;
     public const ON_DELETE   = 0x04;
@@ -52,8 +51,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      */
     protected bool $relationsIncluded = true;
 
-    public function __construct(?Database $database = null, ?self $parent = null)
-    {
+    public function __construct(?Database $database = null, ?self $parent = null) {
         parent::__construct($database);
         $this->parent = $parent;
         $this->data   = new ModelData();
@@ -61,24 +59,24 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         $this->init();
     }
 
-    protected function init(): void
-    {
+    protected function init(): void {
         //...
     }
 
-    public function __get(string $name): mixed
-    {
+    public function __get(string $name): mixed {
         return $this->data->$name ?? null;
     }
 
-    public function __set(string $name, mixed $value): void
-    {
+    public function __set(string $name, mixed $value): void {
         $this->data->$name = $value;
     }
 
-    public function __call($name, $args)
-    {
+    public function __call($name, $args) {
         return call_user_func_array([$this->data, $name], $args);
+    }
+
+    public function __isset(string $name): bool {
+        return $this->data->hasAttribute($name);
     }
 
     protected static function getInstance(): static
@@ -95,8 +93,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return bool True if relationships are present and valid, false otherwise.
      */
-    public function getRelationships(): bool
-    {
+    public function getRelationships(): bool {
         return $this->relationsIncluded;
     }
 
@@ -121,8 +118,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * @param mixed $id The ID of the record to find.
      * @return self|null The found record as an instance of the class, or null if not found.
      */
-    public function find(mixed $id): ?self
-    {
+    public function find(mixed $id): ?self {
         $db = $this->getDatabase();
         if (! $db) {
             return null;
@@ -136,8 +132,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         return $this;
     }
 
-    public static function fetch(mixed $id): ?self
-    {
+    public static function fetch(mixed $id): ?self {
         return static::getInstance()->find($id);
     }
 
@@ -149,8 +144,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return self|null Returns an instance of the model if a matching record is found, or null if no match is found.
      */
-    public function findOneBy(array | Closure $conditions, string $operator = 'AND'): ?self
-    {
+    public function findOneBy(array | Closure $conditions, string $operator = 'AND'): ?self {
 
         $db = $this->getDatabase();
         if (! $db) {
@@ -173,8 +167,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         return $this;
     }
 
-    public static function fetchOneBy(array | Closure $conditions, string $operator = 'AND'): ?self
-    {
+    public static function fetchOneBy(array | Closure $conditions, string $operator = 'AND'): ?self {
         return static::getInstance()->findOneBy($conditions, $operator);
     }
 
@@ -183,8 +176,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return array An array of all records.
      */
-    public function findAll(): array
-    {
+    public function findAll(): array {
         $db = $this->getDatabase();
         if (! $db) {
             return [];
@@ -205,8 +197,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         return $results;
     }
 
-    public static function fetchAll(): array
-    {
+    public static function fetchAll(): array {
         return static::getInstance()->findAll();
     }
 
@@ -217,8 +208,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * @param string $operator The logical operator to combine conditions (e.g., 'AND', 'OR'). Default is 'AND'.
      * @return array An array of records that match the specified conditions.
      */
-    public function findAllBy(array | Closure $conditions, string $operator = 'AND'): array
-    {
+    public function findAllBy(array | Closure $conditions, string $operator = 'AND'): array {
         $results = [];
         $db      = $this->getDatabase();
         if (! $db) {
@@ -247,8 +237,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         return $results;
     }
 
-    public static function fetchAllBy(array | Closure $conditions, string $operator = 'AND'): array
-    {
+    public static function fetchAllBy(array | Closure $conditions, string $operator = 'AND'): array {
         return static::getInstance()->findAllBy($conditions, $operator);
     }
 
@@ -258,8 +247,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * @param array $input An associative array of data to load into the model.
      * @return self Returns the instance of the model.
      */
-    public function load(array $input): self
-    {
+    public function load(array $input): self {
         $input     = ArrayHelper::naturalize($input);
         $relations = $this->getRelations();
         if ($this->beforeLoad($input)) {
@@ -323,8 +311,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return int The ID of the newly inserted record.
      */
-    public function insert(): int
-    {
+    public function insert(): int {
         $result = 0;
         if ($this->isTransactional(self::ON_INSERT)) {
             $db = $this->getDatabase();
@@ -347,8 +334,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         return $result;
     }
 
-    protected function insertInternal(): int
-    {
+    protected function insertInternal(): int {
         $this->lastStatus = [];
         $result           = 0;
 
@@ -402,8 +388,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return int The number of affected rows.
      */
-    public function update(): int
-    {
+    public function update(): int {
         if (! $this->isExisting()) {
             return $this->insert();
         }
@@ -429,8 +414,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         return $result;
     }
 
-    protected function updateInternal(): int
-    {
+    protected function updateInternal(): int {
         $this->lastStatus = [];
         $result           = 0;
 
@@ -465,8 +449,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * @param bool $cascade Whether to delete related records in a cascading manner.
      * @return int The number of affected rows.
      */
-    public function delete(bool $cascade = false): int
-    {
+    public function delete(bool $cascade = false): int {
         $result = 0;
         if (! $this->isExisting()) {
             $this->lastStatus = [
@@ -497,8 +480,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         return $result;
     }
 
-    protected function deleteInternal(bool $cascade = false): int
-    {
+    protected function deleteInternal(bool $cascade = false): int {
         $this->lastStatus = [];
         $result           = 0;
 
@@ -531,8 +513,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         return $result;
     }
 
-    public function truncate(): int
-    {
+    public function truncate(): int {
         if (! $this->isTransactional(self::ON_TRUNCATE)) {
             return $this->truncateInternal();
         }
@@ -553,8 +534,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         }
     }
 
-    protected function truncateInternal(): int
-    {
+    protected function truncateInternal(): int {
         $this->lastStatus = [];
         $result           = 0;
         $db               = $this->getDatabase();
@@ -587,8 +567,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return bool True if the model instance exists, false otherwise.
      */
-    public function isExisting(): bool
-    {
+    public function isExisting(): bool {
         return $this->data->hasAttribute($this->primaryKey);
     }
 
@@ -597,8 +576,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return mixed The ID of the model.
      */
-    public function getId(): mixed
-    {
+    public function getId(): mixed {
         return $this->data->{$this->primaryKey};
     }
 
@@ -607,8 +585,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return string|null The mode of the model, or null if not set.
      */
-    public function getMode(): ?string
-    {
+    public function getMode(): ?string {
         return $this->mode;
     }
 
@@ -618,8 +595,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * @param string $mode The mode to set.
      * @return self Returns the instance of the model.
      */
-    public function setMode(string $mode): self
-    {
+    public function setMode(string $mode): self {
         $this->mode = $mode;
         return $this;
     }
@@ -646,8 +622,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * @return array the declarations of transactional operations. The array keys are modes names,
      * and the array values are the corresponding transaction operations.
      */
-    public function getTransactions()
-    {
+    public function getTransactions() {
         return [];
     }
 
@@ -657,8 +632,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * @param int $type The type to check.
      * @return bool True if the type is transactional, false otherwise.
      */
-    public function isTransactional(int $type): bool
-    {
+    public function isTransactional(int $type): bool {
         $mode         = $this->getMode();
         $transactions = $this->getTransactions();
 
@@ -670,8 +644,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return string The name of the table.
      */
-    public function getTable(): string
-    {
+    public function getTable(): string {
         if (! $this->table) {
             $this->table = strtolower((new \ReflectionClass($this))->getShortName());
         }
@@ -684,21 +657,18 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return string The primary key of the model.
      */
-    public function getPrimaryKey(): string
-    {
+    public function getPrimaryKey(): string {
         return $this->primaryKey;
     }
 
     /**
      * Get the value of data
      */
-    public function getData(): ModelData
-    {
+    public function getData(): ModelData {
         return $this->data;
     }
 
-    public function setData(ModelData $data): void
-    {
+    public function setData(ModelData $data): void {
         $this->data = $data;
         if (! $this->data->isEmpty()) {
             $this->loadRelations();
@@ -708,8 +678,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
     /**
      * Get the value of lastStatus
      */
-    public function getLastStatus(): array
-    {
+    public function getLastStatus(): array {
         return $this->lastStatus;
     }
 
@@ -718,8 +687,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return array An array of relations.
      */
-    protected function getRelations(): array
-    {
+    protected function getRelations(): array {
         // return [
         //     'relation_1' => [
         //         'model'       => ModelClassA::class,
@@ -746,8 +714,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
     /**
      * Get the value of parent
      */
-    public function getParent(): ?self
-    {
+    public function getParent(): ?self {
         return $this->parent;
     }
 
@@ -759,8 +726,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *                     will be included; if false, additional properties(relations) will be included.
      * @return array An associative array representation of the model instance.
      */
-    public function toArray(bool $strict = true): array
-    {
+    public function toArray(bool $strict = true): array {
         $result = $this->data->toArray();
         if ($strict) {
             $result = $this->clearRelations($result);
@@ -773,8 +739,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return void
      */
-    private function loadRelations(): void
-    {
+    private function loadRelations(): void {
         // If relations are not included, skip loading them
         if (! $this->relationsIncluded) {
             return;
@@ -798,8 +763,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * @param class-string<T> $modelClass
      * @return T
      */
-    protected function createModelInstance(string $modelClass)
-    {
+    protected function createModelInstance(string $modelClass) {
         if (isset($this->relationFactories[$modelClass])) {
             $factory  = $this->relationFactories[$modelClass];
             $instance = $factory();
@@ -848,8 +812,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return array An array containing the synchronized relations.
      */
-    private function updateRelations(): array
-    {
+    private function updateRelations(): array {
         $result = [];
         foreach ($this->getRelations() as $relation => $config) {
             // if the persist option is set to false, skip this relation
@@ -901,8 +864,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      *
      * @return array An array containing the details of the removed relations.
      */
-    private function removeRelations(): array
-    {
+    private function removeRelations(): array {
         $result = [];
         foreach ($this->getRelations() as $relation => $config) {
             // if the persist option is set to false, skip this relation
@@ -930,8 +892,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
         return $result;
     }
 
-    private function clearRelations(array $data): array
-    {
+    private function clearRelations(array $data): array {
         foreach ($this->getRelations() as $relation => $definition) {
             if (array_key_exists($relation, $data)) {
                 unset($data[$relation]);
@@ -975,8 +936,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * What should I do before deleting? You must always return a Boolean value
      * @return bool [FALSE|TRUE]
      */
-    protected function beforeDelete()
-    {
+    protected function beforeDelete() {
         return true;
     }
 
@@ -984,8 +944,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * What should I do before inserting? You must always return a Boolean value
      * @return bool [FALSE|TRUE]
      */
-    protected function beforeInsert()
-    {
+    protected function beforeInsert() {
         return true;
     }
 
@@ -993,8 +952,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * What should I do before load? You must always return a Boolean value
      * @return bool [FALSE|TRUE]
      */
-    protected function beforeLoad(array &$input)
-    {
+    protected function beforeLoad(array &$input) {
         return true;
     }
 
@@ -1002,8 +960,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * What should I do before updating? You must always return a Boolean value
      * @return bool [FALSE|TRUE]
      */
-    protected function beforeUpdate()
-    {
+    protected function beforeUpdate() {
         return true;
     }
 
@@ -1011,8 +968,7 @@ abstract class ModelAbstract extends DatabaseProvider implements ModelInterface
      * What should I do before truncating? You must always return a Boolean value
      * @return bool [FALSE|TRUE]
      */
-    protected function beforeTruncate()
-    {
+    protected function beforeTruncate() {
         return true;
     }
 }
