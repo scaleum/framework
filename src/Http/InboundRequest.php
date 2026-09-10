@@ -187,7 +187,7 @@ class InboundRequest extends Message implements ServerRequestInterface {
     }
 
     protected static function cleanKey(string $str): string {
-        if (! preg_match('/^[a-z0-9\:_\/\-]+$/i', $str)) {
+        if (! preg_match('/^[a-z0-9\:._\/\-]+$/i', $str)) {
             throw new ERuntimeError('Disallowed Key Characters');
         }
 
