@@ -11,9 +11,9 @@ declare (strict_types = 1);
 
 namespace Scaleum\Http\Client\Transport;
 
-use Scaleum\Http\OutboundRequest;
-use Scaleum\Http\InboundResponse;
 use Scaleum\Http\HeadersManager;
+use Scaleum\Http\InboundResponse;
+use Scaleum\Http\OutboundRequest;
 use Scaleum\Http\Stream;
 use Scaleum\Http\Uri;
 use Scaleum\Stdlib\Exceptions\EHttpException;
@@ -33,6 +33,8 @@ class CurlTransport extends TransportAbstract {
     protected ?string $username = null;
     protected ?string $token    = null;
     protected ?string $domain   = null;
+    protected bool $verifyPeer  = false;
+    protected int $verifyHost   = 0;
 
     /**
      * Get the value of authType
@@ -119,8 +121,8 @@ class CurlTransport extends TransportAbstract {
             CURLOPT_REFERER        => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_MAXREDIRS      => max($this->getRedirectsCount(), 1),
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => $this->getVerifyPeer(),
+            CURLOPT_SSL_VERIFYHOST => $this->getVerifyHost(),
         ]);
 
         $contentType      = $headers->getHeader('Content-Type', '');
@@ -185,7 +187,7 @@ class CurlTransport extends TransportAbstract {
         $headers->setHeader('Host', $urlParts[2]);
         $headers->setHeader('Connection', 'Close');
 
-        if (!empty($authType = strtoupper($this->getAuthType() ?? ''))) {
+        if (! empty($authType = strtoupper($this->getAuthType() ?? ''))) {
             curl_setopt($handle, CURLOPT_HTTPAUTH, defined($type = 'CURLAUTH_' . $authType) ? constant($type) : CURLAUTH_ANY);
 
             $user     = $this->getUsername() ?? 'username';
@@ -276,7 +278,7 @@ class CurlTransport extends TransportAbstract {
                             $headers->addHeader($name, $value);
                         }
                     }
-                    
+
                     $responseHeaders = $headers->getAll();
                 }
             }
@@ -348,6 +350,44 @@ class CurlTransport extends TransportAbstract {
     public function setDomain(string $domain): static
     {
         $this->domain = $domain;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of verifyPeer
+     */
+    public function getVerifyPeer(): bool {
+        return $this->verifyPeer;
+    }
+
+    /**
+     * Set the value of verifyPeer
+     *
+     * @return  self
+     */
+    public function setVerifyPeer(mixed $value): static
+    {
+        $this->verifyPeer = (bool) $value;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of verifyHost
+     */
+    public function getVerifyHost(): int {
+        return $this->verifyHost;
+    }
+
+    /**
+     * Set the value of verifyHost
+     *
+     * @return  self
+     */
+    public function setVerifyHost(int $value): static
+    {
+        $this->verifyHost = $value;
 
         return $this;
     }
