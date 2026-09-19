@@ -21,6 +21,8 @@
 | `protected ?string $password` | `string\|null` | Password for basic or NTLM authorization.                    |
 | `protected ?string $token`    | `string\|null` | Token for Bearer authorization.                              |
 | `protected ?string $domain`   | `string\|null` | Domain for NTLM authorization.                               |
+| `protected bool $verifyPeer`  | `bool`         | Enables TLS certificate verification. Defaults to `false`.   |
+| `protected int $verifyHost`   | `int`          | Enables TLS certificate hostname verification. Defaults to `0`. |
 
 ##  Methods
 
@@ -54,6 +56,18 @@ public function setToken(string $token): static
 public function setDomain(string $domain): static
 ```
 - Set parameters for various authorization schemes.
+
+### TLS verification getters/setters
+```php
+public function getVerifyPeer(): bool
+public function setVerifyPeer(mixed $value): static
+public function getVerifyHost(): int
+public function setVerifyHost(int $value): static
+```
+- `verifyPeer` is passed to `CURLOPT_SSL_VERIFYPEER`.
+- `verifyHost` is passed to `CURLOPT_SSL_VERIFYHOST`.
+- The current defaults, `false` and `0`, disable TLS certificate and hostname verification.
+- For HTTPS requests in production, use `true` and `2`. Disabling either check makes the connection vulnerable to man-in-the-middle attacks and should be limited to controlled development environments.
 
 ##  Usage examples
 
@@ -107,6 +121,22 @@ $response = $transport->send(
     new OutboundRequest('GET', new Uri('http://short.url/xyz'))
 );
 // will automatically follow Location up to 3 times
+```
+
+###  6. TLS verification
+```php
+$transport = new CurlTransport([
+    'verifyPeer' => true,
+    'verifyHost' => 2,
+]);
+```
+
+The same options can be configured after construction:
+
+```php
+$transport
+    ->setVerifyPeer(true)
+    ->setVerifyHost(2);
 ```
 
 [Back to Contents](../../../../index.md)

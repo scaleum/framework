@@ -21,6 +21,8 @@
 | `protected ?string $password` | `string\|null` | Пароль для базової або NTLM-авторизації.                     |
 | `protected ?string $token`    | `string\|null` | Токен для Bearer-авторизації.                                |
 | `protected ?string $domain`   | `string\|null` | Домен для NTLM-авторизації.                                  |
+| `protected bool $verifyPeer`  | `bool`         | Вмикає перевірку TLS-сертифіката. За замовчуванням `false`.   |
+| `protected int $verifyHost`   | `int`          | Вмикає перевірку імені хоста в TLS-сертифікаті. За замовчуванням `0`. |
 
 ## Методи
 
@@ -54,6 +56,18 @@ public function setToken(string $token): static
 public function setDomain(string $domain): static
 ```
 - Встановлюють параметри для різних схем авторизації.
+
+### Геттери/сеттери перевірки TLS
+```php
+public function getVerifyPeer(): bool
+public function setVerifyPeer(mixed $value): static
+public function getVerifyHost(): int
+public function setVerifyHost(int $value): static
+```
+- `verifyPeer` передається до `CURLOPT_SSL_VERIFYPEER`.
+- `verifyHost` передається до `CURLOPT_SSL_VERIFYHOST`.
+- Поточні значення за замовчуванням, `false` і `0`, вимикають перевірку TLS-сертифіката та імені хоста.
+- Для HTTPS-запитів у production слід використовувати `true` і `2`. Вимкнення будь-якої з перевірок робить з'єднання вразливим до атак «людина посередині» та припустиме лише в контрольованому середовищі розробки.
 
 ## Приклади використання
 
@@ -107,6 +121,22 @@ $response = $transport->send(
     new OutboundRequest('GET', new Uri('http://short.url/xyz'))
 );
 // автоматично перейде за Location до 3 разів
+```
+
+### 6. Перевірка TLS
+```php
+$transport = new CurlTransport([
+    'verifyPeer' => true,
+    'verifyHost' => 2,
+]);
+```
+
+Ці параметри також можна налаштувати після створення транспорту:
+
+```php
+$transport
+    ->setVerifyPeer(true)
+    ->setVerifyHost(2);
 ```
 
 [Повернутись до змісту](../../../../index.md)
