@@ -235,6 +235,24 @@ class ArrayHelper {
         return $result;
     }
 
+    public static function overlay(array $base, array $overrides): array {
+        foreach ($overrides as $key => $value) {
+            if (
+                array_key_exists($key, $base)
+                && is_array($base[$key])
+                && is_array($value)
+                && self::isAssociative($base[$key])
+                && self::isAssociative($value)
+            ) {
+                $base[$key] = self::overlay($base[$key], $value);
+            } else {
+                $base[$key] = $value;
+            }
+        }
+
+        return $base;
+    }
+
     /**
      * Converts values of the input associative array to PHP “native” types:
      *  - digit-only string (including a leading '-') → int

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 /**
  * This file is part of Scaleum Framework.
  *
@@ -23,8 +23,7 @@ use Scaleum\Stdlib\Helpers\PathHelper;
  *
  * @author Maxim Kirichenko <kirichenko.maxim@gmail.com>
  */
-class LoaderResolver
-{
+class LoaderResolver {
     protected static ?LoaderDispatcher $loaders = null;
 
     protected static array $extensions = [
@@ -38,8 +37,7 @@ class LoaderResolver
         protected ?string $env = null,
     ) {}
 
-    public function getFiles(string $path): array
-    {
+    public function getFiles(string $path): array {
         $path       = FileHelper::prepPath($path);
         $extensions = implode(',', array_keys(static::$extensions));
         $files      = glob("$path/*.{{$extensions}}", GLOB_BRACE);
@@ -62,8 +60,7 @@ class LoaderResolver
      * @param array|null $ignored Reference to an array of files to ignore or track as loaded.
      * @return array The merged configuration data from all loaded files.
      */
-    public function fromDir(string $path,  ?array &$ignored = null): array
-    {
+    public function fromDir(string $path,  ? array &$ignored = null) : array {
         $result = [];
         $files  = $this->getFiles($path);
         foreach ($files as $file) {
@@ -85,8 +82,7 @@ class LoaderResolver
      * @return array The configuration data loaded from the file.
      * @throws \RuntimeException If the file cannot be loaded or parsed.
      */
-    public function fromFile(string $file): array
-    {
+    public function fromFile(string $file): array {
         $result   = [];
         $filename = FileHelper::prepFilename($file);
         $ext      = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
@@ -105,7 +101,8 @@ class LoaderResolver
                 $filename = str_replace($basename, PathHelper::join($this->env, $basename), $filename);
                 if (file_exists($filename)) {
                     $extended = $loader->fromFile($filename);
-                    $result   = ArrayHelper::merge($result, $extended);
+                    // $result   = ArrayHelper::merge($result, $extended);
+                    $result   = ArrayHelper::overlay($result, $extended);
                 }
             }
         } else {
@@ -118,8 +115,7 @@ class LoaderResolver
         return $result;
     }
 
-    protected static function getDispatcher(): LoaderDispatcher
-    {
+    protected static function getDispatcher(): LoaderDispatcher {
         if (self::$loaders === null) {
             self::$loaders = new LoaderDispatcher();
         }
